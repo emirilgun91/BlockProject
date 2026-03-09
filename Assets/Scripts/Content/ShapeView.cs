@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
 public class ShapeView : MonoBehaviour
@@ -10,23 +10,28 @@ public class ShapeView : MonoBehaviour
     public void Build(Vector2Int[] cells, float cellSize)
     {
         Clear();
+        if (cells == null || cells.Length == 0)
+            return;
+
+        // Önce şeklin merkezini hesapla
         Vector2 center = Vector2.zero;
+        for (int i = 0; i < cells.Length; i++)
+        {
+            center += cells[i];
+        }
+        center /= cells.Length;
+
+        // Ardından blokları merkeze göre yerleştir
         foreach (var c in cells)
         {
             var b = Instantiate(blockPrefab, transform);
 
-            b.transform.localPosition =
-                new Vector3(c.x * cellSize, c.y * cellSize, 0);
+            b.transform.localPosition = new Vector3(
+                (c.x - center.x) * cellSize,
+                (c.y - center.y) * cellSize,
+                0);
 
             blocks.Add(b);
-            center += c;
-
-            center /= cells.Length;
-
-            b.transform.localPosition =
-                new Vector3((c.x - center.x) * cellSize,
-                    (c.y - center.y) * cellSize,
-                    0);
         }
     }
 

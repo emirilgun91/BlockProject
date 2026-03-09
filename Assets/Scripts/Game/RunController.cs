@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using RogueBlockBlast.UI;
@@ -34,6 +34,7 @@ namespace RogueBlockBlast.Game
         private Rotation _currentRot = Rotation.R0;
 
         private readonly HashSet<Vector2Int> _ghost = new();
+        private bool _poolDirty = true;
         
         private int _freeDeadPoolReroll = 1;
         private int _cardDeadPoolReroll = 0;   // karttan gelen hak
@@ -43,8 +44,14 @@ namespace RogueBlockBlast.Game
 
         private void Start()
         {
-            if (MainCamera == null) 
-                MainCamera = Camera.main;
+            //if (MainCamera == null) 
+               // MainCamera = Camera.main;
+
+           // if (MainCamera != null)
+           // {
+                // Arkaplan rengini sabitle: #0a0b0f
+               // MainCamera.backgroundColor = new Color32(0x0a, 0x0b, 0x0f, 0xff);
+           // }
 
             _bestScore = PlayerPrefs.GetInt("BEST_SCORE", 0);
 
@@ -99,7 +106,12 @@ namespace RogueBlockBlast.Game
 
             if (Keyboard.current.digit3Key.wasPressedThisFrame)
                 SelectPool(2);
-            PoolView.Bind(_piecePool, _selectedPoolIndex);
+
+            if (_poolDirty && PoolView != null)
+            {
+                PoolView.Bind(_piecePool, _selectedPoolIndex);
+                _poolDirty = false;
+            }
         }
         private void SelectPool(int index)
         {
@@ -109,6 +121,7 @@ namespace RogueBlockBlast.Game
             _selectedPoolIndex = index;
             _currentPiece = _piecePool[index];
             _currentRot = Rotation.R0;
+            _poolDirty = true;
         }
         private void OnValidate()
         {
@@ -144,6 +157,9 @@ namespace RogueBlockBlast.Game
             {
                 HandleDeadPool();
             }
+
+            // Havuz değiştiği için UI'yi güncelle
+            _poolDirty = true;
         }
 
         private void NewRun()
@@ -161,6 +177,7 @@ namespace RogueBlockBlast.Game
             BoardView.Build(_board);
 
             GenerateNewPool();
+            _poolDirty = true;
         }
 
         private void SpawnNextFromPool()
@@ -235,6 +252,7 @@ namespace RogueBlockBlast.Game
                     _cardDeadPoolReroll--;
                     _score -= CardRerollCost;
                     GenerateNewPool();
+                    _poolDirty = true;
                     return;
                 }
             }
@@ -263,6 +281,7 @@ namespace RogueBlockBlast.Game
             {
                 HandleDeadPool();
             }
+            _poolDirty = true;
         }
     }
 }

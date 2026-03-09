@@ -5,17 +5,19 @@ namespace RogueBlockBlast.Core
 {
     public class BoardModel
     {
-        public int Width { get; private set; }
+        public int Width  { get; private set; }
         public int Height { get; private set; }
 
-        private bool[,] _cells;
+        private readonly bool[,]  _cells;
+        private readonly Color[,] _colors;
 
         public BoardModel(int width, int height)
         {
-            Width = width;
+            Width  = width;
             Height = height;
 
-            _cells = new bool[width, height];
+            _cells  = new bool[width, height];
+            _colors = new Color[width, height];
         }
 
         public bool IsInside(int x, int y)
@@ -31,8 +33,21 @@ namespace RogueBlockBlast.Core
 
         public void SetFilled(int x, int y, bool value)
         {
+            SetFilled(x, y, value, Color.white);
+        }
+
+        public void SetFilled(int x, int y, bool value, Color color)
+        {
             if (!IsInside(x, y)) return;
-            _cells[x, y] = value;
+
+            _cells[x, y]  = value;
+            _colors[x, y] = value ? color : default;
+        }
+
+        public Color GetCellColor(int x, int y)
+        {
+            if (!IsInside(x, y)) return default;
+            return _colors[x, y];
         }
 
         public List<int> GetFullRows()
@@ -80,13 +95,19 @@ namespace RogueBlockBlast.Core
         public void ClearRow(int row)
         {
             for (int x = 0; x < Width; x++)
-                _cells[x, row] = false;
+            {
+                _cells[x, row]  = false;
+                _colors[x, row] = default;
+            }
         }
 
         public void ClearColumn(int col)
         {
             for (int y = 0; y < Height; y++)
-                _cells[col, y] = false;
+            {
+                _cells[col, y]  = false;
+                _colors[col, y] = default;
+            }
         }
     }
 }

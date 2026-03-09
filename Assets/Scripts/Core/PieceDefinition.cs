@@ -11,13 +11,18 @@ namespace RogueBlockBlast.Core
     public sealed class PieceDefinition
     {
         public string Id { get; }
+        public Color BlockColor  { get; }
         public IReadOnlyList<Vector2Int> CellsR0 => _cellsR0;
-        public Color               BlockColor  { get; }
+
         private readonly Vector2Int[] _cellsR0;
-        public IReadOnlyList<Vector2Int> Cells { get; }
         private readonly Dictionary<Rotation, Vector2Int[]> _rotCache = new();
 
         public PieceDefinition(string id, IEnumerable<Vector2Int> cellsR0)
+            : this(id, cellsR0, Color.white)
+        {
+        }
+
+        public PieceDefinition(string id, IEnumerable<Vector2Int> cellsR0, Color blockColor)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Id required", nameof(id));
             Id = id;
@@ -27,11 +32,18 @@ namespace RogueBlockBlast.Core
 
             _cellsR0 = list.ToArray();
             _rotCache[Rotation.R0] = _cellsR0;
+            BlockColor = blockColor;
         }
         public PieceDefinition(string id, List<Vector2Int> cells, Color blockColor)
         {
-            Id         = id;
-            Cells      = cells.AsReadOnly();
+            if (cells == null) throw new ArgumentNullException(nameof(cells));
+            Id = string.IsNullOrWhiteSpace(id) ? throw new ArgumentException("Id required", nameof(id)) : id;
+
+            var list = new List<Vector2Int>(cells);
+            if (list.Count == 0) throw new ArgumentException("Piece must have at least 1 cell.");
+
+            _cellsR0 = list.ToArray();
+            _rotCache[Rotation.R0] = _cellsR0;
             BlockColor = blockColor;
         }
 

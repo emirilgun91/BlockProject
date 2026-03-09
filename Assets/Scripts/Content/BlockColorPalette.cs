@@ -36,7 +36,7 @@ namespace RogueBlockBlast.Content
 
         // Ghost base colors (same teal/crimson, just faded)
         public static readonly Color GhostValid   = new Color(20f/255f, 143f/255f, 119f/255f, GhostValidAlpha);
-        public static readonly Color GhostInvalid = new Color(192f/255f, 57f/255f,  43f/255f,  GhostInvalidAlpha);
+        public static readonly Color GhostInvalid = new Color(192f/255f, 57f/255f, 43f/255f, GhostInvalidAlpha);
 
         // ── Public API ──────────────────────────────────────────────────────
 

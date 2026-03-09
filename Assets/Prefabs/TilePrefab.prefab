@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7977023091637619835}
   - component: {fileID: 7791734864907992393}
   - component: {fileID: 578154390627390709}
-  - component: {fileID: 2389610955013335594}
+  - component: {fileID: 5934241018654573123}
   m_Layer: 0
   m_Name: TilePrefab
   m_TagString: Untagged
@@ -42,7 +42,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7893675190738736037}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfd3cd97a4fb456388283a2acf4e45a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.TileView
---- !u!114 &2389610955013335594
+--- !u!114 &5934241018654573123
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -117,5 +117,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67d521d69f244d29a435fa5a7f982fee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.BlockCellView
-  _glowRenderer: {fileID: 0}
+  _glowRenderer: {fileID: 8983064192065059291, guid: e16b8ebf9337d3b498f3c95b63d12433, type: 3}
   _glowAlpha: 0.3

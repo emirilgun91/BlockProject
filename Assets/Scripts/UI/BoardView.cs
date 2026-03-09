@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -89,22 +90,26 @@ namespace RogueBlockBlast.UI
         {
             if (_tiles == null) return;
 
-            // Basit debug renkleri
-            Color empty = new Color(0.15f, 0.15f, 0.15f, 1f);
-            Color filled = new Color(0.85f, 0.85f, 0.85f, 1f);
-            Color ghostOk = new Color(0.2f, 0.9f, 0.2f, 0.55f);
-            Color ghostBad = new Color(0.9f, 0.2f, 0.2f, 0.55f);
+            // Board colors
+            // Arkaplan:rgb(27, 42, 102) (camera)
+            // Boş grid hücresi:#1c2132(TilePrefab rengi)
+            Color emptyCell = new Color32(0x1c, 0x21, 0x32, 0xff);
+            Color ghostOk   = BlockColorPalette.GhostValid;
+            Color ghostBad  = BlockColorPalette.GhostInvalid;
 
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
             {
                 bool isFilled = board.IsFilled(x, y);
-                Color c = isFilled ? filled : empty;
+                Color baseColor = isFilled ? board.GetCellColor(x, y) : emptyCell;
 
                 if (ghostCells != null && ghostCells.Contains(new Vector2Int(x, y)))
-                    c = isFilled ? ghostBad : ghostOk;
+                {
+                    // Overlays ghost tint on top of background / piece color
+                    baseColor = isFilled ? ghostBad : ghostOk;
+                }
 
-                _tiles[x, y].SetColor(c);
+                _tiles[x, y].SetColor(baseColor);
             }
         }
 

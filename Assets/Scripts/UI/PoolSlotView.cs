@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
+using UnityEngine.UI;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.Content;
 
 namespace RogueBlockBlast.UI
 {
@@ -71,7 +73,23 @@ namespace RogueBlockBlast.UI
                     (c.x - minX) * cellSize - offsetX,
                     (c.y - minY) * cellSize - offsetY
                 );
-                
+
+                // Hem BlockCellView hem de olası SpriteRenderer/UI Image'ı renklendir
+                var color = piece.BlockColor;
+
+                var cellView = go.GetComponentInChildren<BlockCellView>(true);
+                if (cellView != null)
+                {
+                    cellView.SetColor(color);
+                }
+
+                var sr = go.GetComponentInChildren<SpriteRenderer>(true);
+                if (sr != null)
+                    sr.color = color;
+
+                var img = go.GetComponentInChildren<Image>(true);
+                if (img != null)
+                    img.color = color;
             }
 
             _selectionFrame.SetActive(selected);

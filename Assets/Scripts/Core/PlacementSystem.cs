@@ -40,7 +40,7 @@ namespace RogueBlockBlast.Core
                 int x = anchor.x + cells[i].x;
                 int y = anchor.y + cells[i].y;
 
-                board.SetFilled(x, y, true);
+                board.SetFilled(x, y, true, piece.BlockColor);
             }
         }
     }

@@ -41,6 +41,7 @@ namespace RogueBlockBlast.Game
         private const int CardRerollCost = 300;
         
         [SerializeField] private PoolView PoolView;
+        [SerializeField] private ScoreView ScoreView;
 
         private void Start()
         {
@@ -142,6 +143,11 @@ namespace RogueBlockBlast.Game
             int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared);
             _score += gainedScore;
 
+            if (gainedScore != 0)
+                ScoreView?.AddScoreGain(_score, gainedScore);
+            else
+                ScoreView?.SetScore(_score);
+
             // Kullanılan parçayı havuzdan kaldır
             _piecePool.RemoveAt(_selectedPoolIndex);
 
@@ -173,6 +179,8 @@ namespace RogueBlockBlast.Game
 
             _scoreSystem = new ScoreSystem();
             _score = 0;
+
+            ScoreView?.SetScore(0);
 
             BoardView.Build(_board);
 
@@ -251,6 +259,7 @@ namespace RogueBlockBlast.Game
                 {
                     _cardDeadPoolReroll--;
                     _score -= CardRerollCost;
+                    ScoreView?.AddScoreGain(_score, -CardRerollCost);
                     GenerateNewPool();
                     _poolDirty = true;
                     return;

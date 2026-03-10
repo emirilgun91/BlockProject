@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3061607107582040030}
   - component: {fileID: 7788042878106646727}
   - component: {fileID: 6893417408979544400}
+  - component: {fileID: 6893417408979544401}
   m_Layer: 5
   m_Name: ScoreBoard
   m_TagString: Untagged
@@ -78,6 +79,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6893417408979544401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 208005396217409928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.ScoreView
+  _scoreNumb: {fileID: 8758574429159429027}
+  _floatDuration: 0.5
+  _floatOffsetY: -40
+  _floatFontSize: 26
 --- !u!1 &511165657014361808
 GameObject:
   m_ObjectHideFlags: 0

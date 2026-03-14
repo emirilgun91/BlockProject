@@ -30,27 +30,29 @@ public sealed class MouseTrailVelocity : MonoBehaviour
 
         _cam = Camera.main;
 
-        // başlangıçta particle üretmesin
         SetEmission(0);
     }
 
     void Update()
     {
         if (Mouse.current == null || _cam == null)
-        {
-            SetEmission(0);
             return;
+
+        // click başladıysa particle başlat
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            _ps.Play();
         }
 
-        bool pointerOnUI =
-            EventSystem.current != null &&
-            EventSystem.current.IsPointerOverGameObject();
-
-        if (!Mouse.current.leftButton.isPressed || pointerOnUI)
+        // click bırakıldıysa particle durdur
+        if (Mouse.current.leftButton.wasReleasedThisFrame)
         {
-            SetEmission(0);
-            return;
+            _ps.Stop();
         }
+
+        // basılı değilse pozisyon ve hız hesaplamasına gerek yok
+        if (!Mouse.current.leftButton.isPressed)
+            return;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector2 delta = Mouse.current.delta.ReadValue();
@@ -100,7 +102,8 @@ public sealed class MouseTrailVelocity : MonoBehaviour
 
     void SetEmission(float rate)
     {
-        _emission.rateOverTime = new ParticleSystem.MinMaxCurve(rate);
+        var curve = new ParticleSystem.MinMaxCurve(rate);
+        _emission.rateOverTime = curve;
         _emission.rateOverDistance = 0;
     }
 }

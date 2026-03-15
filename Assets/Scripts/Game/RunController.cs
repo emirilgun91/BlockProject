@@ -45,15 +45,7 @@ namespace RogueBlockBlast.Game
 
         private void Start()
         {
-            //if (MainCamera == null) 
-               // MainCamera = Camera.main;
-
-           // if (MainCamera != null)
-           // {
-                // Arkaplan rengini sabitle: #0a0b0f
-               // MainCamera.backgroundColor = new Color32(0x0a, 0x0b, 0x0f, 0xff);
-           // }
-
+           
             _bestScore = PlayerPrefs.GetInt("BEST_SCORE", 0);
 
             NewRun();

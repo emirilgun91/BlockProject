@@ -5011,8 +5011,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe11fde5c20944ad83271f7a032c4e99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundScroll
-  speedX: -0.005
-  speedY: -0.005
+  speedX: -0.01
+  speedY: -0.01
 --- !u!212 &157049925
 SpriteRenderer:
   serializedVersion: 2
@@ -5062,15 +5062,15 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 650b3e3a87864d142b3258bf22e06466, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.36862746}
+  m_Sprite: {fileID: -4049068801077623646, guid: 650b3e3a87864d142b3258bf22e06466, type: 3}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.36862746}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 19.34, y: 19.92}
+  m_Size: {x: 20.48, y: 20.48}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!4 &157049926
 Transform:
@@ -5081,7 +5081,7 @@ Transform:
   m_GameObject: {fileID: 157049923}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.15, y: 4.48, z: 5}
+  m_LocalPosition: {x: 4.06, y: 3, z: 5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5191,7 +5191,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.08627451, g: 0.101960786, b: 0.14901961, a: 0}
+  m_BackGroundColor: {r: 0.095318615, g: 0.15081057, b: 0.3207547, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -6288,14 +6288,6 @@ PrefabInstance:
     - target: {fileID: 5776758073695240521, guid: 95046667ed6114c469439f116bb6c74b, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5787426823085270129, guid: 95046667ed6114c469439f116bb6c74b, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 11.179932
-      objectReference: {fileID: 0}
-    - target: {fileID: 5787426823085270129, guid: 95046667ed6114c469439f116bb6c74b, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 8.119995
       objectReference: {fileID: 0}
     - target: {fileID: 5861096469904157829, guid: 95046667ed6114c469439f116bb6c74b, type: 3}
       propertyPath: m_SizeDelta.x

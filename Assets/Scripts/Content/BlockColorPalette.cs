@@ -31,8 +31,8 @@ namespace RogueBlockBlast.Content
         private static readonly Color Slate   = HexToColor("2E6DA4");
 
         // Ghost tint alphas
-        public const float GhostValidAlpha   = 0.35f;
-        public const float GhostInvalidAlpha = 0.35f;
+        public const float GhostValidAlpha   = 0.10f;
+        public const float GhostInvalidAlpha = 0.10f;
 
         // Ghost base colors (same teal/crimson, just faded)
         public static readonly Color GhostValid   = new Color(20f/255f, 143f/255f, 119f/255f, GhostValidAlpha);

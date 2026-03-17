@@ -46,9 +46,9 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
-  spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMode: 1
+  spriteExtrude: 7
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
@@ -103,13 +103,13 @@ TextureImporter:
       name: Line_bg 1_0
       rect:
         serializedVersion: 2
-        x: 408
-        y: 0
-        width: 185
-        height: 1024
+        x: 483
+        y: 178
+        width: 29
+        height: 715
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 1, y: 0, z: 0, w: 2}
       customData: 
       outline: []
       physicsShape: []

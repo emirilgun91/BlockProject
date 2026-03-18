@@ -41,11 +41,15 @@ namespace RogueBlockBlast.Game
 
         [SerializeField] private PoolView  PoolView;
         [SerializeField] private ScoreView ScoreView;
+        
+        [SerializeField] private ComboView ComboView;
+        private ComboSystem _comboSystem = new ComboSystem();
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {
             NewRun();
+            ComboView?.Bind(_comboSystem);
         }
 
         private void Update()
@@ -110,49 +114,63 @@ namespace RogueBlockBlast.Game
 
         // ── Placement ────────────────────────────────────────────────────────
         private void DoPlace(Vector2Int anchor)
-        {
-            if (!PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot))
-                return;
-
-            PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot);
-
-            // ── Stats: placement ─────────────────────────────────────────────
-            RunStatsTracker.Instance?.RecordPlacement();
-
-            int cleared = LineClearSystem.ClearLines(_board);
-
-            // ── Stats: line clear ────────────────────────────────────────────
-            if (cleared > 0)
-                RunStatsTracker.Instance?.RecordClear(cleared, 0);
-                // Not: eğer LineClearSystem row/col ayrı dönüyorsa ikinci parametreyi güncelle
-
-            int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared);
-            _score += gainedScore;
-
-            // ── Stats: combo ─────────────────────────────────────────────────
-            RunStatsTracker.Instance?.RecordCombo(_scoreSystem.CurrentMultiplier);
-
-            if (gainedScore != 0)
-                ScoreView?.AddScoreGain(_score, gainedScore);
-            else
-                ScoreView?.SetScore(_score);
-
-            // Kullanılan parçayı havuzdan kaldır
-            _piecePool.RemoveAt(_selectedPoolIndex);
-
-            if (_piecePool.Count == 0)
-                GenerateNewPool();
-            else
+        
             {
-                _selectedPoolIndex = 0;
-                SpawnNextFromPool();
+                if (!PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot))
+                    return;
+ 
+                PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot);
+ 
+                // FX: yerleştirme
+                BoardFX.PlayPlaceFX(BoardView, _currentPiece, anchor, _currentRot);
+ 
+                // Stats
+                RunStatsTracker.Instance?.RecordPlacement();
+ 
+                // Line clear
+                var (cleared, clearedRows, clearedCols) = LineClearSystem.ClearLines(_board);
+ 
+                // FX: line clear
+                if (cleared > 0)
+                {
+                    BoardFX.PlayLineClearFX(BoardView, _board.Width, _board.Height, clearedRows, clearedCols);
+                    RunStatsTracker.Instance?.RecordClear(cleared, 0);
+ 
+                    // Combo: kaç line clear olduysa o kadar ekle
+                    _comboSystem.OnLineClear(cleared);
+                }
+ 
+                // Combo: placement bildir (clear yoksa charge düşer)
+                _comboSystem.OnPlacement(hadClear: cleared > 0);
+ 
+                // Skor — multiplier artık ComboSystem'den geliyor
+                int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared, _comboSystem.Multiplier);
+                _score += gainedScore;
+ 
+                // Stats: combo
+                RunStatsTracker.Instance?.RecordCombo(_comboSystem.Multiplier);
+ 
+                if (gainedScore != 0)
+                    ScoreView?.AddScoreGain(_score, gainedScore);
+                else
+                    ScoreView?.SetScore(_score);
+ 
+                // Pool
+                _piecePool.RemoveAt(_selectedPoolIndex);
+ 
+                if (_piecePool.Count == 0)
+                    GenerateNewPool();
+                else
+                {
+                    _selectedPoolIndex = 0;
+                    SpawnNextFromPool();
+                }
+ 
+                if (!HasAnyValidMoveInPool())
+                    HandleDeadPool();
+ 
+                _poolDirty = true;
             }
-
-            if (!HasAnyValidMoveInPool())
-                HandleDeadPool();
-
-            _poolDirty = true;
-        }
 
         // ── Run ──────────────────────────────────────────────────────────────
         private void NewRun()
@@ -167,6 +185,7 @@ namespace RogueBlockBlast.Game
             _run   = new RunModel();
 
             _scoreSystem = new ScoreSystem();
+            _comboSystem.Reset();  
             _score       = 0;
 
             // ── Stats sıfırla ────────────────────────────────────────────────

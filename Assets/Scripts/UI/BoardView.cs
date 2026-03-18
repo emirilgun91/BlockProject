@@ -158,6 +158,16 @@ namespace RogueBlockBlast.UI
             return new Vector2Int(x, y);
         }
 
+        /// <summary>Verilen koordinattaki TileView'u döndürür. Sınır dışıysa null.</summary>
+        public TileView GetTile(int x, int y)
+        {
+            if (_tiles == null)           return null;
+            if (x < 0 || y < 0)          return null;
+            if (x >= _tiles.GetLength(0)) return null;
+            if (y >= _tiles.GetLength(1)) return null;
+            return _tiles[x, y];
+        }
+
         private Vector3 GridToWorldCenter(int x, int y)
         {
             return new Vector3(

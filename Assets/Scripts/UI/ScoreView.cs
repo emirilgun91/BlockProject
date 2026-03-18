@@ -105,8 +105,7 @@ namespace RogueBlockBlast.UI
                 float ease = 1f - Mathf.Pow(1f - t, 3f);
 
                 rect.anchoredPosition = Vector2.Lerp(startPos, targetPos, ease);
-                float jitter = Random.Range(-20f, 20f);
-                startPos = targetPos + new Vector2(jitter, _floatOffsetY);
+               
                 // scale pop
                 if (t < 0.25f)
                 {

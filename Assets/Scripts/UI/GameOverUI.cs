@@ -6,28 +6,7 @@ using UnityEngine.UI;
 
 namespace RogueBlockBlast.UI
 {
-    /// <summary>
-    /// Game Over overlay — shown when no shape in the pool can be placed.
-    ///
-    /// Hierarchy expected:
-    ///  GameOverUI (this)
-    ///   ├ Backdrop              (Image — dark semi-transparent)
-    ///   ├ Panel
-    ///   │  ├ TitleText          (TMP)  "GAME OVER"
-    ///   │  ├ ScoreSection
-    ///   │  │  ├ FinalScoreLabel (TMP)
-    ///   │  │  ├ FinalScoreText  (TMP)  big number
-    ///   │  │  ├ BestScoreLabel  (TMP)
-    ///   │  │  ├ BestScoreText   (TMP)
-    ///   │  │  └ NewRecordBadge  (GameObject — shown only on new record)
-    ///   │  ├ StatsSection
-    ///   │  │  ├ LinesText       (TMP)
-    ///   │  │  ├ PiecesText      (TMP)
-    ///   │  │  ├ MaxComboText    (TMP)
-    ///   │  │  └ CardsText       (TMP)
-    ///   │  ├ RetryButton        (Button)
-    ///   │  └ MainMenuButton     (Button)
-    /// </summary>
+
     public sealed class GameOverUI : MonoBehaviour
     {
         // ── Singleton ────────────────────────────────────────────────────────
@@ -82,12 +61,16 @@ namespace RogueBlockBlast.UI
         private void Update()
         {
             if (_canvasGroup == null || !_root.activeSelf) return;
-
             _canvasGroup.alpha = Mathf.MoveTowards(
                 _canvasGroup.alpha,
                 _fadingIn ? 1f : 0f,
                 Time.unscaledDeltaTime * _fadeSpeed
             );
+
+            // Tamamen gizlenince etkileşimi kapat
+            bool visible = _canvasGroup.alpha > 0f;
+            _canvasGroup.interactable   = visible;
+            _canvasGroup.blocksRaycasts = visible;
         }
 
         // ── Public API ───────────────────────────────────────────────────────
@@ -99,6 +82,7 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public void Show(int finalScore)
         {
+          
             // ── Best score ──────────────────────────────────────────────────
             int bestScore  = PlayerPrefs.GetInt(BestScoreKey, 0);
             bool newRecord = finalScore > bestScore;
@@ -150,6 +134,18 @@ namespace RogueBlockBlast.UI
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(_mainMenuSceneName);
+        }
+
+        /// <summary>
+        /// R tuşuyla NewRun çağrılınca buradan kapat.
+        /// gameObject'i kapatmaz — sadece _root'u kapatır.
+        /// </summary>
+        public void Hide()
+        {
+            Time.timeScale = 1f;
+            _fadingIn = false;
+            // _root'u kapatmıyoruz — Update() alpha'yı 0'a çeker
+            // alpha 0 olunca zaten görünmez, Show() sonraki çağrıda tekrar fade in yapar
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

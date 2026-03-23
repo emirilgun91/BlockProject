@@ -21,7 +21,7 @@ namespace RogueBlockBlast.UI
         [Header("Clear FX")]
         [SerializeField] private float _clearScaleUp     = 1.18f;   // önce büyü
         [SerializeField] private float _clearFadeOut     = 0f;      // fade hedefi (0 = tamamen yok)
-        [SerializeField] private float _clearDuration    = 0.22f;   // toplam süre
+        [SerializeField] private float _clearDuration    = 0.42f;   // toplam süre
 
         [Header("Restore")]
         [SerializeField] private float _restoreDelay     = 0.22f;   // clear sonrası boşa dönüş gecikmesi

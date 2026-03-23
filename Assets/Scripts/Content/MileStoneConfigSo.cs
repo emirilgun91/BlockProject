@@ -12,7 +12,7 @@ namespace RogueBlockBlast.Content
     {
         [Header("Pool Limit")]
         [Tooltip("Her milestone arasında yerleştirilebilecek maksimum piece sayısı.")]
-        public int PoolLimit = 30;
+        public int PoolLimit = 15;
 
         [Header("Milestones")]
         [Tooltip("Sıralı milestone listesi. Score eşiğine ulaşınca tetiklenir.")]

@@ -1,0 +1,110 @@
+﻿using System;
+using RogueBlockBlast.Content;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace RogueBlockBlast.UI
+{
+    /// <summary>
+    /// Tek kart UI'ı.
+    ///
+    /// Hierarchy (Prefab):
+    ///  CardView_0               ← bu script buraya
+    ///   ├── IconArea  (Image)   ← _iconImage
+    ///   └── CardBody
+    ///        ├── CardNameText    (TMP)    ← _nameText
+    ///        ├── DescriptionText (TMP)    ← _descText
+    ///        └── SelectButton   (Button)  ← _selectButton
+    /// </summary>
+    public sealed class CardView : MonoBehaviour,
+        IPointerEnterHandler, IPointerExitHandler
+    {
+        // ── Inspector ────────────────────────────────────────────────────────
+        [Header("References")]
+        [SerializeField] private Image    _iconImage;
+        [SerializeField] private TMP_Text _nameText;
+        [SerializeField] private TMP_Text _descText;
+        [SerializeField] private Button   _selectButton;
+
+        [Header("Hover Animation")]
+        [SerializeField] private float _hoverLift  = 18f;
+        [SerializeField] private float _hoverSpeed = 10f;
+
+        // ── Runtime ──────────────────────────────────────────────────────────
+        private CardSO         _data;
+        private Action<CardSO> _onSelect;
+        private Vector3        _basePos;
+        private float          _targetY;
+
+        // ── Unity ────────────────────────────────────────────────────────────
+        private void Awake()
+        {
+            _selectButton.onClick.AddListener(OnSelectClicked);
+        }
+
+        private void Update()
+        {
+            var pos = transform.localPosition;
+            pos.y = Mathf.Lerp(pos.y, _basePos.y + _targetY, Time.unscaledDeltaTime * _hoverSpeed);
+            transform.localPosition = pos;
+        }
+
+        // ── Public API ───────────────────────────────────────────────────────
+        public void Bind(CardSO card, Action<CardSO> onSelect)
+        {
+            _data     = card;
+            _onSelect = onSelect;
+            _basePos  = transform.localPosition;
+            _targetY  = 0f;
+            gameObject.SetActive(true);
+            Render();
+        }
+
+        public void Clear()
+        {
+            _data     = null;
+            _onSelect = null;
+            gameObject.SetActive(false);
+        }
+
+        // ── Hover ────────────────────────────────────────────────────────────
+        public void OnPointerEnter(PointerEventData _) => _targetY =  _hoverLift;
+        public void OnPointerExit(PointerEventData _)  => _targetY =  0f;
+
+        // ── Private ──────────────────────────────────────────────────────────
+        private void Render()
+        {
+            if (_data == null) return;
+
+            _nameText.text = _data.CardName;
+            _descText.text = _data.Description;
+
+            if (_iconImage != null)
+            {
+                if (_data.Icon != null)
+                {
+                    _iconImage.sprite = _data.Icon;
+                    _iconImage.color  = Color.white;
+                }
+                else
+                {
+                    _iconImage.sprite = null;
+                    _iconImage.color  = GetRarityColor(_data.Rarity);
+                }
+            }
+        }
+
+        private void OnSelectClicked() => _onSelect?.Invoke(_data);
+
+        private static Color GetRarityColor(CardRarity rarity) => rarity switch
+        {
+            CardRarity.Common   => new Color(0.17f, 0.43f, 0.64f, 0.5f),
+            CardRarity.Uncommon => new Color(0.08f, 0.56f, 0.47f, 0.5f),
+            CardRarity.Rare     => new Color(0.36f, 0.31f, 0.81f, 0.5f),
+            CardRarity.Epic     => new Color(0.56f, 0.27f, 0.68f, 0.5f),
+            _                   => Color.grey
+        };
+    }
+}

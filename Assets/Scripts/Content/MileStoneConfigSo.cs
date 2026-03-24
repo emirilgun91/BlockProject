@@ -18,7 +18,7 @@ namespace RogueBlockBlast.Content
         [Tooltip("Sıralı milestone listesi. Score eşiğine ulaşınca tetiklenir.")]
         public List<MilestoneData> Milestones = new List<MilestoneData>
         {
-            new MilestoneData { ScoreThreshold = 1000,  CoinReward = 5,  Label = "I"   },
+            new MilestoneData { ScoreThreshold = 500,  CoinReward = 5,  Label = "I"   },
             new MilestoneData { ScoreThreshold = 2500,  CoinReward = 8,  Label = "II"  },
             new MilestoneData { ScoreThreshold = 5000,  CoinReward = 12, Label = "III" },
             new MilestoneData { ScoreThreshold = 10000, CoinReward = 20, Label = "IV"  },

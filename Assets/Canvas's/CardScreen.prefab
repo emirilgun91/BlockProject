@@ -741,6 +741,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6213227758037393772}
+  - component: {fileID: 1679176181731473999}
+  - component: {fileID: 6764351603211704632}
   m_Layer: 5
   m_Name: CardScreen
   m_TagString: Untagged
@@ -769,6 +771,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1679176181731473999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9131788574526725641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5cf3c33f48c41a7b4b84c310e31bbfb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.CardSelectionUI
+  _root: {fileID: 9131788574526725641}
+  _canvasGroup: {fileID: 6764351603211704632}
+  _fadeSpeed: 8
+  _cardViews:
+  - {fileID: 6189342134591076618}
+  - {fileID: 6855591754925630596}
+  - {fileID: 5126387052906949501}
+--- !u!225 &6764351603211704632
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9131788574526725641}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &7370160030608628743
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -946,6 +979,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
+--- !u!114 &6189342134591076618 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3723602364546753805, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
+  m_PrefabInstance: {fileID: 7370160030608628743}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea76856979c48f8890490fa8cba8c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.CardView
 --- !u!224 &6605507747619896399 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
@@ -1133,6 +1177,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
   m_PrefabInstance: {fileID: 7822489768707309961}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6855591754925630596 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3723602364546753805, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
+  m_PrefabInstance: {fileID: 7822489768707309961}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea76856979c48f8890490fa8cba8c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.CardView
 --- !u!1001 &8397086033953623664
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1310,6 +1365,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
+--- !u!114 &5126387052906949501 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3723602364546753805, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
+  m_PrefabInstance: {fileID: 8397086033953623664}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea76856979c48f8890490fa8cba8c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.CardView
 --- !u!224 &5290351261286133304 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}

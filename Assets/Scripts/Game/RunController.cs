@@ -25,7 +25,13 @@ namespace RogueBlockBlast.Game
         [SerializeField] private ScoreView         ScoreView;
         [SerializeField] private ComboView         ComboView;
         [SerializeField] private MilestoneView     MilestoneView;
-
+        
+        
+        [SerializeField] private List<CardSO> CardPool;
+        private float _globalScoreMultiplier  = 1f;
+        private int   _coinBonusPerMilestone  = 0;
+        
+        
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
 
@@ -157,7 +163,7 @@ namespace RogueBlockBlast.Game
             _comboSystem.OnPlacement(hadClear: cleared > 0);
 
             // Skor — multiplier ComboSystem'den
-            int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared, _comboSystem.Multiplier);
+            int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared, _comboSystem.Multiplier * _globalScoreMultiplier);
             _score += gainedScore;
 
             // Milestone: score güncelle
@@ -208,11 +214,14 @@ namespace RogueBlockBlast.Game
             _cardDeadPoolReroll = 0;
             _score              = 0;
             _coins              = 0;
+            _globalScoreMultiplier = 1f;
+            _coinBonusPerMilestone = 0;
 
             _board       = new BoardModel(Width, Height);
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
-
+            
+            
             _comboSystem.Reset();
             _milestoneSystem?.Reset();
 
@@ -292,6 +301,10 @@ namespace RogueBlockBlast.Game
             Debug.Log($"[Milestone] {data.Label} reached! +{coinReward} coins → total: {_coins}");
 
             MilestoneView?.PlayMilestoneReachedFX();
+            if (CardPool != null && CardPool.Count > 0)
+            {
+                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked);
+            }
 
             // Kart seçim ekranı — kart sistemi hazır olunca aç:
             // CardSelectionUI.Instance.Show(allCards, OnCardPicked);
@@ -322,7 +335,22 @@ namespace RogueBlockBlast.Game
         // ── Helpers ──────────────────────────────────────────────────────────
         private static Rotation NextRot(Rotation r) => (Rotation)(((int)r + 1) & 3);
         private static Rotation PrevRot(Rotation r) => (Rotation)(((int)r + 3) & 3);
-
+        private void OnCardPicked(CardSO card)
+        {
+            if (card == null) return;   // skip/continue basıldı
+ 
+            // Efektleri sistemlere uygula
+            CardEffectApplier.Apply(
+                card,
+                _comboSystem,
+                _milestoneSystem,
+                ref _cardDeadPoolReroll,
+                ref _globalScoreMultiplier,
+                ref _coinBonusPerMilestone
+            );
+ 
+            Debug.Log($"[Card] Seçildi: {card.CardName}");
+        }
         private void OnValidate()
         {
             if (Width  <= 0) Width  = 8;

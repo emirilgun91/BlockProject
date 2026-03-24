@@ -450,6 +450,7 @@ GameObject:
   - component: {fileID: 5877043818075392077}
   - component: {fileID: 6293322760218487734}
   - component: {fileID: 3289441326027542374}
+  - component: {fileID: 3723602364546753805}
   m_Layer: 5
   m_Name: CardView_0
   m_TagString: Untagged
@@ -542,6 +543,24 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &3723602364546753805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4628394488547461961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea76856979c48f8890490fa8cba8c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.CardView
+  _iconImage: {fileID: 5666826984135034866}
+  _nameText: {fileID: 8222328711162354081}
+  _descText: {fileID: 8771851092525511556}
+  _selectButton: {fileID: 2570271751409057772}
+  _hoverLift: 18
+  _hoverSpeed: 10
 --- !u!1 &5027838029498772664
 GameObject:
   m_ObjectHideFlags: 0

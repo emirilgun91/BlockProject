@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using RogueBlockBlast.UI;
@@ -95,7 +96,8 @@ namespace RogueBlockBlast.Game
             }
 
             _ghost.Clear();
-
+            if (BoardView.IsMouseOverBoard(MainCamera))
+            {
             var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
 
             if (cell.HasValue)
@@ -114,7 +116,7 @@ namespace RogueBlockBlast.Game
                     DoPlace(anchor);
                 }
             }
-
+            }
             BoardView.Render(_board, _ghost);
 
             if (_poolDirty && PoolView != null)
@@ -210,7 +212,7 @@ namespace RogueBlockBlast.Game
             // Game over ekranı açıksa kapat, timeScale sıfırla
             Time.timeScale = 1f;
 
-            _freeDeadPoolReroll = 1;
+            _freeDeadPoolReroll = 0;
             _cardDeadPoolReroll = 0;
             _score              = 0;
             _coins              = 0;
@@ -221,7 +223,7 @@ namespace RogueBlockBlast.Game
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
             
-            
+             DOTween.SetTweensCapacity(200,125);   
             _comboSystem.Reset();
             _milestoneSystem?.Reset();
 
@@ -243,7 +245,7 @@ namespace RogueBlockBlast.Game
             _currentRot   = Rotation.R0;
         }
 
-        private void GenerateNewPool()
+        private void GenerateNewPool(bool skipValidCheck = false)
         {
             _piecePool.Clear();
 
@@ -257,7 +259,8 @@ namespace RogueBlockBlast.Game
             _selectedPoolIndex = 0;
             _currentPiece      = _piecePool[0];
             _currentRot        = Rotation.R0;
-            
+            if(!skipValidCheck && !HasAnyValidMoveInPool())
+                OnGameOver();
             _poolDirty = true;
         }
 
@@ -277,6 +280,8 @@ namespace RogueBlockBlast.Game
                 _freeDeadPoolReroll--;
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
+                if (!HasAnyValidMoveInPool())
+                    OnGameOver();
                 return;
             }
 
@@ -287,6 +292,8 @@ namespace RogueBlockBlast.Game
                 ScoreView?.AddScoreGain(_score, -CardRerollCost);
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
+                if (!HasAnyValidMoveInPool())
+                    OnGameOver();
                 _poolDirty = true;
                 return;
             }

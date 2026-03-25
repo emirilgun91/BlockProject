@@ -167,7 +167,23 @@ namespace RogueBlockBlast.UI
             if (y >= _tiles.GetLength(1)) return null;
             return _tiles[x, y];
         }
+        public bool IsMouseOverBoard(Camera cam)
+        {
+            if (_tiles == null || cam == null) return false;
+            if (Mouse.current == null) return false;
 
+            Vector2 mousePos    = Mouse.current.position.ReadValue();
+            Vector3 world3      = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0f));
+            Vector2 local       = new Vector2(world3.x, world3.y) - OriginWorld;
+
+            int x = Mathf.FloorToInt(local.x / CellSize);
+            int y = Mathf.FloorToInt(local.y / CellSize);
+
+            int w = _tiles.GetLength(0);
+            int h = _tiles.GetLength(1);
+
+            return x >= 0 && y >= 0 && x < w && y < h;
+        }
         private Vector3 GridToWorldCenter(int x, int y)
         {
             return new Vector3(

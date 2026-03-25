@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Card_ 1
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_
-  CardName: 
-  Description: 
+  CardName: Epic deneme
+  Description: Combo bonus bocmso
   Icon: {fileID: 0}
-  Rarity: 0
-  Effects: []
-  BaseWeight: 100
+  Rarity: 3
+  Effects:
+  - Type: 3
+    Value: 2
+    Description: 
+  BaseWeight: 50

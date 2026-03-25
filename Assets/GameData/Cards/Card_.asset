@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Card_
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_
-  CardName: 
-  Description: 
+  CardName: Deneme
+  Description: Lorem ipsum Lorem ipsum falan filan owyeah
   Icon: {fileID: 0}
-  Rarity: 0
-  Effects: []
-  BaseWeight: 100
+  Rarity: 2
+  Effects:
+  - Type: 5
+    Value: 15
+    Description: 
+  BaseWeight: 50

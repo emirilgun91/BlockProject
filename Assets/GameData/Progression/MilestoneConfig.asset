@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33213aae5dfe4e64903900cc0a6cb53c, type: 3}
   m_Name: MilestoneConfig
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.MilestoneConfigSO
-  PoolLimit: 30
+  PoolLimit: 20
   Milestones:
-  - ScoreThreshold: 1000
+  - ScoreThreshold: 500
     CoinReward: 5
     Label: I
   - ScoreThreshold: 2500

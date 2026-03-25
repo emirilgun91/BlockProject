@@ -64,6 +64,7 @@ namespace RogueBlockBlast.UI
             _canvasGroup.alpha = Mathf.MoveTowards(
                 _canvasGroup.alpha,
                 _fadingIn ? 1f : 0f,
+                
                 Time.unscaledDeltaTime * _fadeSpeed
             );
 
@@ -82,11 +83,12 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public void Show(int finalScore)
         {
-          
+            
             // ── Best score ──────────────────────────────────────────────────
             int bestScore  = PlayerPrefs.GetInt(BestScoreKey, 0);
             bool newRecord = finalScore > bestScore;
-
+            _canvasGroup.interactable = true;
+            _canvasGroup.blocksRaycasts = true;
             if (newRecord)
             {
                 bestScore = finalScore;

@@ -37,7 +37,7 @@ namespace RogueBlockBlast.UI
         private Action<CardSO> _onSelect;
         private Vector3        _basePos;
         private float          _targetY;
-
+        private float          _hoverOffsetY;
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
         {
@@ -47,18 +47,23 @@ namespace RogueBlockBlast.UI
         private void Update()
         {
             var pos = transform.localPosition;
-            pos.y = Mathf.Lerp(pos.y, _basePos.y + _targetY, Time.unscaledDeltaTime * _hoverSpeed);
+            pos.y = Mathf.Lerp(pos.y, _hoverOffsetY, Time.unscaledDeltaTime * _hoverSpeed);
             transform.localPosition = pos;
         }
 
         // ── Public API ───────────────────────────────────────────────────────
         public void Bind(CardSO card, Action<CardSO> onSelect)
         {
-            _data     = card;
-            _onSelect = onSelect;
-            _basePos  = transform.localPosition;
-            _targetY  = 0f;
+            _data        = card;
+            _onSelect    = onSelect;
+            _hoverOffsetY = 0f;
             gameObject.SetActive(true);
+ 
+            // Pozisyonu Layout Group'a bırak — kendimiz sıfırlıyoruz
+            var pos = transform.localPosition;
+            pos.y = 0f;
+            transform.localPosition = pos;
+ 
             Render();
         }
 
@@ -70,8 +75,8 @@ namespace RogueBlockBlast.UI
         }
 
         // ── Hover ────────────────────────────────────────────────────────────
-        public void OnPointerEnter(PointerEventData _) => _targetY =  _hoverLift;
-        public void OnPointerExit(PointerEventData _)  => _targetY =  0f;
+        public void OnPointerEnter(PointerEventData _) => _hoverOffsetY =  _hoverLift;
+        public void OnPointerExit(PointerEventData _)  => _hoverOffsetY =  0f;
 
         // ── Private ──────────────────────────────────────────────────────────
         private void Render()

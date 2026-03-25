@@ -171,8 +171,8 @@ MonoBehaviour:
   m_Padding:
     m_Left: 40
     m_Right: 40
-    m_Top: 36
-    m_Bottom: 36
+    m_Top: 20
+    m_Bottom: 20
   m_ChildAlignment: 4
   m_Spacing: 24
   m_ChildForceExpandWidth: 1
@@ -505,7 +505,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 358.96, y: 50}
+  m_SizeDelta: {x: 358.95996, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4581930308425926792
 CanvasRenderer:
@@ -570,7 +570,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 1024
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -884,11 +884,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 280
+      value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 380
+      value: 450
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1077,11 +1077,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 280
+      value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 380
+      value: 450
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1270,11 +1270,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 280
+      value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 380
+      value: 450
       objectReference: {fileID: 0}
     - target: {fileID: 4459525924086145096, guid: fc49ce393e268e6438ce2b1886999e80, type: 3}
       propertyPath: m_LocalPosition.x

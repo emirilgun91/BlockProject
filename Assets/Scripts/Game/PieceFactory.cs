@@ -1,6 +1,5 @@
 ﻿using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
-using Unity.Burst.Intrinsics;
 
 namespace RogueBlockBlast.Game
 {
@@ -8,7 +7,12 @@ namespace RogueBlockBlast.Game
     {
         public static PieceDefinition Create(ShapeSO so)
         {
-            return new PieceDefinition(so.Id, so.Cells, so.BlockColor);
+            return new PieceDefinition(
+                so.Id,
+                so.Cells,
+                so.BlockColor,
+                so.GetCurrentTileValue()   // upgrade dahil tile değeri
+            );
         }
     }
 }

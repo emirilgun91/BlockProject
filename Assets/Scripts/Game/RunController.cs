@@ -152,7 +152,8 @@ namespace RogueBlockBlast.Game
             RunStatsTracker.Instance?.RecordPlacement();
 
             // Line clear
-            var (cleared, clearedRows, clearedCols) = LineClearSystem.ClearLines(_board);
+            var (cleared, tileValueSum, clearedRows, clearedCols) =
+                LineClearSystem.ClearLines(_board);
 
             if (cleared > 0)
             {
@@ -165,7 +166,11 @@ namespace RogueBlockBlast.Game
             _comboSystem.OnPlacement(hadClear: cleared > 0);
 
             // Skor — multiplier ComboSystem'den
-            int gainedScore = _scoreSystem.ResolveAfterPlacement(cleared, _comboSystem.Multiplier * _globalScoreMultiplier);
+            int gainedScore = _scoreSystem.ResolveAfterPlacement(
+                tileValueSum,
+                _comboSystem.Multiplier,
+                _globalScoreMultiplier   // kart efektinden gelen çarpan
+            );
             _score += gainedScore;
 
             // Milestone: score güncelle

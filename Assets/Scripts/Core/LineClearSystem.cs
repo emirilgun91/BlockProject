@@ -5,37 +5,41 @@ namespace RogueBlockBlast.Core
     public static class LineClearSystem
     {
         /// <summary>
-        /// Dolu satır ve sütunları temizler.
-        /// FX sistemi için hangi satır/sütunların temizlendiğini de döndürür.
+        /// Dolu satır/sütunları temizler.
         /// </summary>
         /// <returns>
-        /// totalCleared  : toplam temizlenen satır + sütun sayısı
-        /// clearedRows   : [y] = true ise o satır temizlendi
-        /// clearedCols   : [x] = true ise o sütun temizlendi
+        /// totalCleared : temizlenen satır + sütun sayısı
+        /// tileValueSum : temizlenen tüm tile'ların puan toplamı
+        /// clearedRows  : hangi satırların temizlendiği (FX için)
+        /// clearedCols  : hangi sütunların temizlendiği (FX için)
         /// </returns>
-        public static (int totalCleared, bool[] clearedRows, bool[] clearedCols)
+        public static (int totalCleared, float tileValueSum, bool[] clearedRows, bool[] clearedCols)
             ClearLines(BoardModel board)
         {
             List<int> rows = board.GetFullRows();
             List<int> cols = board.GetFullColumns();
 
-            // bool array'leri oluştur
             bool[] clearedRows = new bool[board.Height];
             bool[] clearedCols = new bool[board.Width];
 
-            for (int i = 0; i < rows.Count; i++)
+            float tileValueSum = 0f;
+
+            // Önce değerleri topla, sonra temizle
+            foreach (int y in rows)
             {
-                clearedRows[rows[i]] = true;
-                board.ClearRow(rows[i]);
+                tileValueSum    += board.SumRowValues(y);
+                clearedRows[y]   = true;
+                board.ClearRow(y);
             }
 
-            for (int i = 0; i < cols.Count; i++)
+            foreach (int x in cols)
             {
-                clearedCols[cols[i]] = true;
-                board.ClearColumn(cols[i]);
+                tileValueSum    += board.SumColumnValues(x);
+                clearedCols[x]   = true;
+                board.ClearColumn(x);
             }
 
-            return (rows.Count + cols.Count, clearedRows, clearedCols);
+            return (rows.Count + cols.Count, tileValueSum, clearedRows, clearedCols);
         }
     }
 }

@@ -1,30 +1,28 @@
 ﻿using DG.Tweening;
+using TMPro;
 using UnityEngine;
 
 namespace RogueBlockBlast.UI
 {
-    /// <summary>
-    /// Tek bir board hücresinin görsel katmanı.
-    /// SetColor  → anlık renk ata
-    /// PlayPlaceFX  → yerleştirme animasyonu
-    /// PlayClearFX  → line clear patlaması
-    /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class TileView : MonoBehaviour
     {
         // ── Inspector ────────────────────────────────────────────────────────
         [Header("Place FX")]
-        [SerializeField] private float _placeScalePunch  = 0.28f;   // ne kadar şişiyor
-        [SerializeField] private float _placeDuration    = 0.18f;   // süre
-        [SerializeField] private int   _placeVibrato     = 1;       // titreşim sayısı
+        [SerializeField] private float _placeScalePunch  = 0.28f;
+        [SerializeField] private float _placeDuration    = 0.18f;
+        [SerializeField] private int   _placeVibrato     = 1;
 
         [Header("Clear FX")]
-        [SerializeField] private float _clearScaleUp     = 1.18f;   // önce büyü
-        [SerializeField] private float _clearFadeOut     = 0f;      // fade hedefi (0 = tamamen yok)
-        [SerializeField] private float _clearDuration    = 0.42f;   // toplam süre
+        [SerializeField] private float _clearScaleUp     = 1.18f;
+        [SerializeField] private float _clearFadeOut     = 0f;
+        [SerializeField] private float _clearDuration    = 0.22f;
 
         [Header("Restore")]
-        [SerializeField] private float _restoreDelay     = 0.22f;   // clear sonrası boşa dönüş gecikmesi
+        [SerializeField] private float _restoreDelay     = 0.22f;
+
+        [Header("Debug")]
+        [SerializeField] private TMP_Text _scoreText;  // TilePrefab altındaki ScoreText
 
         // ── Private ──────────────────────────────────────────────────────────
         private SpriteRenderer _sr;
@@ -67,6 +65,20 @@ namespace RogueBlockBlast.UI
         {
             _colorTween?.Kill();
             _sr.color = color;
+
+            // Boş hücreye dönünce score text'i temizle
+            if (_scoreText != null)
+                _scoreText.text = string.Empty;
+        }
+
+        /// <summary>
+        /// Tile value'yu gösterir.
+        /// BoardView.Render() içinde dolu tile'lara çağrılır.
+        /// </summary>
+        public void SetTileValue(float value)
+        {
+            if (_scoreText == null) return;
+            _scoreText.text = value > 0f ? value.ToString("0") : string.Empty;
         }
 
         /// <summary>

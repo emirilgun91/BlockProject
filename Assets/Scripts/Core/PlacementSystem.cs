@@ -1,3 +1,4 @@
+using RogueBlockBlast.Core;
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
@@ -5,42 +6,36 @@ namespace RogueBlockBlast.Core
     public static class PlacementSystem
     {
         public static bool CanPlace(
-            BoardModel board,
+            BoardModel      board,
             PieceDefinition piece,
-            Vector2Int anchor,
-            Rotation rot)
+            Vector2Int      anchor,
+            Rotation        rot)
         {
             var cells = piece.GetCells(rot);
-
-            for (int i = 0; i < cells.Count; i++)
+            foreach (var c in cells)
             {
-                int x = anchor.x + cells[i].x;
-                int y = anchor.y + cells[i].y;
-
-                if (!board.IsInside(x, y))
-                    return false;
-
-                if (board.IsFilled(x, y))
-                    return false;
+                int x = anchor.x + c.x;
+                int y = anchor.y + c.y;
+                if (!board.IsInside(x, y)) return false;
+                if (board.IsFilled(x, y))  return false;
             }
-
             return true;
         }
 
         public static void Place(
-            BoardModel board,
+            BoardModel      board,
             PieceDefinition piece,
-            Vector2Int anchor,
-            Rotation rot)
+            Vector2Int      anchor,
+            Rotation        rot)
         {
             var cells = piece.GetCells(rot);
-
-            for (int i = 0; i < cells.Count; i++)
+            foreach (var c in cells)
             {
-                int x = anchor.x + cells[i].x;
-                int y = anchor.y + cells[i].y;
+                int x = anchor.x + c.x;
+                int y = anchor.y + c.y;
 
-                board.SetFilled(x, y, true, piece.BlockColor);
+                // Renk + tile değeri birlikte yazılır
+                board.SetFilled(x, y, true, piece.BlockColor, piece.TileValue);
             }
         }
     }

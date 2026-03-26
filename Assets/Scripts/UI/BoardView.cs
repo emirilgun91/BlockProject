@@ -50,7 +50,7 @@ namespace RogueBlockBlast.UI
                     Destroy(go);
                     continue;
                 }
-
+                //tv.Init();
                 var sr = go.GetComponent<SpriteRenderer>();
                 if (sr != null) sr.sortingOrder = 10;
 
@@ -132,11 +132,14 @@ namespace RogueBlockBlast.UI
             {
                 bool  isFilled  = board.IsFilled(x, y);
                 Color baseColor = isFilled ? board.GetCellColor(x, y) : emptyCell;
-
+                if (isFilled)
+                    _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
                 if (ghostCells != null && ghostCells.Contains(new Vector2Int(x, y)))
                     baseColor = isFilled ? ghostBad : ghostOk;
 
                 _tiles[x, y].SetColor(baseColor);
+                if (isFilled)
+                    _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
             }
         }
 

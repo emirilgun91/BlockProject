@@ -74,6 +74,7 @@ namespace RogueBlockBlast.Game
                     default:
                         Debug.LogWarning($"[Card] Bilinmeyen efekt tipi: {effect.Type}");
                         break;
+                    
                 }
             }
         }

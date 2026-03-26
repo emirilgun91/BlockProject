@@ -20,4 +20,5 @@ MonoBehaviour:
   - {x: 2, y: 1}
   Rarity: 0
   BaseWeight: 50
-  ColorPreset: 3
+  ColorPreset: 1
+  BaseTileValue: 8

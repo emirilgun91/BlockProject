@@ -13,7 +13,9 @@ namespace RogueBlockBlast.Content
         Teal,      // #148F77  — cool, line-clear synergy
         Indigo,    // #5B4FCF  — deep purple-blue
         Violet,    // #8E44AD  — magic / special
-        Slate,     // #2E6DA4  — neutral blue
+        Slate, // #2E6DA4  — neutral blue
+        Pinky,
+        Greeny,
     }
 
     /// <summary>
@@ -23,13 +25,14 @@ namespace RogueBlockBlast.Content
     public static class BlockColorPalette
     {
         // ── Dark roguelike palette ──────────────────────────────────────────
-        private static readonly Color Crimson = HexToColor("C0392B");
-        private static readonly Color Amber   = HexToColor("D68910");
-        private static readonly Color Teal    = HexToColor("148F77");
-        private static readonly Color Indigo  = HexToColor("5B4FCF");
-        private static readonly Color Violet  = HexToColor("8E44AD");
-        private static readonly Color Slate   = HexToColor("2E6DA4");
-
+        private static readonly Color Crimson = HexToColor("f0744e");
+        private static readonly Color Amber   = HexToColor("c73333");
+        private static readonly Color Teal    = HexToColor("f0bb4c");
+        private static readonly Color Indigo  = HexToColor("5b4ef0");
+        private static readonly Color Violet  = HexToColor("8652d0");
+        private static readonly Color Slate   = HexToColor("4fc0eb");
+        private static readonly Color Pinky = HexToColor("f04edb");
+        private static readonly Color Greeny = HexToColor("4bbe4f");
         // Ghost tint alphas
         public const float GhostValidAlpha   = 0.10f;
         public const float GhostInvalidAlpha = 0.10f;
@@ -49,6 +52,8 @@ namespace RogueBlockBlast.Content
             BlockColorPreset.Indigo  => Indigo,
             BlockColorPreset.Violet  => Violet,
             BlockColorPreset.Slate   => Slate,
+            BlockColorPreset.Pinky  => Pinky,
+            BlockColorPreset.Greeny  => Greeny,
             _                        => Color.white,
         };
 

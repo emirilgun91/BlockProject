@@ -3,22 +3,26 @@ using UnityEngine;
 namespace RogueBlockBlast.Core
 {
     /// <summary>
-    /// Skor hesaplar — combo multiplier dışarıdan verilir (ComboSystem'den gelir).
-    /// Combo mantığı burada yok, ComboSystem'de.
+    /// Tile değeri tabanlı skor hesabı.
+    /// tileValueSum × comboMultiplier × globalMultiplier
     /// </summary>
     public sealed class ScoreSystem
     {
         /// <summary>
         /// Placement sonrası skoru hesaplar.
-        /// multiplier → ComboSystem.Multiplier
+        /// tileValueSum     : temizlenen tile'ların toplam değeri (LineClearSystem'den gelir)
+        /// comboMultiplier  : ComboSystem.Multiplier
+        /// globalMultiplier : kart efektlerinden gelen çarpan (varsayılan 1.0)
         /// </summary>
-        public int ResolveAfterPlacement(int clearedLineCount, float multiplier)
+        public int ResolveAfterPlacement(
+            float tileValueSum,
+            float comboMultiplier,
+            float globalMultiplier = 1f)
         {
-            if (clearedLineCount <= 0) return 0;
+            if (tileValueSum <= 0f) return 0;
 
-            int baseScore  = clearedLineCount * 100;
-            int finalScore = Mathf.RoundToInt(baseScore * multiplier);
-            return finalScore;
+            float raw    = tileValueSum * comboMultiplier * globalMultiplier;
+            return Mathf.RoundToInt(raw);
         }
     }
 }

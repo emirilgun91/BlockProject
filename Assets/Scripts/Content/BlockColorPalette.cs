@@ -8,20 +8,16 @@ namespace RogueBlockBlast.Content
     /// </summary>
     public enum BlockColorPreset
     {
-        Crimson,   // #C0392B  — aggressive, rare pieces
-        Amber,     // #D68910  — warm, common pieces
-        Teal,      // #148F77  — cool, line-clear synergy
-        Indigo,    // #5B4FCF  — deep purple-blue
-        Violet,    // #8E44AD  — magic / special
-        Slate, // #2E6DA4  — neutral blue
-        Pinky,
+        Crimson, 
+        Amber,     
+        Teal,      
+        Indigo,    
+        Violet,   
+        Slate, 
         Greeny,
+        Pinky,
     }
-
-    /// <summary>
-    /// Converts a BlockColorPreset to its Unity Color.
-    /// Single source of truth — change hex here, every piece updates.
-    /// </summary>
+    
     public static class BlockColorPalette
     {
         // ── Dark roguelike palette ──────────────────────────────────────────

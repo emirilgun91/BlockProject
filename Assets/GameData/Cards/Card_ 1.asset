@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Card_ 1
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_
-  CardName: Epic deneme
-  Description: Combo bonus bocmso
-  Icon: {fileID: 0}
+  CardName: Crossfire
+  Description: Clearing a row and a column simultaneously (Cross-Clear) adds +3 shapes
+    back to your current pool.
+  Icon: {fileID: 8348444580040657917, guid: 96067a3ffa187814a9c862816d5d45aa, type: 3}
   Rarity: 3
   Effects:
   - Type: 3

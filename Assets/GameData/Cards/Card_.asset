@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: Card_
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_
-  CardName: Deneme
-  Description: Lorem ipsum Lorem ipsum falan filan owyeah
-  Icon: {fileID: 0}
+  CardName: Living on the Edge
+  Description: Gain a massive +2.0 to your combo multiplier instantly, but you can
+    no longer rotate shapes for the rest of the milestone.
+  Icon: {fileID: -7109979918689030526, guid: 5fd4b1b7d0995994c8e78d45c086681d, type: 3}
   Rarity: 2
   Effects:
-  - Type: 5
-    Value: 15
+  - Type: 2
+    Value: 1
     Description: 
   BaseWeight: 50

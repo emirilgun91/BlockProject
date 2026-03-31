@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Card_ 2
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_
-  CardName: Adam Siler Atar
-  Description: Line Clear bonus veririm
-  Icon: {fileID: 0}
+  CardName: Phantom Drop
+  Description: If your pool reaches 0, you get exactly 1 "Phantom Block" (a 1x1 wild
+    card that clears any line it touches) to save your run.
+  Icon: {fileID: 7740770645608920724, guid: 793217a0efea3cc428d432623f0b2632, type: 3}
   Rarity: 1
   Effects:
   - Type: 0

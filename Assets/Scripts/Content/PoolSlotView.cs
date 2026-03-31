@@ -10,7 +10,7 @@ namespace RogueBlockBlast.UI
         [SerializeField] private RectTransform _container;
         [SerializeField] private GameObject _cellPrefab;
         [SerializeField] private GameObject _selectionFrame;
-        [SerializeField] private float _fitPadding = 0.80f;
+      
         float _targetScale = 1f;
         void Update()
         {
@@ -55,16 +55,16 @@ namespace RogueBlockBlast.UI
             int width  = maxX - minX + 1;
             int height = maxY - minY + 1;
 
-// Her ekseni ayrı kısıtla — en küçük olanı al
+           
             float maxCellByWidth  = _container.rect.width  / width;
             float maxCellByHeight = _container.rect.height / height;
-            float cellSize = Mathf.Min(maxCellByWidth, maxCellByHeight) * _fitPadding;
+            float cellSize = Mathf.Min(maxCellByWidth, maxCellByHeight) * 0.55f;
 
-// Tile'ları tam bitişik yerleştir
-            float totalW  = width  * cellSize;
-            float totalH  = height * cellSize;
-            float offsetX = totalW * 0.5f - cellSize * 0.5f;
-            float offsetY = totalH * 0.5f - cellSize * 0.5f;
+         
+            float maxAllowed = Mathf.Min(_container.rect.width, _container.rect.height) / 1.5f;
+            cellSize = Mathf.Min(cellSize, maxAllowed);
+            float offsetX = (width - 1) * cellSize * 0.5f;
+            float offsetY = (height - 1) * cellSize * 0.5f;
             
             foreach (var c in cells)
             {
@@ -98,6 +98,7 @@ namespace RogueBlockBlast.UI
             }
 
             _selectionFrame.SetActive(selected);
+         
 
             transform.localScale = selected ? Vector3.one * 1.1f : Vector3.one;
             

@@ -83,31 +83,29 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public void Show(int finalScore)
         {
-            
             // ── Best score ──────────────────────────────────────────────────
             int bestScore  = PlayerPrefs.GetInt(BestScoreKey, 0);
             bool newRecord = finalScore > bestScore;
-            _canvasGroup.interactable = true;
-            _canvasGroup.blocksRaycasts = true;
+ 
             if (newRecord)
             {
                 bestScore = finalScore;
                 PlayerPrefs.SetInt(BestScoreKey, bestScore);
                 PlayerPrefs.Save();
             }
-
+ 
             // ── Score display ───────────────────────────────────────────────
             _finalScoreText.text = FormatScore(finalScore);
             _bestScoreText.text  = FormatScore(bestScore);
-
+ 
             if (_newRecordBadge != null)
                 _newRecordBadge.SetActive(newRecord);
-
+ 
             // ── Stats ───────────────────────────────────────────────────────
             if (RunStatsTracker.Instance != null)
             {
                 var s = RunStatsTracker.Instance;
-
+ 
                 _linesText.text    = $"{s.LinesCleared}";
                 _piecesText.text   = $"{s.PiecesPlaced}";
                 _maxComboText.text = s.MaxCombo > 10
@@ -115,12 +113,13 @@ namespace RogueBlockBlast.UI
                     : "—";
                 _cardsText.text    = $"{s.CardsSelected}";
             }
-
+ 
             // ── Show ─────────────────────────────────────────────────────────
             Time.timeScale = 0f;
+            Game.GameStateController.LockInput();
             _root.SetActive(true);
             _fadingIn = true;
-
+ 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = 0f;
         }
@@ -129,12 +128,14 @@ namespace RogueBlockBlast.UI
         private void OnRetry()
         {
             Time.timeScale = 1f;
+            Game.GameStateController.Reset();
             SceneManager.LoadScene(_gameSceneName);
         }
 
         private void OnMainMenu()
         {
             Time.timeScale = 1f;
+            Game.GameStateController.Reset();
             SceneManager.LoadScene(_mainMenuSceneName);
         }
 
@@ -145,14 +146,11 @@ namespace RogueBlockBlast.UI
         public void Hide()
         {
             Time.timeScale = 1f;
+            Game.GameStateController.UnlockInput();
             _fadingIn = false;
-            // _root'u kapatmıyoruz — Update() alpha'yı 0'a çeker
-            // alpha 0 olunca zaten görünmez, Show() sonraki çağrıda tekrar fade in yapar
+            
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
-
-        /// Formats 12480 → "12,480"
         private static string FormatScore(int score) =>
             score.ToString("N0");
     }

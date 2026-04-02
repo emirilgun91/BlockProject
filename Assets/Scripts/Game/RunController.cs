@@ -83,7 +83,7 @@ namespace RogueBlockBlast.Game
         private void Update()
         {
             if (_board == null || _currentPiece == null) return;
-
+            if (!GameStateController.InputAllowed) return;
             if (Keyboard.current != null)
             {
                 if (Keyboard.current.qKey.wasPressedThisFrame) _currentRot = PrevRot(_currentRot);
@@ -227,7 +227,8 @@ namespace RogueBlockBlast.Game
             _board       = new BoardModel(Width, Height);
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
-            
+            GameStateController.Reset();  // ← ekle
+            GameOverUI.Instance?.Hide();  
              DOTween.SetTweensCapacity(200,125);   
             _comboSystem.Reset();
             _milestoneSystem?.Reset();
@@ -270,10 +271,19 @@ namespace RogueBlockBlast.Game
         }
 
         // ── Game Over ────────────────────────────────────────────────────────
-        private void OnGameOver()
+        private void OnGameOver(GameOverReason reason = GameOverReason.Default)
         {
           
-            GameOverUI.Instance?.Show(_score);
+            if (GameOverAnnouncer.Instance != null)
+            {
+                GameOverAnnouncer.Instance.Play(reason, () =>
+                    GameOverUI.Instance?.Show(_score));
+            }
+            else
+            {
+                // Announcer yoksa direkt aç
+                GameOverUI.Instance?.Show(_score);
+            }
         }
 
         // ── Dead Pool ────────────────────────────────────────────────────────
@@ -286,7 +296,7 @@ namespace RogueBlockBlast.Game
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
-                    OnGameOver();
+                    OnGameOver(GameOverReason.NoMoves);
                 return;
             }
 
@@ -298,7 +308,7 @@ namespace RogueBlockBlast.Game
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
-                    OnGameOver();
+                    OnGameOver(GameOverReason.NoMoves);
                 _poolDirty = true;
                 return;
             }
@@ -324,7 +334,7 @@ namespace RogueBlockBlast.Game
 
         private void HandlePoolLimitExhausted()
         {
-            OnGameOver();
+            OnGameOver(GameOverReason.PoolExhausted);
         }
 
         // ── Valid Move Check ─────────────────────────────────────────────────

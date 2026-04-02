@@ -16,16 +16,19 @@ MonoBehaviour:
   Milestones:
   - ScoreThreshold: 500
     CoinReward: 5
-    Label: I
+    Label: Stage 1
   - ScoreThreshold: 2500
     CoinReward: 8
-    Label: II
+    Label: Stage 2
   - ScoreThreshold: 5000
     CoinReward: 12
-    Label: III
+    Label: Stage 3
   - ScoreThreshold: 10000
     CoinReward: 20
-    Label: IV
-  - ScoreThreshold: 20000
+    Label: Stage 4
+  - ScoreThreshold: 17500
     CoinReward: 35
-    Label: V
+    Label: Stage 5
+  - ScoreThreshold: 25000
+    CoinReward: 35
+    Label: Stage 6

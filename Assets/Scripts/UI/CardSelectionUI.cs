@@ -112,6 +112,7 @@ namespace RogueBlockBlast.UI
 
             // Oyunu dondur ve ekranı aç
             Time.timeScale = 0f;
+            Game.GameStateController.LockInput();
             _root.SetActive(true);
             _isOpen   = true;
             _fadingIn = true;
@@ -131,13 +132,9 @@ namespace RogueBlockBlast.UI
 
         private void CloseAndResume(CardSO card)
         {
-            // Fade out başlat
             _fadingIn = false;
-
-            // Oyunu devam ettir
             Time.timeScale = 1f;
-
-            // Callback
+            Game.GameStateController.UnlockInput();
             _onCardPicked?.Invoke(card);
             _onCardPicked = null;
         }

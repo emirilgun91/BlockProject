@@ -4,6 +4,7 @@ using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using RogueBlockBlast.UI;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
 namespace RogueBlockBlast.Game
@@ -32,7 +33,7 @@ namespace RogueBlockBlast.Game
         private float _globalScoreMultiplier  = 1f;
         private int   _coinBonusPerMilestone  = 0;
         
-        
+        [SerializeField] private AudioClip mainLoopMusic;
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
 
@@ -61,12 +62,16 @@ namespace RogueBlockBlast.Game
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
-        {
+        {   
             _milestoneSystem = new MilestoneSystem(MilestoneConfig);
             _milestoneSystem.OnMilestoneReached   += HandleMilestoneReached;
             _milestoneSystem.OnPoolLimitExhausted += HandlePoolLimitExhausted;
             MilestoneView?.Bind(_milestoneSystem);
             ComboView?.Bind(_comboSystem);
+            if (mainLoopMusic != null)
+            {
+                AudioManager.Instance.PlayMusic(mainLoopMusic);
+            }
             
             NewRun();
         }

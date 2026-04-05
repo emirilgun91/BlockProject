@@ -71,7 +71,7 @@ namespace RogueBlockBlast.UI
             if (_multiplierText != null)
                 _multiplierBaseScale = _multiplierText.transform.localScale;
 
-            ApplyState(new ComboState(0, 3, 1f, false), animate: false);
+            ApplyState(new ComboState(0, 5, 1f, false), animate: false);
         }
 
         // ── Handlers ─────────────────────────────────────────────────────────
@@ -87,8 +87,8 @@ namespace RogueBlockBlast.UI
         private void HandleMaxCharge()
         {
             // 3. bar'a özel glow animasyonu
-            if (_chargeBars != null && _chargeBars.Length >= 3)
-                PlayMaxGlow(_chargeBars[2]);
+            if (_chargeBars != null && _chargeBars.Length >= 5)
+                PlayMaxGlow(_chargeBars[4]);
         }
 
         private void HandleReset()
@@ -190,7 +190,7 @@ namespace RogueBlockBlast.UI
         {
             _glowSequence?.Kill();
 
-            if (_chargeBars != null && _chargeBars.Length >= 3 && _chargeBars[2] != null)
+            if (_chargeBars != null && _chargeBars.Length >= 5 && _chargeBars[4] != null)
                 _chargeBars[2].DOColor(_colorEmpty, _emptyDuration);
         }
     }

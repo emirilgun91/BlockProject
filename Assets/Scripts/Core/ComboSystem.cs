@@ -17,12 +17,12 @@ namespace RogueBlockBlast.Core
     public sealed class ComboSystem
     {
         // ── Config (kartlarla değiştirilebilir) ──────────────────────────────
-        public int   MaxCharge         { get; private set; } = 3;
+        public int   MaxCharge         { get; private set; } = 5;
         public float BonusPerClear     { get; private set; } = 0.1f;  // stage 1-2
         public float BonusAtMaxCharge  { get; private set; } = 0.2f;  // stage 3
 
         // ── State ────────────────────────────────────────────────────────────
-        public int   Charges    { get; private set; } = 0;
+        public int   Charges    { get; private set; } = 5;
         public float Multiplier { get; private set; } = 1f;
         public bool  IsMaxCharge => Charges >= MaxCharge;
 

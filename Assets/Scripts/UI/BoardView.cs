@@ -160,7 +160,9 @@ namespace RogueBlockBlast.UI
 
             return new Vector2Int(x, y);
         }
-
+        /// <summary>Tile'ın dünya pozisyonunu döndürür — VFX için.</summary>
+        public Vector3 GetTileWorldPosition(int x, int y) =>
+            GridToWorldCenter(x, y);
         /// <summary>Verilen koordinattaki TileView'u döndürür. Sınır dışıysa null.</summary>
         public TileView GetTile(int x, int y)
         {
@@ -187,6 +189,10 @@ namespace RogueBlockBlast.UI
 
             return x >= 0 && y >= 0 && x < w && y < h;
         }
+        
+ 
+     
+       
         private Vector3 GridToWorldCenter(int x, int y)
         {
             return new Vector3(

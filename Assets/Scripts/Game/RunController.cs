@@ -43,7 +43,7 @@ namespace RogueBlockBlast.Game
         private ScoreSystem     _scoreSystem     = new ScoreSystem();
         private ComboSystem     _comboSystem     = new ComboSystem();
         private MilestoneSystem _milestoneSystem;
-
+        
         // ── State ────────────────────────────────────────────────────────────
         private int _score = 0;
         private int _coins = 0;
@@ -59,7 +59,12 @@ namespace RogueBlockBlast.Game
         private int       _freeDeadPoolReroll = 1;
         private int       _cardDeadPoolReroll = 0;
         private const int CardRerollCost      = 300;
-
+        
+        [SerializeField] private LineClearVFX LineClearVFX;
+        //SFX
+        [Header ("SFX")]
+        [SerializeField] private AudioClip GameOverSFX;
+        [SerializeField] private AudioClip LineClearSFX;
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {   
@@ -157,15 +162,35 @@ namespace RogueBlockBlast.Game
             RunStatsTracker.Instance?.RecordPlacement();
 
             // Line clear
-            var (cleared, tileValueSum, clearedRows, clearedCols) =
+            var (cleared, tileValueSum, clearedRows, clearedCols, snapshots) =
                 LineClearSystem.ClearLines(_board);
 
             if (cleared > 0)
             {
-                BoardFX.PlayLineClearFX(BoardView, _board.Width, _board.Height, clearedRows, clearedCols);
+                if (LineClearVFX != null)
+                {
+                    LineClearVFX.Play(
+                        clearedRows,
+                        clearedCols,
+                        snapshots,          // ← board temizlenmeden önce alınan snapshot
+                        BoardView,
+                        _board.Width,
+                        _board.Height,
+                        onAllArrived: () => ScoreView?.PunchScore()
+                    );
+                }
+                else
+                {
+                    // Fallback
+                    BoardFX.PlayLineClearFX(BoardView, _board.Width, _board.Height, clearedRows, clearedCols);
+                }
+ 
                 RunStatsTracker.Instance?.RecordClear(cleared, 0);
                 _comboSystem.OnLineClear(cleared);
+                AudioManager.Instance?.PlaySFX(LineClearSFX);
             }
+                
+          
 
             // Combo: placement bildirimi (clear yoksa charge düşer)
             _comboSystem.OnPlacement(hadClear: cleared > 0);
@@ -278,7 +303,7 @@ namespace RogueBlockBlast.Game
         // ── Game Over ────────────────────────────────────────────────────────
         private void OnGameOver(GameOverReason reason = GameOverReason.Default)
         {
-          
+            AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
             if (GameOverAnnouncer.Instance != null)
             {
                 GameOverAnnouncer.Instance.Play(reason, () =>

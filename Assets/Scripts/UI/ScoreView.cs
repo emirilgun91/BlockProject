@@ -19,7 +19,11 @@ namespace RogueBlockBlast.UI
             if (_scoreNumb != null)
                 _scoreNumb.text = total.ToString();
         }
-      
+        public void PunchScore()
+        {
+            if (_scoreNumb == null || !gameObject.activeInHierarchy) return;
+            StartCoroutine(ScoreBounce());
+        }
         public void AddScoreGain(int newTotal, int gained)
         {
             if (_scoreNumb == null) return;

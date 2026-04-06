@@ -110,7 +110,6 @@ namespace RogueBlockBlast.UI
                 _text.color = c;
 
                 yield return null;
-                Debug.Log($"flyTarget: {flyTarget} | targetScreenPos: {targetScreenPos}");
             }
 
             onArrive?.Invoke();
@@ -118,8 +117,7 @@ namespace RogueBlockBlast.UI
             _rect.localScale = Vector3.one;
             ScorePopupPool.Instance?.Return(this);
         }
-
-        // Önceden çalışan formül — dokunmuyoruz
+        
         private Vector2 ToCanvasPos(Vector2 screenPos)
         {
             if (_canvas == null) return screenPos;

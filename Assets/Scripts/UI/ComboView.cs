@@ -80,6 +80,7 @@ namespace RogueBlockBlast.UI
             // Max charge düştüyse glow'u durdur
             if (_lastCharges >= state.MaxCharge && state.Charges < state.MaxCharge)
                 StopMaxGlow();
+            FrameFeedbackController.Instance?.OnComboChanged(state.Multiplier);
 
             ApplyState(state, animate: true);
         }
@@ -89,10 +90,12 @@ namespace RogueBlockBlast.UI
             // 3. bar'a özel glow animasyonu
             if (_chargeBars != null && _chargeBars.Length >= 5)
                 PlayMaxGlow(_chargeBars[4]);
+            
         }
 
         private void HandleReset()
         {
+            FrameFeedbackController.Instance?.OnComboBreak();
             if (_multiplierText != null)
             {
                 _multiplierText.transform

@@ -52,9 +52,10 @@ namespace RogueBlockBlast.Core
         /// <summary>Her piece yerleştirmesinde çağır.</summary>
         public void OnPiecePlaced()
         {
+          
             PiecesPlacedInWindow++;
             FireProgressChanged();
-
+            
             if (PiecesRemaining <= 0)
                 OnPoolLimitExhausted?.Invoke();
         }

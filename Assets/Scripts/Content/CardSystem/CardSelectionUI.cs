@@ -124,7 +124,7 @@ namespace RogueBlockBlast.UI
         /// <summary>Kart seçilmeden geçmek için (opsiyonel continue butonu için).</summary>
         public void Skip() => CloseAndResume(null);
 
-        // ── Private ──────────────────────────────────────────────────────────
+        
         private void OnCardSelected(CardSO card)
         {
             CloseAndResume(card);

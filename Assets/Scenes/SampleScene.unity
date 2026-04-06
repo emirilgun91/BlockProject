@@ -7006,6 +7006,7 @@ GameObject:
   m_Component:
   - component: {fileID: 839350891}
   - component: {fileID: 839350892}
+  - component: {fileID: 839350893}
   m_Layer: 8
   m_Name: frame_Board_0
   m_TagString: Untagged
@@ -7022,11 +7023,11 @@ Transform:
   m_GameObject: {fileID: 839350890}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -11.000009, y: 69.999985, z: 0}
-  m_LocalScale: {x: 100.5, y: 100.5, z: 100.5}
+  m_LocalPosition: {x: 3.898148, y: 4.648148, z: 90}
+  m_LocalScale: {x: 0.9305556, y: 0.9305556, z: 0.9305556}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 77026440}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &839350892
 SpriteRenderer:
@@ -7054,7 +7055,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 486fced17a850a34c897c059a7881697, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7087,6 +7088,20 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &839350893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 839350890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 023dc2e8fa194f5ea731107f1eb7295d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.FrameFeedbackController
+  _config: {fileID: 11400000, guid: 11c7e5d3538339c4189841adc7ae45a2, type: 2}
+  _renderer: {fileID: 839350892}
 --- !u!1 &968012562
 GameObject:
   m_ObjectHideFlags: 0
@@ -12365,9 +12380,6 @@ PrefabInstance:
     - {fileID: 8633147999998215134, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 6688405041176649622, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
-      insertIndex: 0
-      addedObject: {fileID: 839350891}
-    - targetCorrespondingSourceObject: {fileID: 6688405041176649622, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2130154534}
     - targetCorrespondingSourceObject: {fileID: 6688405041176649622, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
@@ -12411,3 +12423,4 @@ SceneRoots:
   - {fileID: 96685071}
   - {fileID: 1388591290}
   - {fileID: 1355268665}
+  - {fileID: 839350891}

@@ -167,6 +167,7 @@ namespace RogueBlockBlast.Game
 
             if (cleared > 0)
             {
+                FrameFeedbackController.Instance?.OnLineClear(cleared);
                 if (LineClearVFX != null)
                 {
                     LineClearVFX.Play(
@@ -184,14 +185,12 @@ namespace RogueBlockBlast.Game
                     // Fallback
                     BoardFX.PlayLineClearFX(BoardView, _board.Width, _board.Height, clearedRows, clearedCols);
                 }
- 
+                FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
                 RunStatsTracker.Instance?.RecordClear(cleared, 0);
                 _comboSystem.OnLineClear(cleared);
                 AudioManager.Instance?.PlaySFX(LineClearSFX);
             }
                 
-          
-
             // Combo: placement bildirimi (clear yoksa charge düşer)
             _comboSystem.OnPlacement(hadClear: cleared > 0);
 
@@ -217,7 +216,7 @@ namespace RogueBlockBlast.Game
 
             // Pool güncelle
             _piecePool.RemoveAt(_selectedPoolIndex);
-
+            
             if (_piecePool.Count == 0)
                 GenerateNewPool();
             else
@@ -234,6 +233,7 @@ namespace RogueBlockBlast.Game
 
             // Milestone: piece sayacı — pool işlemleri bittikten sonra
             _milestoneSystem?.OnPiecePlaced();
+            FrameFeedbackController.Instance?.OnCritical(_milestoneSystem.PiecesRemaining); // ← ekle
             _poolDirty = true;
         }
 
@@ -303,6 +303,7 @@ namespace RogueBlockBlast.Game
         // ── Game Over ────────────────────────────────────────────────────────
         private void OnGameOver(GameOverReason reason = GameOverReason.Default)
         {
+            FrameFeedbackController.Instance?.OnGameOver();
             AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
             if (GameOverAnnouncer.Instance != null)
             {
@@ -349,6 +350,7 @@ namespace RogueBlockBlast.Game
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
+            FrameFeedbackController.Instance?.OnMilestone();
             _coins += coinReward;
             Debug.Log($"[Milestone] {data.Label} reached! +{coinReward} coins → total: {_coins}");
 

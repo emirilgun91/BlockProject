@@ -14,29 +14,36 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Renderer         _renderer;
 
         // Shader IDs
-        static readonly int ID_GlowColor      = Shader.PropertyToID("_GlowColor");
-        static readonly int ID_GlowIntensity  = Shader.PropertyToID("_GlowIntensity");
-        static readonly int ID_GlowPulseSpeed = Shader.PropertyToID("_GlowPulseSpeed");
-        static readonly int ID_RainbowActive  = Shader.PropertyToID("_RainbowActive");
-        static readonly int ID_RainbowSpeed   = Shader.PropertyToID("_RainbowSpeed");
-        static readonly int ID_ShockwaveT     = Shader.PropertyToID("_ShockwaveT");
-        static readonly int ID_ShockwaveColor = Shader.PropertyToID("_ShockwaveColor");
-        static readonly int ID_ShockwaveWidth = Shader.PropertyToID("_ShockwaveWidth");
-        static readonly int ID_NoiseAmount    = Shader.PropertyToID("_NoiseAmount");
-        static readonly int ID_Alpha          = Shader.PropertyToID("_Alpha");
-        static readonly int ID_RainbowSaturation          = Shader.PropertyToID("RainbowSaturation");
+        static readonly int ID_GlowColor         = Shader.PropertyToID("_GlowColor");
+        static readonly int ID_GlowIntensity      = Shader.PropertyToID("_GlowIntensity");
+        static readonly int ID_GlowPulseSpeed     = Shader.PropertyToID("_GlowPulseSpeed");
+        static readonly int ID_RainbowActive      = Shader.PropertyToID("_RainbowActive");
+        static readonly int ID_RainbowSpeed       = Shader.PropertyToID("_RainbowSpeed");
+        static readonly int ID_ShockwaveT         = Shader.PropertyToID("_ShockwaveT");
+        static readonly int ID_ShockwaveColor     = Shader.PropertyToID("_ShockwaveColor");
+        static readonly int ID_ShockwaveWidth     = Shader.PropertyToID("_ShockwaveWidth");
+        static readonly int ID_NoiseAmount        = Shader.PropertyToID("_NoiseAmount");
+        static readonly int ID_Alpha              = Shader.PropertyToID("_Alpha");
+        static readonly int ID_RainbowSaturation  = Shader.PropertyToID("_RainbowSaturation");
+
         private enum FrameState { Idle, Combo, Critical, LineClear, Milestone, GameOver }
 
-        private FrameState           _currentState  = FrameState.Idle;
-        private FrameState           _previousState = FrameState.Idle;
+        private FrameState            _currentState  = FrameState.Idle;
+        private FrameState            _previousState = FrameState.Idle;
         private MaterialPropertyBlock _mpb;
 
         private float _currentIntensity;
         private float _comboMultiplier = 1f;
 
+        // Son bilinen remaining — state geçişlerinden sonra Critical'ı
+        // yeniden başlatmak için saklanır
+        private int _lastRemaining = int.MaxValue;
+
         private Coroutine _pulseLoop;
         private Coroutine _rainbowRoutine;
         private Coroutine _breakRoutine;
+        private Coroutine _dropRoutine;
+        private bool _isDropping = false;
         private TweenerCore<float, float, FloatOptions> _shockSequence;
 
         private void Awake()
@@ -47,22 +54,18 @@ namespace RogueBlockBlast.UI
             if (_renderer == null)
                 _renderer = GetComponent<Renderer>();
 
-            // MaterialPropertyBlock — SpriteRenderer dahil tüm renderer tipleriyle çalışır
             _mpb = new MaterialPropertyBlock();
             _renderer.GetPropertyBlock(_mpb);
-
-            // Tüm property'leri başlangıç değerleriyle set et
-            _renderer.GetPropertyBlock(_mpb);
-            _mpb.SetColor(ID_GlowColor,      Color.white);
-            _mpb.SetFloat(ID_GlowIntensity,  0f);
-            _mpb.SetFloat(ID_GlowPulseSpeed, 0f);
-            _mpb.SetFloat(ID_RainbowActive,  0f);
-            _mpb.SetFloat(ID_RainbowSpeed,   1f);
-            _mpb.SetFloat(ID_RainbowSaturation, 1f);
-            _mpb.SetFloat(ID_ShockwaveT,     0f);
-            _mpb.SetFloat(ID_ShockwaveWidth, 0.08f);
-            _mpb.SetFloat(ID_NoiseAmount,    0f);
-            _mpb.SetFloat(ID_Alpha,          1f);   // ← kritik
+            _mpb.SetColor(ID_GlowColor,         Color.white);
+            _mpb.SetFloat(ID_GlowIntensity,      0f);
+            _mpb.SetFloat(ID_GlowPulseSpeed,     0f);
+            _mpb.SetFloat(ID_RainbowActive,      0f);
+            _mpb.SetFloat(ID_RainbowSpeed,       1f);
+            _mpb.SetFloat(ID_RainbowSaturation,  1f);
+            _mpb.SetFloat(ID_ShockwaveT,         0f);
+            _mpb.SetFloat(ID_ShockwaveWidth,     0.08f);
+            _mpb.SetFloat(ID_NoiseAmount,        0f);
+            _mpb.SetFloat(ID_Alpha,              1f);
             _renderer.SetPropertyBlock(_mpb);
         }
 
@@ -75,19 +78,25 @@ namespace RogueBlockBlast.UI
         // ── PUBLIC API ───────────────────────────────────────────────────────
 
         public void OnDrop(Color pieceColor)
-            => StartCoroutine(DropPulse(pieceColor));
+        {
+            if (_dropRoutine != null) StopCoroutine(_dropRoutine);
+            _dropRoutine = StartCoroutine(DropPulse(pieceColor));
+        }
 
         public void OnComboChanged(float multiplier)
         {
             _comboMultiplier = multiplier;
             if (_currentState == FrameState.GameOver || _currentState == FrameState.Milestone) return;
-
+            if (_isDropping) return;
             StopLoops();
 
-            if (multiplier >= _config.ComboPlasmaThreshold)      EnterComboPlasma();
-            else if (multiplier >= _config.ComboGlowThreshold)   EnterComboGlow();
-            else if (multiplier >= _config.ComboWarmThreshold)   EnterComboWarm();
+            if (multiplier >= _config.ComboPlasmaThreshold)    EnterComboPlasma();
+            else if (multiplier >= _config.ComboGlowThreshold) EnterComboGlow();
+            else if (multiplier >= _config.ComboWarmThreshold) EnterComboWarm();
             else SetIdle();
+
+            // Combo/Idle'a geçtikten sonra hâlâ critical bölgedeyse loop'u yeniden başlat
+            TryResumeCritical();
         }
 
         public void OnComboBreak()
@@ -100,9 +109,18 @@ namespace RogueBlockBlast.UI
 
         public void OnCritical(int remaining)
         {
+            _lastRemaining = remaining;
+
             if (_currentState == FrameState.GameOver || _currentState == FrameState.Milestone) return;
-            if (remaining <= _config.CriticalThreshold) EnterCritical(remaining);
-            else if (_currentState == FrameState.Critical) OnComboChanged(_comboMultiplier);
+
+            if (remaining <= _config.CriticalThreshold)
+                EnterCritical(remaining);
+            else if (_currentState == FrameState.Critical)
+            {
+                // Eşiğin üstüne çıktı — Critical'dan çık
+                StopPulseLoop();
+                OnComboChanged(_comboMultiplier);
+            }
         }
 
         public void OnLineClear(int lineCount)
@@ -137,11 +155,7 @@ namespace RogueBlockBlast.UI
             SetProp(ID_NoiseAmount,    0f);
             SetProp(ID_Alpha,          1f);
 
-            if (!animate)
-            {
-                SetProp(ID_GlowIntensity, 0f);
-                return;
-            }
+            if (!animate) { SetProp(ID_GlowIntensity, 0f); return; }
 
             TweenFloat(ID_GlowIntensity, 0f, _config.IdleFadeDuration);
             TweenFloat(ID_Alpha,         1f, _config.IdleFadeDuration);
@@ -150,9 +164,9 @@ namespace RogueBlockBlast.UI
         private void EnterComboWarm()
         {
             _currentState = FrameState.Combo;
-            SetProp(ID_RainbowActive, 0f);
+            SetProp(ID_RainbowActive,  0f);
             SetProp(ID_GlowPulseSpeed, 0f);
-            SetProp(ID_NoiseAmount,   0f);
+            SetProp(ID_NoiseAmount,    0f);
             TweenColor(ID_GlowColor,     _config.ComboWarmColor,     _config.ComboWarmDuration);
             TweenFloat(ID_GlowIntensity, _config.ComboWarmIntensity, _config.ComboWarmDuration);
         }
@@ -162,7 +176,7 @@ namespace RogueBlockBlast.UI
             _currentState = FrameState.Combo;
             SetProp(ID_RainbowActive, 0f);
             SetProp(ID_NoiseAmount,   0f);
-            TweenColor(ID_GlowColor,      _config.ComboGlowColor,    0.3f);
+            TweenColor(ID_GlowColor,      _config.ComboGlowColor,     0.3f);
             TweenFloat(ID_GlowIntensity,  _config.ComboGlowIntensity, 0.3f);
             TweenFloat(ID_GlowPulseSpeed, _config.ComboGlowSpeed,     0.3f);
         }
@@ -172,9 +186,9 @@ namespace RogueBlockBlast.UI
             _currentState = FrameState.Combo;
             SetProp(ID_RainbowActive, 0f);
             SetProp(ID_NoiseAmount,   0f);
-            TweenColor(ID_GlowColor,      _config.ComboGlowColor,       0.5f);
-            TweenFloat(ID_GlowIntensity,  _config.ComboPlasmaIntensity,  0.5f);
-            TweenFloat(ID_GlowPulseSpeed, _config.ComboPlasmaSpeed,      0.5f);
+            TweenColor(ID_GlowColor,      _config.ComboGlowColor,      0.5f);
+            TweenFloat(ID_GlowIntensity,  _config.ComboPlasmaIntensity, 0.5f);
+            TweenFloat(ID_GlowPulseSpeed, _config.ComboPlasmaSpeed,     0.5f);
         }
 
         private IEnumerator ComboBreak()
@@ -191,6 +205,7 @@ namespace RogueBlockBlast.UI
             TweenFloat(ID_NoiseAmount,   0f, _config.BreakFadeDuration);
             yield return new WaitForSeconds(_config.BreakFadeDuration);
             SetIdle();
+            TryResumeCritical();
         }
 
         private void EnterCritical(int remaining)
@@ -198,12 +213,32 @@ namespace RogueBlockBlast.UI
             _currentState = FrameState.Critical;
             SetProp(ID_RainbowActive, 0f);
             SetProp(ID_NoiseAmount,   0f);
+
             float urgency   = 1f - Mathf.Clamp01((float)remaining / _config.CriticalThreshold);
             float intensity = Mathf.Lerp(_config.CriticalMinIntensity, _config.CriticalMaxIntensity, urgency);
             float speed     = Mathf.Lerp(_config.CriticalMinSpeed,     _config.CriticalMaxSpeed,     urgency);
+
             TweenColor(ID_GlowColor,      _config.CriticalColor, 0.3f);
-            TweenFloat(ID_GlowIntensity,  intensity,             0.3f);
             TweenFloat(ID_GlowPulseSpeed, speed,                 0.3f);
+
+           
+            if (_pulseLoop != null) StopCoroutine(_pulseLoop);
+            _pulseLoop = StartCoroutine(CriticalPulseLoop(intensity, speed));
+        }
+
+        
+        private IEnumerator CriticalPulseLoop(float maxIntensity, float speed)
+        {
+            float halfPeriod = speed > 0f ? 0.5f / speed : 0.5f;
+
+            while (true)
+            {
+                TweenFloat(ID_GlowIntensity, maxIntensity, halfPeriod);
+                yield return new WaitForSeconds(halfPeriod);
+
+                TweenFloat(ID_GlowIntensity, _config.CriticalMinIntensity, halfPeriod);
+                yield return new WaitForSeconds(halfPeriod);
+            }
         }
 
         private IEnumerator RainbowSpin(int lineCount)
@@ -225,6 +260,8 @@ namespace RogueBlockBlast.UI
             yield return new WaitForSeconds(_config.RainbowFadeDuration);
 
             SetProp(ID_RainbowActive, 0f);
+
+            // OnComboChanged → TryResumeCritical zinciri burada da çalışır
             OnComboChanged(_comboMultiplier);
         }
 
@@ -247,19 +284,20 @@ namespace RogueBlockBlast.UI
              {
                  SetProp(ID_ShockwaveT, 0f);
                  _currentState = _previousState;
+                 // OnComboChanged → TryResumeCritical zinciri burada da çalışır
                  OnComboChanged(_comboMultiplier);
              });
         }
 
         private IEnumerator DropPulse(Color pieceColor)
-        {
+        {  
+            _isDropping = true;
             float savedIntensity = _currentIntensity;
             Color savedGlow      = GetPropColor(ID_GlowColor);
-
             SetProp(ID_GlowColor, pieceColor);
-            TweenFloat(ID_GlowIntensity, _config.DropIntensity, _config.DropDuration * 0.3f);
-            yield return new WaitForSeconds(_config.DropDuration * 0.3f);
-
+            TweenFloat(ID_GlowIntensity, _config.DropIntensity, _config.DropDuration * 0.5f);
+            yield return new WaitForSeconds(_config.DropDuration * 0.5f);
+            _isDropping = false;
             TweenFloat(ID_GlowIntensity, savedIntensity, _config.DropDuration * 0.7f);
             TweenColor(ID_GlowColor,     savedGlow,       _config.DropDuration * 0.7f);
         }
@@ -274,6 +312,24 @@ namespace RogueBlockBlast.UI
             TweenFloat(ID_GlowIntensity, 0f, _config.GameOverFadeDuration);
             TweenFloat(ID_NoiseAmount,   2f, _config.GameOverFadeDuration);
             TweenFloat(ID_Alpha,         0f, _config.GameOverFadeDuration);
+        }
+
+        // ── CRITICAL RESUME ──────────────────────────────────────────────────
+
+        // Herhangi bir state geçişinin sonunda çağrılır.
+        // Hâlâ critical bölgedeyse loop'u yeniden başlatır.
+        private void TryResumeCritical()
+        {
+            if (_lastRemaining > _config.CriticalThreshold) return;
+            if (_currentState == FrameState.GameOver)       return;
+            if (_currentState == FrameState.Milestone)      return;
+
+            EnterCritical(_lastRemaining);
+        }
+
+        private void StopPulseLoop()
+        {
+            if (_pulseLoop != null) { StopCoroutine(_pulseLoop); _pulseLoop = null; }
         }
 
         // ── MPB HELPERS ──────────────────────────────────────────────────────
@@ -305,18 +361,28 @@ namespace RogueBlockBlast.UI
             return _mpb.GetColor(id);
         }
 
+        // ── TWEEN HELPERS ────────────────────────────────────────────────────
+
         private void TweenFloat(int id, float target, float duration)
         {
-            float current = GetPropFloat(id);
-            DOTween.To(() => current, v => { current = v; SetProp(id, v); }, target, duration)
-                   .SetId(this);
+            DOTween.Kill(id);
+            DOTween.To(
+                () => GetPropFloat(id),
+                v  => SetProp(id, v),
+                target,
+                duration
+            ).SetId(id);
         }
 
         private void TweenColor(int id, Color target, float duration)
         {
-            Color current = GetPropColor(id);
-            DOTween.To(() => current, v => { current = v; SetProp(id, v); }, target, duration)
-                   .SetId(this);
+            DOTween.Kill(id);
+            DOTween.To(
+                () => GetPropColor(id),
+                v  => SetProp(id, v),
+                target,
+                duration
+            ).SetId(id);
         }
 
         private void StopLoops()

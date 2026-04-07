@@ -76,11 +76,13 @@ namespace RogueBlockBlast.UI
 
         // ── Handlers ─────────────────────────────────────────────────────────
         private void HandleStateChanged(ComboState state)
-        {
+        
+        { 
+            FrameFeedbackController.Instance?.OnComboChanged(state.Multiplier);
             // Max charge düştüyse glow'u durdur
             if (_lastCharges >= state.MaxCharge && state.Charges < state.MaxCharge)
                 StopMaxGlow();
-            FrameFeedbackController.Instance?.OnComboChanged(state.Multiplier);
+           
 
             ApplyState(state, animate: true);
         }

@@ -32,7 +32,7 @@ namespace RogueBlockBlast.UI
         public float  ComboPlasmaSpeed     = 3.0f;
 
         [Header("Combo Break")]
-        public float  BreakFlickerCount  = 4;
+        public int    BreakFlickerCount  = 4;
         public float  BreakFlickerSpeed  = 0.04f;
         public float  BreakFadeDuration  = 0.25f;
 

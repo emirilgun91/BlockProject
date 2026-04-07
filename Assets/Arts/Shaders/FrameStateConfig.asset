@@ -13,38 +13,38 @@ MonoBehaviour:
   m_Name: FrameStateConfig
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.FrameStateConfig
   IdleColor: {r: 1, g: 1, b: 1, a: 1}
-  IdleFadeDuration: 0.3
-  DropIntensity: 1.5
-  DropDuration: 0.2
+  IdleFadeDuration: 0.8
+  DropIntensity: 20
+  DropDuration: 5
   ComboWarmColor: {r: 1, g: 0.8, b: 0.1, a: 1}
-  ComboWarmIntensity: 0.5
+  ComboWarmIntensity: 1.5
   ComboWarmDuration: 0.4
   ComboGlowColor: {r: 1, g: 0.7, b: 0, a: 1}
-  ComboGlowIntensity: 1.5
-  ComboGlowSpeed: 1.5
-  ComboPlasmaIntensity: 3.5
-  ComboPlasmaSpeed: 3
+  ComboGlowIntensity: 3
+  ComboGlowSpeed: 2
+  ComboPlasmaIntensity: 6
+  ComboPlasmaSpeed: 4
   BreakFlickerCount: 4
-  BreakFlickerSpeed: 0.04
-  BreakFadeDuration: 0.25
-  CriticalColor: {r: 1, g: 0, b: 0, a: 1}
-  CriticalMinIntensity: 1
-  CriticalMaxIntensity: 2.5
+  BreakFlickerSpeed: 0.2
+  BreakFadeDuration: 0.5
+  CriticalColor: {r: 0.8773585, g: 0, b: 0, a: 1}
+  CriticalMinIntensity: 1.5
+  CriticalMaxIntensity: 8
   CriticalMinSpeed: 1
-  CriticalMaxSpeed: 4
+  CriticalMaxSpeed: 3
   CriticalThreshold: 5
   MilestoneColor: {r: 0.1, g: 0.9, b: 0.6, a: 1}
-  MilestoneDuration: 0.6
-  MilestoneWidth: 0.08
+  MilestoneDuration: 1
+  MilestoneWidth: 0.8
   RainbowMinSpeed: 0.5
   RainbowMaxSpeed: 4
-  RainbowGlowIntensity: 2
-  RainbowHoldDuration: 0.8
-  RainbowFadeDuration: 0.3
+  RainbowGlowIntensity: 4
+  RainbowHoldDuration: 2.5
+  RainbowFadeDuration: 1.5
   RainbowMaxLines: 4
   GameOverColor: {r: 0.85, g: 0.1, b: 0.1, a: 1}
-  GameOverBlastIntensity: 5
-  GameOverBlastDuration: 0.15
+  GameOverBlastIntensity: 15
+  GameOverBlastDuration: 1.5
   GameOverFadeDuration: 1.2
   ComboWarmThreshold: 1.8
   ComboGlowThreshold: 3

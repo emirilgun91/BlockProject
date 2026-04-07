@@ -135,7 +135,6 @@ namespace RogueBlockBlast.Game
                 _poolDirty = false;
             }
         }
-
         // ── Pool ─────────────────────────────────────────────────────────────
         private void SelectPool(int index)
         {
@@ -154,7 +153,7 @@ namespace RogueBlockBlast.Game
                 return;
 
             PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot);
-
+            FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
             // FX: yerleştirme punch
             BoardFX.PlayPlaceFX(BoardView, _currentPiece, anchor, _currentRot);
 
@@ -164,7 +163,7 @@ namespace RogueBlockBlast.Game
             // Line clear
             var (cleared, tileValueSum, clearedRows, clearedCols, snapshots) =
                 LineClearSystem.ClearLines(_board);
-
+       
             if (cleared > 0)
             {
                 FrameFeedbackController.Instance?.OnLineClear(cleared);
@@ -173,7 +172,7 @@ namespace RogueBlockBlast.Game
                     LineClearVFX.Play(
                         clearedRows,
                         clearedCols,
-                        snapshots,          // ← board temizlenmeden önce alınan snapshot
+                        snapshots,
                         BoardView,
                         _board.Width,
                         _board.Height,
@@ -182,7 +181,6 @@ namespace RogueBlockBlast.Game
                 }
                 else
                 {
-                    // Fallback
                     BoardFX.PlayLineClearFX(BoardView, _board.Width, _board.Height, clearedRows, clearedCols);
                 }
                 FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
@@ -198,7 +196,7 @@ namespace RogueBlockBlast.Game
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
                 tileValueSum,
                 _comboSystem.Multiplier,
-                _globalScoreMultiplier   // kart efektinden gelen çarpan
+                _globalScoreMultiplier
             );
             _score += gainedScore;
 
@@ -227,13 +225,25 @@ namespace RogueBlockBlast.Game
 
             // Dead pool kontrolü
             if (!HasAnyValidMoveInPool())
-            { HandleDeadPool(); 
+            { 
+                HandleDeadPool(); 
                 return;
             }
 
+            // ─── DÜZELTME ───────────────────────────────────────────────────
+            // Critical feedback'i OnPiecePlaced'TEN ÖNCE ver.
+            // Böylece PiecesRemaining henüz 0'a düşmeden doğru değeri okuruz.
+            // OnPiecePlaced içinde PiecesRemaining 0'a düşerse OnPoolLimitExhausted
+            // → HandlePoolLimitExhausted → OnGameOver zinciri tetiklenir ve
+            // FrameFeedbackController zaten GameOver state'ine geçer — Critical
+            // o noktada zaten irrelevant olur.
+            // ────────────────────────────────────────────────────────────────
+            int remaining = _milestoneSystem?.PiecesRemaining ?? int.MaxValue;
+            FrameFeedbackController.Instance?.OnCritical(remaining);
+
             // Milestone: piece sayacı — pool işlemleri bittikten sonra
             _milestoneSystem?.OnPiecePlaced();
-            FrameFeedbackController.Instance?.OnCritical(_milestoneSystem.PiecesRemaining); // ← ekle
+
             _poolDirty = true;
         }
 
@@ -244,7 +254,6 @@ namespace RogueBlockBlast.Game
             if (Height <= 0) Height = 8;
             Time.timeScale = 1f;
             GameOverUI.Instance?.Hide(); 
-            // Game over ekranı açıksa kapat, timeScale sıfırla
             Time.timeScale = 1f;
 
             _freeDeadPoolReroll = 0;
@@ -257,9 +266,9 @@ namespace RogueBlockBlast.Game
             _board       = new BoardModel(Width, Height);
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
-            GameStateController.Reset();  // ← ekle
+            GameStateController.Reset();
             GameOverUI.Instance?.Hide();  
-             DOTween.SetTweensCapacity(200,125);   
+            DOTween.SetTweensCapacity(200,125);   
             _comboSystem.Reset();
             _milestoneSystem?.Reset();
 
@@ -312,7 +321,6 @@ namespace RogueBlockBlast.Game
             }
             else
             {
-                // Announcer yoksa direkt aç
                 GameOverUI.Instance?.Show(_score);
             }
         }
@@ -359,9 +367,6 @@ namespace RogueBlockBlast.Game
             {
                 CardSelectionUI.Instance?.Show(CardPool, OnCardPicked);
             }
-
-            // Kart seçim ekranı — kart sistemi hazır olunca aç:
-            // CardSelectionUI.Instance.Show(allCards, OnCardPicked);
         }
 
         private void HandlePoolLimitExhausted()
@@ -391,9 +396,8 @@ namespace RogueBlockBlast.Game
         private static Rotation PrevRot(Rotation r) => (Rotation)(((int)r + 3) & 3);
         private void OnCardPicked(CardSO card)
         {
-            if (card == null) return;   // skip/continue basıldı
+            if (card == null) return;
  
-            // Efektleri sistemlere uygula
             CardEffectApplier.Apply(
                 card,
                 _comboSystem,

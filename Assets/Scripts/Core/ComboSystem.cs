@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace RogueBlockBlast.Core
 {
@@ -44,6 +45,7 @@ namespace RogueBlockBlast.Core
         /// </summary>
         public void OnLineClear(int lineCount)
         {
+           
             if (lineCount <= 0) return;
 
             for (int i = 0; i < lineCount; i++)

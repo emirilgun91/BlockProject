@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
   m_Name: Card_ 1
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_
+  Id: Card_Crossfire
   CardName: Crossfire
   Description: Clearing a row and a column simultaneously (Cross-Clear) adds +3 shapes
     back to your current pool.

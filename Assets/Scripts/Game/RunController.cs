@@ -262,7 +262,7 @@ namespace RogueBlockBlast.Game
             _coins              = 0;
             _globalScoreMultiplier = 1f;
             _coinBonusPerMilestone = 0;
-
+            CardInventoryUI.Instance?.Clear();
             _board       = new BoardModel(Width, Height);
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
@@ -366,6 +366,8 @@ namespace RogueBlockBlast.Game
             if (CardPool != null && CardPool.Count > 0)
             {
                 CardSelectionUI.Instance?.Show(CardPool, OnCardPicked);
+               
+
             }
         }
 
@@ -397,7 +399,7 @@ namespace RogueBlockBlast.Game
         private void OnCardPicked(CardSO card)
         {
             if (card == null) return;
- 
+            
             CardEffectApplier.Apply(
                 card,
                 _comboSystem,
@@ -406,7 +408,7 @@ namespace RogueBlockBlast.Game
                 ref _globalScoreMultiplier,
                 ref _coinBonusPerMilestone
             );
- 
+            CardInventoryUI.Instance?.AddCard(card);
             Debug.Log($"[Card] Seçildi: {card.CardName}");
         }
         private void OnValidate()

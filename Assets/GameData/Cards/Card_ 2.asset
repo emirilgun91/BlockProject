@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
   m_Name: Card_ 2
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_
+  Id: Card_Phantom Drop
   CardName: Phantom Drop
   Description: If your pool reaches 0, you get exactly 1 "Phantom Block" (a 1x1 wild
     card that clears any line it touches) to save your run.

@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.MilestoneConfigSO
   PoolLimit: 20
   Milestones:
-  - ScoreThreshold: 500
+  - ScoreThreshold: 100
     CoinReward: 5
     Label: Stage 1
-  - ScoreThreshold: 2500
+  - ScoreThreshold: 300
     CoinReward: 8
     Label: Stage 2
   - ScoreThreshold: 5000

@@ -1,0 +1,118 @@
+﻿using RogueBlockBlast.Content;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace RogueBlockBlast.UI
+{
+    /// <summary>
+    /// Kart slot'larının üzerine gelinince gösterilen tooltip.
+    /// Screen Space Overlay Canvas'ta çalışır.
+    ///
+    /// Hierarchy:
+    ///  CardTooltip (bu script + CanvasGroup)
+    ///   ├── Background   (Image)
+    ///   ├── CardName     (TMP)
+    ///   ├── Description  (TMP)
+    ///   └── EffectRow    (opsiyonel — effect listesi için)
+    /// </summary>
+    public sealed class CardTooltip : MonoBehaviour
+    {
+        public static CardTooltip Instance { get; private set; }
+
+        [Header("References")]
+        [SerializeField] private RectTransform _rect;
+        [SerializeField] private CanvasGroup   _canvasGroup;
+        [SerializeField] private TMP_Text      _nameText;
+        [SerializeField] private TMP_Text      _descText;
+        [SerializeField] private TMP_Text      _effectText;   // opsiyonel
+
+        [Header("Settings")]
+        [SerializeField] private Vector2 _offset   = new Vector2(12f, -8f);
+        [SerializeField] private float   _margin   = 8f;
+
+        private Canvas _canvas;
+
+        private void Awake()
+        {
+            if (Instance != null) { Destroy(gameObject); return; }
+            Instance = this;
+
+            _canvas = GetComponentInParent<Canvas>();
+            if (_rect == null) _rect = GetComponent<RectTransform>();
+            if (_canvasGroup == null) _canvasGroup = GetComponent<CanvasGroup>();
+
+            // gameObject.SetActive(false) değil — Awake çalışmaz
+            _canvasGroup.alpha          = 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable   = false;
+
+            Hide();
+        }
+
+        // ── Public API ───────────────────────────────────────────────────────
+
+        public void Show(CardSO card, int stackCount, Vector2 screenPos)
+        {
+            if (card == null) return;
+
+            // İsim — stack varsa badge ekle
+            _nameText.text = stackCount > 1
+                ? $"{card.CardName}  <size=11><color=#8a93aa>x{stackCount}</color></size>"
+                : card.CardName;
+
+            _descText.text = card.Description;
+
+            // Effect özeti
+            if (_effectText != null)
+            {
+                if (card.Effects != null && card.Effects.Count > 0)
+                {
+                    var sb = new System.Text.StringBuilder();
+                    foreach (var e in card.Effects)
+                    {
+                        if (!string.IsNullOrWhiteSpace(e.Description))
+                            sb.AppendLine($"▸  {e.Description}");
+                    }
+                    _effectText.text    = sb.ToString().TrimEnd();
+                    _effectText.gameObject.SetActive(true);
+                }
+                else
+                {
+                    _effectText.gameObject.SetActive(false);
+                }
+            }
+
+            _canvasGroup.alpha          = 1f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable   = false;
+            // gameObject.SetActive(true) yok
+            PositionTooltip(screenPos);
+
+            // Sonraki frame'de boyutu biliyoruz — pozisyonu hemen set et
+            PositionTooltip(screenPos);
+        }
+
+        public void Hide()
+        {
+            _canvasGroup.alpha = 0f;
+            if (_canvasGroup != null) _canvasGroup.alpha = 0f;
+        }
+
+        public void UpdatePosition(Vector2 screenPos) => PositionTooltip(screenPos);
+
+        // ── Private ──────────────────────────────────────────────────────────
+        private void PositionTooltip(Vector2 screenPos)
+        {
+            if (_rect == null) return;
+
+            // World Space Canvas için direkt screen pozisyonunu kullan
+            // rect.position screen koordinatını kabul eder
+            Vector3 worldPos = _canvas.worldCamera != null
+                ? _canvas.worldCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, _canvas.planeDistance))
+                : Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
+
+            _rect.position = worldPos + (Vector3)_offset * 0.01f;
+        }
+    }
+}

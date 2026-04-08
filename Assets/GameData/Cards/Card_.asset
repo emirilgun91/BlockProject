@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
   m_Name: Card_
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_
+  Id: Card_Living on the Edge
   CardName: Living on the Edge
   Description: Gain a massive +2.0 to your combo multiplier instantly, but you can
     no longer rotate shapes for the rest of the milestone.

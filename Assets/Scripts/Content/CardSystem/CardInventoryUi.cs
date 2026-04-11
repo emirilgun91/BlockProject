@@ -76,8 +76,6 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public void AddCard(CardSO card)
         {
-            Debug.Log($"[Inventory] Id:{card.Id} | mevcut keyler:{string.Join(',', _inventory.Keys)}");
-       
             if (card == null) return;
 
             if (_inventory.TryGetValue(card.Id, out var entry))
@@ -120,5 +118,8 @@ namespace RogueBlockBlast.UI
             foreach (var e in _inventory.Values) total += e.count;
             return total;
         }
+
+        /// <summary>Seçilmiş kart ID'lerini döndürür — unique filtre için.</summary>
+        public IEnumerable<string> GetSelectedCardIds() => _inventory.Keys;
     }
 }

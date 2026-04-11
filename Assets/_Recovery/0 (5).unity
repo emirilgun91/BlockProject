@@ -6403,8 +6403,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -563, y: 191}
-  m_SizeDelta: {x: 533.57, y: 92.97}
+  m_AnchoredPosition: {x: -572, y: 137}
+  m_SizeDelta: {x: 250, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &341533590
 MonoBehaviour:
@@ -6428,8 +6428,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 0c1f364965a18f8498e0110f75e9c38b, type: 2}
-  m_sharedMaterial: {fileID: 3182625828907635409, guid: 0c1f364965a18f8498e0110f75e9c38b, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6453,12 +6453,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
+  m_fontSize: 15
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 15
-  m_fontSizeMax: 40
+  m_fontSizeMin: 12
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
@@ -7495,7 +7495,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a759cb18b1acf8644b486023ffe51564, type: 2}
   - {fileID: 11400000, guid: 0ddeb60e2dd303a4b89fdbcf7f223c59, type: 2}
   - {fileID: 11400000, guid: 718ea13c0b33cdd47b4ba19eb4938e5c, type: 2}
-  - {fileID: 11400000, guid: e2dcdbe483019954c98ebb2f4c11c3a7, type: 2}
   mainLoopMusic: {fileID: 8300000, guid: 3c0d3b49cbf100046bbb012852dd4e2a, type: 3}
   MilestoneConfig: {fileID: 11400000, guid: 88c4c4ba54f8d1644874bc5ee0305cd3, type: 2}
   LineClearVFX: {fileID: 1355268666}
@@ -10143,11 +10142,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1503688622}
   m_CullTransparentMesh: 1
---- !u!1 &1509733042 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2464927403162721322, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
-  m_PrefabInstance: {fileID: 2323398847864134956}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1517109726
 GameObject:
   m_ObjectHideFlags: 0
@@ -12150,10 +12144,6 @@ PrefabInstance:
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1679176181731473999, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
-      propertyPath: _newBadge
-      value: 
-      objectReference: {fileID: 1509733042}
     - target: {fileID: 1926731659157827723, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -12567,10 +12557,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6937003247068641940, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 46.199997
-      objectReference: {fileID: 0}
-    - target: {fileID: 6937003247068641940, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -57.899994
       objectReference: {fileID: 0}
@@ -12643,16 +12629,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8252089367074924771, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 46.199997
-      objectReference: {fileID: 0}
-    - target: {fileID: 8252089367074924771, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -57.899994
-      objectReference: {fileID: 0}
-    - target: {fileID: 8665574458332788077, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 46.199997
       objectReference: {fileID: 0}
     - target: {fileID: 8665574458332788077, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
       propertyPath: m_AnchoredPosition.y

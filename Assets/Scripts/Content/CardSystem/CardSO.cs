@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using RogueBlockBlast.Core;
 using UnityEngine;
 
 namespace RogueBlockBlast.Content
@@ -19,12 +20,24 @@ namespace RogueBlockBlast.Content
         public CardRarity Rarity = CardRarity.Common;
 
         [Header("Effects")]
-        [Tooltip("Bu kartın uyguladığı efektler. Birden fazla olabilir.")]
         public List<CardEffect> Effects = new List<CardEffect>();
 
         [Header("Spawn Weight")]
         [Min(0)]
         public int BaseWeight = 100;
+
+        [Header("Unique")]
+        [Tooltip("True ise bir kez seçildikten sonra kart havuzuna bir daha girmez.")]
+        public bool IsUnique = false;
+
+        [Header("Unlock")]
+        [Tooltip("True ise başlangıçta kilitli — milestone'da unlock edilir.")]
+        public bool LockedByDefault = false;
+
+        /// <summary>Runtime'da bu kart unlock edilmiş mi?</summary>
+        public bool IsUnlocked =>
+            !LockedByDefault ||
+            (UnlockRegistry.Instance != null && UnlockRegistry.Instance.IsCardUnlocked(Id));
 
         private void OnValidate()
         {

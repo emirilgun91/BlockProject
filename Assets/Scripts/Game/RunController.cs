@@ -6,6 +6,8 @@ using RogueBlockBlast.UI;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
+using System.Linq;
+
 
 namespace RogueBlockBlast.Game
 {
@@ -77,7 +79,25 @@ namespace RogueBlockBlast.Game
             {
                 AudioManager.Instance.PlayMusic(mainLoopMusic);
             }
-            
+            if (UnlockRegistry.Instance != null)
+            {
+                // Shape ID'lerini topla
+                var shapeIds = ShapeLibrary.Shapes
+                    .Where(s => s != null)
+                    .Select(s => s.Id);
+ 
+                // Card ID'lerini topla
+                var cardIds = CardPool
+                    .Where(c => c != null)
+                    .Select(c => c.Id);
+ 
+                // Milestone label'larını topla
+                var milestoneLabels = MilestoneConfig.Milestones
+                    .Select(m => m.Label);
+ 
+                UnlockRegistry.Instance.Init(shapeIds, cardIds);
+                UnlockRegistry.Instance.InitMilestones(milestoneLabels);
+            }
             NewRun();
         }
 
@@ -358,16 +378,40 @@ namespace RogueBlockBlast.Game
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
-            FrameFeedbackController.Instance?.OnMilestone();
             _coins += coinReward;
             Debug.Log($"[Milestone] {data.Label} reached! +{coinReward} coins → total: {_coins}");
-
+ 
             MilestoneView?.PlayMilestoneReachedFX();
+            FrameFeedbackController.Instance?.OnMilestone();
+ 
+            // İlk kez bu milestone'a ulaşıldı mı?
+            CardSO newlyUnlockedCard = null;
+ 
+            if (UnlockRegistry.Instance != null &&
+                UnlockRegistry.Instance.IsFirstMilestoneReach(data.Label))
+            {
+                // Kilitli kartlardan rastgele birini unlock et
+                var lockedCards = CardPool
+                    .Where(c => c != null && c.LockedByDefault && !c.IsUnlocked)
+                    .ToList();
+ 
+                if (lockedCards.Count > 0)
+                {
+                    int pick = UnityEngine.Random.Range(0, lockedCards.Count);
+                    newlyUnlockedCard = lockedCards[pick];
+                    UnlockRegistry.Instance.UnlockCard(newlyUnlockedCard.Id);
+ 
+                    Debug.Log($"[Unlock] Yeni kart açıldı: {newlyUnlockedCard.CardName}");
+ 
+                    // MilestoneView'da "New Card Earned!" göster
+                    MilestoneView?.ShowNewCardEarned(newlyUnlockedCard.CardName);
+                }
+            }
+ 
+            // Kart seçim ekranını aç — yeni kart en sola, NEW badge ile
             if (CardPool != null && CardPool.Count > 0)
             {
-                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked);
-               
-
+                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked, newlyUnlockedCard);
             }
         }
 

@@ -16,17 +16,24 @@ namespace RogueBlockBlast.Content
         [Header("Spawn Weight")]
         public ShapeRarity Rarity = ShapeRarity.Common;
         [Min(0)]
-        public int BaseWeight     = 100;
+        public int BaseWeight = 100;
 
         [Header("Visual")]
-        [Tooltip("Palette rengi.")]
         public BlockColorPreset ColorPreset = BlockColorPreset.Teal;
         public Color BlockColor => BlockColorPalette.GetColor(ColorPreset);
 
         [Header("Score")]
-        [Tooltip("Her tile'ın base puan değeri. Upgrade ile artar.")]
         [Min(1)]
         public int BaseTileValue = 10;
+
+        [Header("Unlock")]
+        [Tooltip("True ise başlangıçta kilitli — coin ile unlock edilebilir.")]
+        public bool LockedByDefault = false;
+
+        /// <summary>Runtime'da bu shape unlock edilmiş mi?</summary>
+        public bool IsUnlocked =>
+            !LockedByDefault ||
+            (UnlockRegistry.Instance != null && UnlockRegistry.Instance.IsShapeUnlocked(Id));
 
         /// <summary>Runtime tile değeri — upgrade dahil.</summary>
         public float GetCurrentTileValue() =>

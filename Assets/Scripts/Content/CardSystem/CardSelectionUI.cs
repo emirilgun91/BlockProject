@@ -8,48 +8,39 @@ namespace RogueBlockBlast.UI
 {
     /// <summary>
     /// Kart seçim overlay'i.
-    /// Milestone'a ulaşınca oyunu duraklatır, 3 kart sunar.
     ///
-    /// Hierarchy:
-    ///  CardScreen (bu script + CanvasGroup buraya)
-    ///   ├── Backdrop
-    ///   └── Panel
-    ///        ├── MilestoneBanner
-    ///        ├── ChooseLabel
-    ///        └── CardsContainer
-    ///             ├── CardView_0  ← _cardViews[0]
-    ///             ├── CardView_1  ← _cardViews[1]
-    ///             └── CardView_2  ← _cardViews[2]
+    /// Değişiklikler:
+    /// - Kilitli kartlar gösterilmez
+    /// - Zaten seçilmiş kartlar gösterilmez (unique kart)
+    /// - Yeni unlock edilen kart en sola gelir + NEW badge
     ///
-    /// RunController'dan çağır:
-    ///   CardSelectionUI.Instance.Show(cardPool, onCardPicked);
+    /// Show() çağrısında newlyUnlockedCard parametresi varsa
+    /// o kart listeye eklenir ve NEW badge gösterilir.
     /// </summary>
     public sealed class CardSelectionUI : MonoBehaviour
     {
-        // ── Singleton ────────────────────────────────────────────────────────
         public static CardSelectionUI Instance { get; private set; }
 
-        // ── Inspector ────────────────────────────────────────────────────────
         [Header("Root & Fade")]
         [SerializeField] private GameObject  _root;
         [SerializeField] private CanvasGroup _canvasGroup;
         [SerializeField] private float       _fadeSpeed = 8f;
 
-        [Header("Card Views — CardsContainer altındaki 3 CardView")]
+        [Header("Card Views")]
         [SerializeField] private CardView[] _cardViews;  // 3 eleman
 
-        // ── Runtime ──────────────────────────────────────────────────────────
+        [Header("New Card Badge — CardView_0 üzerinde")]
+        [SerializeField] private GameObject _newBadge;   // "NEW" yazan obje, default inactive
+
         private Action<CardSO> _onCardPicked;
         private bool           _fadingIn;
         private bool           _isOpen;
 
-        // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
         {
             if (Instance != null) { Destroy(gameObject); return; }
             Instance = this;
 
-            // Başlangıçta kapalı
             if (_canvasGroup != null)
             {
                 _canvasGroup.alpha          = 0f;
@@ -73,7 +64,6 @@ namespace RogueBlockBlast.UI
             _canvasGroup.interactable   = visible && _fadingIn;
             _canvasGroup.blocksRaycasts = visible;
 
-            // Fade out tamamlandıysa root'u kapat
             if (!_fadingIn && _canvasGroup.alpha <= 0.01f)
             {
                 _root.SetActive(false);
@@ -85,32 +75,42 @@ namespace RogueBlockBlast.UI
 
         /// <summary>
         /// Kart seçim ekranını açar.
-        /// cardPool: tüm kartlar (ağırlıklı rastgele 3 tanesi seçilir)
-        /// onCardPicked: kart seçilince çağrılır, null = geçildi
+        /// newlyUnlockedCard: bu run'da yeni açılan kart — en sola gelir, NEW badge alır.
         /// </summary>
-        public void Show(List<CardSO> cardPool, Action<CardSO> onCardPicked)
+        public void Show(
+            List<CardSO>   cardPool,
+            Action<CardSO> onCardPicked,
+            CardSO         newlyUnlockedCard = null)
         {
-            if (cardPool == null || cardPool.Count == 0)
+            _onCardPicked = onCardPicked;
+
+            // Seçilebilecek kartları filtrele
+            var available = BuildAvailablePool(cardPool, newlyUnlockedCard);
+
+            if (available.Count == 0)
             {
+                // Seçilecek kart kalmadı — direkt geç
                 onCardPicked?.Invoke(null);
                 return;
             }
 
-            _onCardPicked = onCardPicked;
+            // NEW badge — sadece yeni kart varsa ve ilk slota gelecekse
+            bool showNewBadge = newlyUnlockedCard != null &&
+                                available.Count > 0 &&
+                                available[0] == newlyUnlockedCard;
 
-            // Ağırlıklı rastgele 3 kart seç
-            var picked = PickWeightedRandom(cardPool, Mathf.Min(3, cardPool.Count));
+            if (_newBadge != null)
+                _newBadge.SetActive(showNewBadge);
 
             // CardView'ları bağla
             for (int i = 0; i < _cardViews.Length; i++)
             {
-                if (i < picked.Count)
-                    _cardViews[i].Bind(picked[i], OnCardSelected);
+                if (i < available.Count)
+                    _cardViews[i].Bind(available[i], OnCardSelected);
                 else
                     _cardViews[i].Clear();
             }
 
-            // Oyunu dondur ve ekranı aç
             Time.timeScale = 0f;
             Game.GameStateController.LockInput();
             _root.SetActive(true);
@@ -121,25 +121,74 @@ namespace RogueBlockBlast.UI
                 _canvasGroup.alpha = 0f;
         }
 
-        /// <summary>Kart seçilmeden geçmek için (opsiyonel continue butonu için).</summary>
         public void Skip() => CloseAndResume(null);
 
-        
-        private void OnCardSelected(CardSO card)
+        // ── Private ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Gösterilecek kart listesini oluşturur:
+        /// 1. newlyUnlockedCard varsa en başa ekle
+        /// 2. Unlock edilmiş kartları al
+        /// 3. Zaten seçilmiş kartları çıkar (unique)
+        /// 4. Ağırlıklı rastgele 2 kart daha seç (toplam max 3)
+        /// </summary>
+        private List<CardSO> BuildAvailablePool(List<CardSO> allCards, CardSO newCard)
         {
-            CloseAndResume(card);
+            var result = new List<CardSO>();
+
+            // Yeni kart en başa
+            if (newCard != null && newCard.IsUnlocked)
+                result.Add(newCard);
+
+            // Seçilmiş kart ID'leri
+            var selectedIds = GetSelectedCardIds();
+
+            // Kalan havuz:
+            // - Unlock edilmiş
+            // - newCard değil
+            // - Unique kartsa ve zaten seçildiyse çıkar
+            // - Unique değilse seçilmiş olsa bile tekrar gelebilir
+            var pool = allCards
+                .Where(c =>
+                    c != null &&
+                    c.IsUnlocked &&
+                    c != newCard &&
+                    !(c.IsUnique && selectedIds.Contains(c.Id)))
+                .ToList();
+
+            // Kaç slot doluyor?
+            int remaining = Mathf.Min(_cardViews.Length - result.Count, pool.Count);
+            var picked    = PickWeightedRandom(pool, remaining);
+            result.AddRange(picked);
+
+            return result;
         }
+
+        private HashSet<string> GetSelectedCardIds()
+        {
+            var ids = new HashSet<string>();
+            if (CardInventoryUI.Instance == null) return ids;
+
+            foreach (var id in CardInventoryUI.Instance.GetSelectedCardIds())
+                ids.Add(id);
+
+            return ids;
+        }
+
+        private void OnCardSelected(CardSO card) => CloseAndResume(card);
 
         private void CloseAndResume(CardSO card)
         {
-            _fadingIn = false;
+            _fadingIn      = false;
             Time.timeScale = 1f;
             Game.GameStateController.UnlockInput();
+
+            if (_newBadge != null) _newBadge.SetActive(false);
+
             _onCardPicked?.Invoke(card);
             _onCardPicked = null;
         }
 
-        // ── Weighted Random ──────────────────────────────────────────────────
         private static List<CardSO> PickWeightedRandom(List<CardSO> pool, int count)
         {
             var remaining = new List<CardSO>(pool);

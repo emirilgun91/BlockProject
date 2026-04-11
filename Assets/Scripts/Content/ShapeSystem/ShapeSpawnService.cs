@@ -15,20 +15,24 @@ namespace RogueBlockBlast.Core
             int totalWeight = 0;
 
             for (int i = 0; i < library.Shapes.Count; i++)
+            {
+                // Kilitli shape'leri atla
+                if (!library.Shapes[i].IsUnlocked) continue;
                 totalWeight += library.Shapes[i].BaseWeight;
+            }
+
+            if (totalWeight <= 0) return null;
 
             int roll = Random.Range(0, totalWeight);
-
             int cumulative = 0;
 
             for (int i = 0; i < library.Shapes.Count; i++)
             {
-                cumulative += library.Shapes[i].BaseWeight;
+                if (!library.Shapes[i].IsUnlocked) continue;
 
+                cumulative += library.Shapes[i].BaseWeight;
                 if (roll < cumulative)
                     return PieceFactory.Create(library.Shapes[i]);
-                if (totalWeight <= 0)
-                    return null;
             }
 
             return null;

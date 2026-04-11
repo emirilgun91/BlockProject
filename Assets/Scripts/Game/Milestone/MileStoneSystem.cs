@@ -25,6 +25,7 @@ namespace RogueBlockBlast.Core
         // ── State ────────────────────────────────────────────────────────────
         public int  CurrentMilestoneIndex { get; private set; } = 0;
         public int  PiecesPlacedInWindow  { get; private set; } = 0;
+        public int  CurrentScore          { get; private set; } = 0;
         public int  PiecesRemaining       => Mathf.Max(0, _config.PoolLimit - PiecesPlacedInWindow);
         public bool AllMilestonesCleared  => CurrentMilestoneIndex >= _config.TotalMilestones;
 
@@ -52,10 +53,9 @@ namespace RogueBlockBlast.Core
         /// <summary>Her piece yerleştirmesinde çağır.</summary>
         public void OnPiecePlaced()
         {
-          
             PiecesPlacedInWindow++;
             FireProgressChanged();
-            
+
             if (PiecesRemaining <= 0)
                 OnPoolLimitExhausted?.Invoke();
         }
@@ -63,6 +63,7 @@ namespace RogueBlockBlast.Core
         /// <summary>Her score güncellemesinde çağır.</summary>
         public void OnScoreChanged(int newScore)
         {
+            CurrentScore = newScore;
             if (AllMilestonesCleared) return;
 
             var milestone = NextMilestone;
@@ -70,6 +71,8 @@ namespace RogueBlockBlast.Core
 
             if (newScore >= milestone.Value.ScoreThreshold)
                 TriggerMilestone(milestone.Value);
+            else
+                FireProgressChanged();
         }
 
         /// <summary>Run başında sıfırlar.</summary>
@@ -103,6 +106,12 @@ namespace RogueBlockBlast.Core
         private void FireProgressChanged()
         {
             var next = NextMilestone;
+
+            // Önceki milestone eşiği — score progress başlangıç noktası
+            int prevThreshold = CurrentMilestoneIndex > 0
+                ? (_config.GetMilestone(CurrentMilestoneIndex - 1)?.ScoreThreshold ?? 0)
+                : 0;
+
             OnProgressChanged?.Invoke(new MilestoneProgressState(
                 currentMilestone : CurrentMilestoneIndex,
                 totalMilestones  : _config.TotalMilestones,
@@ -110,7 +119,9 @@ namespace RogueBlockBlast.Core
                 poolLimit        : _config.PoolLimit,
                 nextThreshold    : next?.ScoreThreshold ?? 0,
                 nextLabel        : next?.Label ?? "MAX",
-                allCleared       : AllMilestonesCleared
+                allCleared       : AllMilestonesCleared,
+                currentScore     : CurrentScore,
+                prevThreshold    : prevThreshold
             ));
         }
         public void EnsureMinimumRemaining(int minimum = 6)
@@ -131,6 +142,8 @@ namespace RogueBlockBlast.Core
         public readonly int    PiecesRemaining;
         public readonly int    PoolLimit;
         public readonly int    NextThreshold;
+        public readonly int    PrevThreshold;   // önceki milestone eşiği
+        public readonly int    CurrentScore;
         public readonly string NextLabel;
         public readonly bool   AllCleared;
 
@@ -138,21 +151,39 @@ namespace RogueBlockBlast.Core
             int currentMilestone, int totalMilestones,
             int piecesRemaining,  int poolLimit,
             int nextThreshold,    string nextLabel,
-            bool allCleared)
+            bool allCleared,      int currentScore,
+            int prevThreshold)
         {
             CurrentMilestone = currentMilestone;
             TotalMilestones  = totalMilestones;
             PiecesRemaining  = piecesRemaining;
             PoolLimit        = poolLimit;
             NextThreshold    = nextThreshold;
+            PrevThreshold    = prevThreshold;
+            CurrentScore     = currentScore;
             NextLabel        = nextLabel;
             AllCleared       = allCleared;
         }
 
-        /// <summary>Pool limit progress — 0..1 arası, UI progress bar için.</summary>
+        /// <summary>
+        /// Skor tabanlı progress — 0..1 arası.
+        /// Önceki milestone'dan sonraki milestone'a olan mesafedeki ilerleme.
+        /// Örnek: prev=0, next=2500, score=250 → 0.10
+        /// </summary>
+        public float ScoreFillRatio
+        {
+            get
+            {
+                if (AllCleared) return 1f;
+                int range = NextThreshold - PrevThreshold;
+                if (range <= 0) return 1f;
+                return Mathf.Clamp01((float)(CurrentScore - PrevThreshold) / range);
+            }
+        }
+
+        /// <summary>Eski PoolFillRatio — geriye dönük uyumluluk için tutuldu.</summary>
         public float PoolFillRatio => PoolLimit > 0
             ? 1f - (float)PiecesRemaining / PoolLimit
             : 1f;
     }
-   
 }

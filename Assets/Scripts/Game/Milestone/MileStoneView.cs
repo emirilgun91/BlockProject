@@ -42,9 +42,14 @@ namespace RogueBlockBlast.UI
         [Range(0f, 1f)]
         [SerializeField] private float _dangerRatio = 0.80f;
 
+        [Header("New Card Notification")]
+        [SerializeField] private TMP_Text _newCardText;        // "New Card Earned!" yazacak TMP
+        [SerializeField] private float    _newCardShowDuration = 2.5f;
+
         // ── Runtime ──────────────────────────────────────────────────────────
         private MilestoneSystem _system;
         private Sequence        _milestoneSequence;
+        private Sequence        _newCardSequence;
 
         // ── Public API ───────────────────────────────────────────────────────
         public void Bind(MilestoneSystem system)
@@ -62,6 +67,7 @@ namespace RogueBlockBlast.UI
                 _system.OnProgressChanged -= HandleProgressChanged;
 
             _milestoneSequence?.Kill();
+            _newCardSequence?.Kill();
         }
 
         // ── Handler ──────────────────────────────────────────────────────────
@@ -76,7 +82,7 @@ namespace RogueBlockBlast.UI
         {
             if (_fill == null) return;
 
-            float targetFill = state.PoolFillRatio;
+            float targetFill = state.ScoreFillRatio;
 
             // Renk — normal / danger / milestone tamamlandı
             Color targetColor;
@@ -108,6 +114,24 @@ namespace RogueBlockBlast.UI
                     ? string.Empty
                     : $"{state.PiecesRemaining} left";
             }
+        }
+
+        public void ShowNewCardEarned(string cardName)
+        {
+            if (_newCardText == null) return;
+
+            _newCardSequence?.Kill();
+
+            _newCardText.text  = $"New Card Earned!\n<size=80%>{cardName}</size>";
+            _newCardText.alpha = 0f;
+            _newCardText.gameObject.SetActive(true);
+
+            _newCardSequence = DOTween.Sequence()
+                .Append(_newCardText.DOFade(1f, 0.3f))
+                .AppendInterval(_newCardShowDuration)
+                .Append(_newCardText.DOFade(0f, 0.4f))
+                .AppendCallback(() => _newCardText.gameObject.SetActive(false))
+                .SetAutoKill(true);
         }
 
         /// <summary>

@@ -98,6 +98,14 @@ namespace RogueBlockBlast.Game
                 UnlockRegistry.Instance.Init(shapeIds, cardIds);
                 UnlockRegistry.Instance.InitMilestones(milestoneLabels);
             }
+            if (ShapeLibrary != null)
+            {
+                var shapeIds = ShapeLibrary.Shapes
+                    .Where(s => s != null)
+                    .Select(s => s.Id);
+ 
+                ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
+            }
             NewRun();
         }
 
@@ -378,8 +386,12 @@ namespace RogueBlockBlast.Game
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
-            _coins += coinReward;
-            Debug.Log($"[Milestone] {data.Label} reached! +{coinReward} coins → total: {_coins}");
+            // Coin'i kalıcı wallet'a ekle
+            int total = coinReward + _coinBonusPerMilestone;
+            CoinWallet.Instance?.Earn(total);
+            _coins += total;  // local tracking için de tut
+ 
+            Debug.Log($"[Milestone] {data.Label} → +{total} coin | Wallet: {CoinWallet.Instance?.Balance}");
  
             MilestoneView?.PlayMilestoneReachedFX();
             FrameFeedbackController.Instance?.OnMilestone();

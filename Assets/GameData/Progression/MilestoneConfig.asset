@@ -20,15 +20,24 @@ MonoBehaviour:
   - ScoreThreshold: 300
     CoinReward: 8
     Label: Stage 2
-  - ScoreThreshold: 5000
+  - ScoreThreshold: 2500
     CoinReward: 12
     Label: Stage 3
-  - ScoreThreshold: 10000
+  - ScoreThreshold: 5000
     CoinReward: 20
     Label: Stage 4
-  - ScoreThreshold: 17500
-    CoinReward: 35
+  - ScoreThreshold: 8000
+    CoinReward: 25
     Label: Stage 5
-  - ScoreThreshold: 25000
+  - ScoreThreshold: 12500
     CoinReward: 35
     Label: Stage 6
+  - ScoreThreshold: 20000
+    CoinReward: 40
+    Label: Stage 7
+  - ScoreThreshold: 35000
+    CoinReward: 40
+    Label: Stage 8
+  - ScoreThreshold: 50000
+    CoinReward: 50
+    Label: Stage 9

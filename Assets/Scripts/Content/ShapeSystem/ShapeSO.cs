@@ -27,8 +27,20 @@ namespace RogueBlockBlast.Content
         public int BaseTileValue = 10;
 
         [Header("Unlock")]
-        [Tooltip("True ise başlangıçta kilitli — coin ile unlock edilebilir.")]
+        [Tooltip("True ise başlangıçta kilitli.")]
         public bool LockedByDefault = false;
+        [Tooltip("Unlock maliyeti (coin).")]
+        public int UnlockCost = 300;
+
+        [Header("Upgrade Costs")]
+        [Tooltip("Her score upgrade seviyesinin baz maliyeti.")]
+        public int ScoreUpgradeBaseCost = 10;
+        [Tooltip("Her seviyede maliyet ne kadar artar.")]
+        public int ScoreUpgradeCostPerLevel = 5;
+        [Tooltip("Weight artırma maliyeti.")]
+        public int WeightIncreaseCost = 60;
+        [Tooltip("Weight azaltma maliyeti.")]
+        public int WeightDecreaseCost = 40;
 
         /// <summary>Runtime'da bu shape unlock edilmiş mi?</summary>
         public bool IsUnlocked =>

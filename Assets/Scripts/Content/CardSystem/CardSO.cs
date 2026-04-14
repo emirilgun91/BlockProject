@@ -34,10 +34,37 @@ namespace RogueBlockBlast.Content
         [Tooltip("True ise başlangıçta kilitli — milestone'da unlock edilir.")]
         public bool LockedByDefault = false;
 
-        /// <summary>Runtime'da bu kart unlock edilmiş mi?</summary>
-        public bool IsUnlocked =>
-            !LockedByDefault ||
-            (UnlockRegistry.Instance != null && UnlockRegistry.Instance.IsCardUnlocked(Id));
+        [Tooltip("Bu kart hangi shape unlock edilince kullanılabilir olur. Boş bırakılırsa shape bağımlılığı yok.")]
+        public string RequiredShapeId = "";
+
+        /// <summary>
+        /// Runtime'da bu kart kullanılabilir mi?
+        /// İki koşulun ikisi de sağlanmalı:
+        /// 1. Kart kendisi unlock edilmiş (LockedByDefault false veya UnlockRegistry'de var)
+        /// 2. RequiredShapeId varsa o shape unlock edilmiş olmalı
+        /// </summary>
+        public bool IsUnlocked
+        {
+            get
+            {
+                // Kart kilidi
+                bool cardUnlocked = !LockedByDefault ||
+                    (UnlockRegistry.Instance != null &&
+                     UnlockRegistry.Instance.IsCardUnlocked(Id));
+
+                if (!cardUnlocked) return false;
+
+                // Shape bağımlılığı
+                if (!string.IsNullOrEmpty(RequiredShapeId))
+                {
+                    bool shapeUnlocked = UnlockRegistry.Instance != null &&
+                                        UnlockRegistry.Instance.IsShapeUnlocked(RequiredShapeId);
+                    if (!shapeUnlocked) return false;
+                }
+
+                return true;
+            }
+        }
 
         private void OnValidate()
         {

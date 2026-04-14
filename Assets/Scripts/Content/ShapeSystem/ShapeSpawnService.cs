@@ -12,13 +12,13 @@ namespace RogueBlockBlast.Core
             if (library == null || library.Shapes == null || library.Shapes.Count == 0)
                 return null;
 
+            var reg = ShapeUpgradeRegistry.Instance;
             int totalWeight = 0;
 
             for (int i = 0; i < library.Shapes.Count; i++)
             {
-                // Kilitli shape'leri atla
                 if (!library.Shapes[i].IsUnlocked) continue;
-                totalWeight += library.Shapes[i].BaseWeight;
+                totalWeight += reg.GetEffectiveWeight(library.Shapes[i].Id, library.Shapes[i].BaseWeight);
             }
 
             if (totalWeight <= 0) return null;
@@ -30,7 +30,7 @@ namespace RogueBlockBlast.Core
             {
                 if (!library.Shapes[i].IsUnlocked) continue;
 
-                cumulative += library.Shapes[i].BaseWeight;
+                cumulative += reg.GetEffectiveWeight(library.Shapes[i].Id, library.Shapes[i].BaseWeight);
                 if (roll < cumulative)
                     return PieceFactory.Create(library.Shapes[i]);
             }

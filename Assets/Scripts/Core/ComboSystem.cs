@@ -7,7 +7,7 @@ namespace RogueBlockBlast.Core
     /// Combo mantığını yönetir — UI veya Unity bağımlılığı yok.
     ///
     /// KURALLAR:
-    /// - Line clear → charge +1 (max 3)
+    /// - Line clear → charge +1 (max 5)
     ///   · charge < 3  → multiplier += 0.1
     ///   · charge == 3 → multiplier += 0.2 (max charge bonusu)
     /// - Placement, clear yok → charge -1 (min 0)

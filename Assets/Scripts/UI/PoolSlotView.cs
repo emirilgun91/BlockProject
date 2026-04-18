@@ -23,7 +23,7 @@ namespace RogueBlockBlast.UI
         
         public void SetHighlight(bool value)
         {
-            transform.localScale = value ? Vector3.one * 1.15f : Vector3.one;
+            _targetScale = value ? 1.15f : 1f;
         }
         public void Render(PieceDefinition piece, bool selected)
         {
@@ -96,11 +96,9 @@ namespace RogueBlockBlast.UI
                 if (img != null)
                     img.color = color;
             }
-
+            
             _selectionFrame.SetActive(selected);
-         
-
-            transform.localScale = selected ? Vector3.one * 1.1f : Vector3.one;
+            _targetScale = selected ? 1.1f : 1f;
             
         }
         

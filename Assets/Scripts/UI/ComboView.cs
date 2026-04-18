@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace RogueBlockBlast.UI
 {
     /// <summary>
-    /// Combo UI — 3 charge bar + multiplier text.
+    /// Combo UI — 5 charge bar + multiplier text.
     ///
     /// Hierarchy:
     ///  ComboBoard
@@ -26,7 +26,7 @@ namespace RogueBlockBlast.UI
     {
         // ── Inspector ────────────────────────────────────────────────────────
         [Header("Charge Bars")]
-        [SerializeField] private Image[] _chargeBars;   // 3 eleman — Charge_1/2/3
+        [SerializeField] private Image[] _chargeBars;   
 
         [Header("Text")]
         [SerializeField] private TMP_Text _multiplierText;
@@ -89,7 +89,7 @@ namespace RogueBlockBlast.UI
 
         private void HandleMaxCharge()
         {
-            // 3. bar'a özel glow animasyonu
+            
             if (_chargeBars != null && _chargeBars.Length >= 5)
                 PlayMaxGlow(_chargeBars[4]);
             
@@ -136,7 +136,6 @@ namespace RogueBlockBlast.UI
                 if (_chargeBars[i] == null) continue;
 
                 bool shouldBeFilled = i < state.Charges;
-                bool wasFilled      = i < _lastCharges;
 
                 Color targetColor = shouldBeFilled
                     ? (state.IsMaxCharge ? _colorMaxGlow : _colorFilled)
@@ -144,14 +143,14 @@ namespace RogueBlockBlast.UI
 
                 if (!animate)
                 {
-                    _chargeBars[i].color = targetColor;
+                    _chargeBars[i].color      = targetColor;
+                    _chargeBars[i].fillAmount = shouldBeFilled ? 1f : 0f;
                     continue;
                 }
 
                 float duration = shouldBeFilled ? _fillDuration : _emptyDuration;
-
-                _chargeBars[i].DOColor(targetColor, duration)
-                    .SetEase(Ease.OutQuad);
+                _chargeBars[i].DOColor(targetColor, duration).SetEase(Ease.OutQuad);
+                _chargeBars[i].DOFillAmount(shouldBeFilled ? 1f : 0f, duration).SetEase(Ease.OutQuad);
             }
         }
 

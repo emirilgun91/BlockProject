@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ee6a21ed5db41c88beacd8cc0836829, type: 3}
+  m_Name: UpgradeLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeLibrarySO
+  Upgrades:
+  - {fileID: 11400000, guid: f3fded3ab2ddc9644b92b4748f732d32, type: 2}
+  - {fileID: 11400000, guid: dd76b8ffb6dbd4849a52d333edf237cd, type: 2}
+  - {fileID: 11400000, guid: bfab634e42ba4b14fbaf4aa459ebb80f, type: 2}
+  - {fileID: 11400000, guid: 89cb6fc04a03fb74da3f71b02b8b39ae, type: 2}
+  - {fileID: 11400000, guid: 274ffc208b3fd9d4aa86c9750de3f975, type: 2}
+  - {fileID: 11400000, guid: 5243cd58feb9b7640b2f6be7ebeee80d, type: 2}
+  - {fileID: 11400000, guid: 0a2e464cee47da74c9aa9af729db4a82, type: 2}
+  - {fileID: 11400000, guid: e61d547e727df7c4ba37c5543d69c52d, type: 2}

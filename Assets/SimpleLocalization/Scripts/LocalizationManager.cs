@@ -94,7 +94,6 @@ namespace Assets.SimpleLocalization.Scripts
                 }
             }
 
-            AutoLanguage();
         }
 
         /// <summary>

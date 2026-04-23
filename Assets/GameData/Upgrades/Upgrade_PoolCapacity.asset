@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84c4220a04b34e2fb915479aee8786a0, type: 3}
+  m_Name: Upgrade_PoolCapacity
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
+  Id: Upgrade_PoolCapacity
+  NameKey: Pool Capacity
+  DescriptionKey: Pool capacity increase
+  Icon: {fileID: 0}
+  UnlockStageIndex: 3
+  MaxLevel: 5
+  CostPerLevel: 64000000f4010000ac0d0000581b000010270000
+  EffectType: 0
+  EffectValuePerLevel: 2

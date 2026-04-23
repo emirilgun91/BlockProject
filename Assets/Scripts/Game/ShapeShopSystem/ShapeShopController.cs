@@ -42,7 +42,6 @@ namespace RogueBlockBlast.UI
             // Registry'leri yükle
             if (_shapeLibrary != null)
                 ShapeUpgradeRegistry.Instance.Load(_shapeLibrary.Shapes);
-            Debug.Log($"[Shop] Library:{_shapeLibrary != null} | Content:{_content != null} | Prefab:{_cardPrefab != null} | ShapeCount:{_shapeLibrary?.Shapes?.Count}");
 
             // Coin değişince UI güncelle
             if (CoinWallet.Instance != null)
@@ -72,7 +71,7 @@ namespace RogueBlockBlast.UI
 
         public void OnBackButton()
         {
-            SceneManager.LoadScene(_mainMenuSceneName);
+            PanelManager.Instance?.CloseCurrentPanel();
         }
 
         // ── Private ──────────────────────────────────────────────────────────

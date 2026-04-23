@@ -21,12 +21,17 @@ namespace RogueBlockBlast.Core
     {
         // ── Config ───────────────────────────────────────────────────────────
         private readonly MilestoneConfigSO _config;
+        private int _poolLimitOverride; // 0 = config'den oku — mutable
 
         // ── State ────────────────────────────────────────────────────────────
         public int  CurrentMilestoneIndex { get; private set; } = 0;
         public int  PiecesPlacedInWindow  { get; private set; } = 0;
         public int  CurrentScore          { get; private set; } = 0;
-        public int  PiecesRemaining       => Mathf.Max(0, _config.PoolLimit - PiecesPlacedInWindow);
+
+        private int EffectivePoolLimit =>
+            _poolLimitOverride > 0 ? _poolLimitOverride : _config.PoolLimit;
+
+        public int  PiecesRemaining       => Mathf.Max(0, EffectivePoolLimit - PiecesPlacedInWindow);
         public bool AllMilestonesCleared  => CurrentMilestoneIndex >= _config.TotalMilestones;
 
         // Sonraki milestone — null ise tüm milestone'lar geçildi
@@ -43,9 +48,10 @@ namespace RogueBlockBlast.Core
         public event Action<MilestoneProgressState> OnProgressChanged;
 
         // ── Constructor ──────────────────────────────────────────────────────
-        public MilestoneSystem(MilestoneConfigSO config)
+        public MilestoneSystem(MilestoneConfigSO config, int poolLimitOverride = 0)
         {
-            _config = config;
+            _config            = config;
+            _poolLimitOverride = poolLimitOverride;
         }
 
         // ── Public API ───────────────────────────────────────────────────────
@@ -75,13 +81,17 @@ namespace RogueBlockBlast.Core
                 FireProgressChanged();
         }
 
-        /// <summary>Run başında sıfırlar.</summary>
+        /// <summary>Run başında sıfırlar — pool limit korunur.</summary>
         public void Reset()
         {
             CurrentMilestoneIndex = 0;
             PiecesPlacedInWindow  = 0;
+            CurrentScore          = 0;
             FireProgressChanged();
         }
+
+        /// <summary>Pool limit'i güncelle — upgrade değişince NewRun'da çağır.</summary>
+        public void SetPoolLimit(int limit) => _poolLimitOverride = limit;
 
         /// <summary>
         /// Sadece piece counter'ı sıfırlar — milestone index değişmez.
@@ -102,6 +112,14 @@ namespace RogueBlockBlast.Core
             OnMilestoneReached?.Invoke(data.CoinReward, data);
             FireProgressChanged();
         }
+        public void EnsureMinimumRemaining(int minimum = 6)
+        {
+            int current = PiecesRemaining;
+            if (current < minimum)
+                PiecesPlacedInWindow = Mathf.Max(0, _config.PoolLimit - minimum);
+            // current >= minimum ise hiç dokunmuyoruz
+            FireProgressChanged();
+        }
 
         private void FireProgressChanged()
         {
@@ -116,7 +134,7 @@ namespace RogueBlockBlast.Core
                 currentMilestone : CurrentMilestoneIndex,
                 totalMilestones  : _config.TotalMilestones,
                 piecesRemaining  : PiecesRemaining,
-                poolLimit        : _config.PoolLimit,
+                poolLimit        : EffectivePoolLimit,
                 nextThreshold    : next?.ScoreThreshold ?? 0,
                 nextLabel        : next?.Label ?? "MAX",
                 allCleared       : AllMilestonesCleared,
@@ -124,15 +142,8 @@ namespace RogueBlockBlast.Core
                 prevThreshold    : prevThreshold
             ));
         }
-        public void EnsureMinimumRemaining(int minimum = 6)
-        {
-            int current = PiecesRemaining;
-            if (current < minimum)
-                PiecesPlacedInWindow = Mathf.Max(0, _config.PoolLimit - minimum);
-            // current >= minimum ise hiç dokunmuyoruz
-            FireProgressChanged();
-        }
     }
+    
 
     /// <summary>UI'ya gönderilen snapshot.</summary>
     public readonly struct MilestoneProgressState

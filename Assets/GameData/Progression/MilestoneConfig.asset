@@ -15,7 +15,7 @@ MonoBehaviour:
   PoolLimit: 20
   Milestones:
   - ScoreThreshold: 100
-    CoinReward: 5
+    CoinReward: 5000
     Label: Stage 1
   - ScoreThreshold: 300
     CoinReward: 8

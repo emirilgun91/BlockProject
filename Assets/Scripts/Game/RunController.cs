@@ -35,6 +35,9 @@ namespace RogueBlockBlast.Game
         private float _globalScoreMultiplier  = 1f;
         private int   _coinBonusPerMilestone  = 0;
         
+        [Header("Upgrades")]
+        [SerializeField] private UpgradeLibrarySO _upgradeLibrary;
+        
         [SerializeField] private AudioClip mainLoopMusic;
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
@@ -49,7 +52,7 @@ namespace RogueBlockBlast.Game
         // ── State ────────────────────────────────────────────────────────────
         private int _score = 0;
         private int _coins = 0;
-
+        private float _maxComboReached = 1f;
         private List<PieceDefinition> _piecePool         = new List<PieceDefinition>(3);
         private int                   _selectedPoolIndex = -1;
         private PieceDefinition       _currentPiece;
@@ -69,11 +72,19 @@ namespace RogueBlockBlast.Game
         [SerializeField] private AudioClip LineClearSFX;
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
-        {   
-            _milestoneSystem = new MilestoneSystem(MilestoneConfig);
+        {  
+            UpgradeRegistry.Instance?.Init(_upgradeLibrary);
+            ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
+            int poolBonus = Mathf.RoundToInt(
+                UpgradeRegistry.Instance?.GetEffect(
+                    _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
+            );
+            _milestoneSystem = new MilestoneSystem(MilestoneConfig, MilestoneConfig.PoolLimit + poolBonus);
             _milestoneSystem.OnMilestoneReached   += HandleMilestoneReached;
             _milestoneSystem.OnPoolLimitExhausted += HandlePoolLimitExhausted;
             MilestoneView?.Bind(_milestoneSystem);
+            
+            
             ComboView?.Bind(_comboSystem);
             if (mainLoopMusic != null)
             {
@@ -103,9 +114,8 @@ namespace RogueBlockBlast.Game
                 var shapeIds = ShapeLibrary.Shapes
                     .Where(s => s != null)
                     .Select(s => s.Id);
- 
-                ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
             }
+           
             NewRun();
         }
 
@@ -219,7 +229,10 @@ namespace RogueBlockBlast.Game
                 
             // Combo: placement bildirimi (clear yoksa charge düşer)
             _comboSystem.OnPlacement(hadClear: cleared > 0);
-
+            
+            if (_comboSystem.Multiplier > _maxComboReached)
+                _maxComboReached = _comboSystem.Multiplier;
+            
             // Skor — multiplier ComboSystem'den
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
                 tileValueSum,
@@ -257,15 +270,6 @@ namespace RogueBlockBlast.Game
                 HandleDeadPool(); 
                 return;
             }
-
-            // ─── DÜZELTME ───────────────────────────────────────────────────
-            // Critical feedback'i OnPiecePlaced'TEN ÖNCE ver.
-            // Böylece PiecesRemaining henüz 0'a düşmeden doğru değeri okuruz.
-            // OnPiecePlaced içinde PiecesRemaining 0'a düşerse OnPoolLimitExhausted
-            // → HandlePoolLimitExhausted → OnGameOver zinciri tetiklenir ve
-            // FrameFeedbackController zaten GameOver state'ine geçer — Critical
-            // o noktada zaten irrelevant olur.
-            // ────────────────────────────────────────────────────────────────
             int remaining = _milestoneSystem?.PiecesRemaining ?? int.MaxValue;
             FrameFeedbackController.Instance?.OnCritical(remaining);
 
@@ -283,7 +287,7 @@ namespace RogueBlockBlast.Game
             Time.timeScale = 1f;
             GameOverUI.Instance?.Hide(); 
             Time.timeScale = 1f;
-
+            
             _freeDeadPoolReroll = 0;
             _cardDeadPoolReroll = 0;
             _score              = 0;
@@ -298,8 +302,19 @@ namespace RogueBlockBlast.Game
             GameOverUI.Instance?.Hide();  
             DOTween.SetTweensCapacity(200,125);   
             _comboSystem.Reset();
-            _milestoneSystem?.Reset();
+            if (_milestoneSystem != null)
+            {
+                // Pool limit'i güncelle (upgrade değişmiş olabilir)
+                int poolBonus = Mathf.RoundToInt(
+                    UpgradeRegistry.Instance?.GetEffect(
+                        _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
+                );
+                Debug.Log($"[NewRun] PoolLimit:{MilestoneConfig.PoolLimit} | Bonus:{poolBonus} | Effective:{MilestoneConfig.PoolLimit + poolBonus} | UpgradeLevel:{UpgradeRegistry.Instance?.GetLevel("upgrade_pool_capacity")}");
 
+                _milestoneSystem?.SetPoolLimit(MilestoneConfig.PoolLimit + poolBonus);
+                _milestoneSystem?.Reset();
+                MilestoneView?.Bind(_milestoneSystem);
+            }
             RunStatsTracker.Instance?.Reset();
 
             ScoreView?.SetScore(0);
@@ -340,8 +355,14 @@ namespace RogueBlockBlast.Game
         // ── Game Over ────────────────────────────────────────────────────────
         private void OnGameOver(GameOverReason reason = GameOverReason.Default)
         {
+            
+            
             FrameFeedbackController.Instance?.OnGameOver();
             AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
+            
+            float maxCombo = (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f;
+            LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
+            
             if (GameOverAnnouncer.Instance != null)
             {
                 GameOverAnnouncer.Instance.Play(reason, () =>
@@ -351,6 +372,7 @@ namespace RogueBlockBlast.Game
             {
                 GameOverUI.Instance?.Show(_score);
             }
+           
         }
 
         // ── Dead Pool ────────────────────────────────────────────────────────
@@ -386,23 +408,25 @@ namespace RogueBlockBlast.Game
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
-            // Coin'i kalıcı wallet'a ekle
-            int total = coinReward + _coinBonusPerMilestone;
-            CoinWallet.Instance?.Earn(total);
-            _coins += total;  // local tracking için de tut
+            // CoinGainBoost — %4 per level, level başına 0.04
+            float coinMultiplier = 1f + (UpgradeRegistry.Instance?.GetEffect(
+                _upgradeLibrary?.Get("upgrade_coin_gain")) ?? 0f);
  
-            Debug.Log($"[Milestone] {data.Label} → +{total} coin | Wallet: {CoinWallet.Instance?.Balance}");
+            int total = Mathf.RoundToInt((coinReward + _coinBonusPerMilestone) * coinMultiplier);
+ 
+            CoinWallet.Instance?.Earn(total);
+            _coins += total;
+ 
+            Debug.Log($"[Milestone] {data.Label} → +{total} coin (x{coinMultiplier:0.00})");
  
             MilestoneView?.PlayMilestoneReachedFX();
             FrameFeedbackController.Instance?.OnMilestone();
  
             // İlk kez bu milestone'a ulaşıldı mı?
             CardSO newlyUnlockedCard = null;
- 
             if (UnlockRegistry.Instance != null &&
                 UnlockRegistry.Instance.IsFirstMilestoneReach(data.Label))
             {
-                // Kilitli kartlardan rastgele birini unlock et
                 var lockedCards = CardPool
                     .Where(c => c != null && c.LockedByDefault && !c.IsUnlocked)
                     .ToList();
@@ -412,19 +436,17 @@ namespace RogueBlockBlast.Game
                     int pick = UnityEngine.Random.Range(0, lockedCards.Count);
                     newlyUnlockedCard = lockedCards[pick];
                     UnlockRegistry.Instance.UnlockCard(newlyUnlockedCard.Id);
- 
-                    Debug.Log($"[Unlock] Yeni kart açıldı: {newlyUnlockedCard.CardName}");
- 
-                    // MilestoneView'da "New Card Earned!" göster
                     MilestoneView?.ShowNewCardEarned(newlyUnlockedCard.CardName);
                 }
+ 
+                // MaxMilestoneReached güncelle — buton lock kontrolü için
+                int current = PlayerPrefs.GetInt("MaxMilestoneReached", 0);
+                if (_milestoneSystem.CurrentMilestoneIndex > current)
+                    PlayerPrefs.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
             }
  
-            // Kart seçim ekranını aç — yeni kart en sola, NEW badge ile
             if (CardPool != null && CardPool.Count > 0)
-            {
                 CardSelectionUI.Instance?.Show(CardPool, OnCardPicked, newlyUnlockedCard);
-            }
         }
 
         private void HandlePoolLimitExhausted()

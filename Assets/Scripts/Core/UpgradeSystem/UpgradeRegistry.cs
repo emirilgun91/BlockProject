@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
 using RogueBlockBlast.Content;
+
+//using UnityEditor.Overlays;
+
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
@@ -100,7 +103,6 @@ namespace RogueBlockBlast.Core
             _levels[upgrade.Id] = newLevel;
             PlayerPrefs.SetInt(KeyPrefix + upgrade.Id, newLevel);
             PlayerPrefs.Save();
-            Debug.Log($"[UpgradeRegistry] Saved → Key:{KeyPrefix + upgrade.Id} | Level:{newLevel}");
             return true;
         }
 

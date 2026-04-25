@@ -31,8 +31,6 @@ namespace RogueBlockBlast.UI
     {
         [Header("Data")]
         [SerializeField] private UpgradeLibrarySO _library;
-
-        [Header("Coin")]
         [SerializeField] private TMP_Text _coinText;
 
         [Header("Grid")]
@@ -61,7 +59,9 @@ namespace RogueBlockBlast.UI
 
         private void OnEnable()
         {
-            // Panel her açıldığında yeniden oluştur
+            // Her panel açılışında registry'yi yükle
+            UpgradeRegistry.Instance?.Init(_library);
+
             BuildSlots();
             UpdateCoinText(CoinWallet.Instance?.Balance ?? 0);
             ShowEmptyDetail();

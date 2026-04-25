@@ -1309,7 +1309,7 @@ MonoBehaviour:
   _btnSettings: {fileID: 1159966426}
   _btnQuit: {fileID: 1841012044}
   _shapeShopPanel: {fileID: 540537266}
-  _upgradesPanel: {fileID: 0}
+  _upgradesPanel: {fileID: 233890151}
   _settingsPanel: {fileID: 0}
 --- !u!1 &173007955
 GameObject:

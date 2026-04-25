@@ -23,4 +23,5 @@ MonoBehaviour:
     Description: 
   BaseWeight: 50
   IsUnique: 0
-  LockedByDefault: 1
+  LockedByDefault: 0
+  RequiredShapeId: 

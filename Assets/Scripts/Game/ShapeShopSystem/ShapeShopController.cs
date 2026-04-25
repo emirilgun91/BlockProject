@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using TMPro;
@@ -37,21 +38,26 @@ namespace RogueBlockBlast.UI
 
         // ── Unity ────────────────────────────────────────────────────────────
 
-        private void Start()
+        private void OnEnable()
         {
-            // Registry'leri yükle
+            // Her panel açılışında registry'leri yükle
             if (_shapeLibrary != null)
+            {
                 ShapeUpgradeRegistry.Instance.Load(_shapeLibrary.Shapes);
+                var ids = _shapeLibrary.Shapes
+                    .Where(s => s != null)
+                    .Select(s => s.Id);
+                UnlockRegistry.Instance?.Init(ids, System.Array.Empty<string>());
+            }
 
-            // Coin değişince UI güncelle
+            UpdateCoinText(CoinWallet.Instance?.Balance ?? 0);
             if (CoinWallet.Instance != null)
                 CoinWallet.Instance.OnBalanceChanged += UpdateCoinText;
 
             BuildCards();
-            UpdateCoinText(CoinWallet.Instance?.Balance ?? 0);
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             if (CoinWallet.Instance != null)
                 CoinWallet.Instance.OnBalanceChanged -= UpdateCoinText;

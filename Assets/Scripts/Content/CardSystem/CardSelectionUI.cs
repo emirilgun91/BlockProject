@@ -2,21 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using RogueBlockBlast.Content;
+using TMPro;
 using UnityEngine;
 
 namespace RogueBlockBlast.UI
 {
-    /// <summary>
-    /// Kart seçim overlay'i.
-    ///
-    /// Değişiklikler:
-    /// - Kilitli kartlar gösterilmez
-    /// - Zaten seçilmiş kartlar gösterilmez (unique kart)
-    /// - Yeni unlock edilen kart en sola gelir + NEW badge
-    ///
-    /// Show() çağrısında newlyUnlockedCard parametresi varsa
-    /// o kart listeye eklenir ve NEW badge gösterilir.
-    /// </summary>
     public sealed class CardSelectionUI : MonoBehaviour
     {
         public static CardSelectionUI Instance { get; private set; }
@@ -27,14 +17,25 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float       _fadeSpeed = 8f;
 
         [Header("Card Views")]
-        [SerializeField] private CardView[] _cardViews;  // 3 eleman
+        [SerializeField] private CardView[] _cardViews;
 
-        [Header("New Card Badge — CardView_0 üzerinde")]
-        [SerializeField] private GameObject _newBadge;   // "NEW" yazan obje, default inactive
+        [Header("New Card Badge")]
+        [SerializeField] private GameObject _newBadge;
+
+        [Header("Card Reroll")]
+        [SerializeField] private GameObject _rerollButton;    // reroll butonu root
+        [SerializeField] private TMP_Text   _rerollCountText; // "x2"
 
         private Action<CardSO> _onCardPicked;
         private bool           _fadingIn;
         private bool           _isOpen;
+
+        // Reroll state
+        private List<CardSO> _currentCardPool;
+        private CardSO       _currentNewlyUnlocked;
+        private int          _rerollsRemaining;
+        // Reroll'da gösterilen kartları exclude etmek için
+        private readonly HashSet<string> _shownCardIds = new();
 
         private void Awake()
         {
@@ -75,41 +76,30 @@ namespace RogueBlockBlast.UI
 
         /// <summary>
         /// Kart seçim ekranını açar.
-        /// newlyUnlockedCard: bu run'da yeni açılan kart — en sola gelir, NEW badge alır.
+        /// rerollCount: CardReroll upgrade'inden gelen hak sayısı.
         /// </summary>
         public void Show(
             List<CardSO>   cardPool,
             Action<CardSO> onCardPicked,
-            CardSO         newlyUnlockedCard = null)
+            CardSO         newlyUnlockedCard = null,
+            int            rerollCount       = 0)
         {
-            _onCardPicked = onCardPicked;
+            _onCardPicked         = onCardPicked;
+            _currentCardPool      = cardPool;
+            _currentNewlyUnlocked = newlyUnlockedCard;
+            _rerollsRemaining     = rerollCount;
+            _shownCardIds.Clear();
 
-            // Seçilebilecek kartları filtrele
             var available = BuildAvailablePool(cardPool, newlyUnlockedCard);
 
             if (available.Count == 0)
             {
-                // Seçilecek kart kalmadı — direkt geç
                 onCardPicked?.Invoke(null);
                 return;
             }
 
-            // NEW badge — sadece yeni kart varsa ve ilk slota gelecekse
-            bool showNewBadge = newlyUnlockedCard != null &&
-                                available.Count > 0 &&
-                                available[0] == newlyUnlockedCard;
-
-            if (_newBadge != null)
-                _newBadge.SetActive(showNewBadge);
-
-            // CardView'ları bağla
-            for (int i = 0; i < _cardViews.Length; i++)
-            {
-                if (i < available.Count)
-                    _cardViews[i].Bind(available[i], OnCardSelected);
-                else
-                    _cardViews[i].Clear();
-            }
+            ApplyCards(available, newlyUnlockedCard);
+            UpdateRerollButton();
 
             Time.timeScale = 0f;
             Game.GameStateController.LockInput();
@@ -123,43 +113,95 @@ namespace RogueBlockBlast.UI
 
         public void Skip() => CloseAndResume(null);
 
+        /// <summary>Reroll butonu onClick bağlantısı.</summary>
+        public void OnRerollClicked()
+        {
+            if (_rerollsRemaining <= 0) return;
+
+            _rerollsRemaining--;
+
+            // Şu an gösterilen kartları exclude listesine ekle
+            foreach (var view in _cardViews)
+            {
+                // CardView'dan mevcut kartı al — null kontrolü
+                // Reroll'da yeni kart badge gösterme
+            }
+
+            var available = BuildAvailablePool(_currentCardPool, null, excludeShown: true);
+            ApplyCards(available, null);
+            UpdateRerollButton();
+        }
+
         // ── Private ──────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Gösterilecek kart listesini oluşturur:
-        /// 1. newlyUnlockedCard varsa en başa ekle
-        /// 2. Unlock edilmiş kartları al
-        /// 3. Zaten seçilmiş kartları çıkar (unique)
-        /// 4. Ağırlıklı rastgele 2 kart daha seç (toplam max 3)
-        /// </summary>
-        private List<CardSO> BuildAvailablePool(List<CardSO> allCards, CardSO newCard)
+        private void ApplyCards(List<CardSO> available, CardSO newCard)
+        {
+            // Shown ID'leri güncelle
+            foreach (var c in available)
+                if (c != null) _shownCardIds.Add(c.Id);
+
+            // NEW badge
+            bool showNewBadge = newCard != null &&
+                                available.Count > 0 &&
+                                available[0] == newCard;
+
+            if (_newBadge != null)
+                _newBadge.SetActive(showNewBadge);
+
+            for (int i = 0; i < _cardViews.Length; i++)
+            {
+                if (i < available.Count)
+                    _cardViews[i].Bind(available[i], OnCardSelected);
+                else
+                    _cardViews[i].Clear();
+            }
+        }
+
+        private void UpdateRerollButton()
+        {
+            if (_rerollButton == null) return;
+
+            bool hasUpgrade = _rerollsRemaining > 0 || CanShowReroll();
+            _rerollButton.SetActive(hasUpgrade);
+
+            if (_rerollCountText != null)
+                _rerollCountText.text = $"x{_rerollsRemaining}";
+
+            // Butonu disable et — hak bitti
+            var btn = _rerollButton.GetComponentInChildren<UnityEngine.UI.Button>();
+            if (btn != null) btn.interactable = _rerollsRemaining > 0;
+        }
+
+        private bool CanShowReroll()
+        {
+            // Upgrade seviyesi > 0 ise butonu göster (hak 0 olsa bile görünür ama disabled)
+            var reg = Core.UpgradeRegistry.Instance;
+            return (reg?.GetLevel("upgrade_card_reroll") ?? 0) > 0;
+        }
+
+        private List<CardSO> BuildAvailablePool(
+            List<CardSO> allCards,
+            CardSO newCard,
+            bool excludeShown = false)
         {
             var result = new List<CardSO>();
 
-            // Yeni kart en başa
             if (newCard != null && newCard.IsUnlocked)
                 result.Add(newCard);
 
-            // Seçilmiş kart ID'leri
             var selectedIds = GetSelectedCardIds();
 
-            // Kalan havuz:
-            // - Unlock edilmiş
-            // - newCard değil
-            // - Unique kartsa ve zaten seçildiyse çıkar
-            // - Unique değilse seçilmiş olsa bile tekrar gelebilir
             var pool = allCards
                 .Where(c =>
                     c != null &&
                     c.IsUnlocked &&
                     c != newCard &&
-                    !(c.IsUnique && selectedIds.Contains(c.Id)))
+                    !(c.IsUnique && selectedIds.Contains(c.Id)) &&
+                    !(excludeShown && _shownCardIds.Contains(c.Id)))
                 .ToList();
 
-            // Kaç slot doluyor?
             int remaining = Mathf.Min(_cardViews.Length - result.Count, pool.Count);
-            var picked    = PickWeightedRandom(pool, remaining);
-            result.AddRange(picked);
+            result.AddRange(PickWeightedRandom(pool, remaining));
 
             return result;
         }
@@ -168,10 +210,8 @@ namespace RogueBlockBlast.UI
         {
             var ids = new HashSet<string>();
             if (CardInventoryUI.Instance == null) return ids;
-
             foreach (var id in CardInventoryUI.Instance.GetSelectedCardIds())
                 ids.Add(id);
-
             return ids;
         }
 

@@ -29,7 +29,13 @@ namespace RogueBlockBlast.Game
         [SerializeField] private ScoreView         ScoreView;
         [SerializeField] private ComboView         ComboView;
         [SerializeField] private MilestoneView     MilestoneView;
-        
+       
+        [Header("UI — Reroll")]
+        [SerializeField] private PoolRerollButton _poolRerollButton;
+ 
+// Reroll hakları — run başında upgrade'den okunur
+        private int _poolRerollsRemaining  = 0;
+        private int _cardRerollsRemaining  = 0;
         
         [SerializeField] private List<CardSO> CardPool;
         private float _globalScoreMultiplier  = 1f;
@@ -309,7 +315,6 @@ namespace RogueBlockBlast.Game
                     UpgradeRegistry.Instance?.GetEffect(
                         _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
                 );
-                Debug.Log($"[NewRun] PoolLimit:{MilestoneConfig.PoolLimit} | Bonus:{poolBonus} | Effective:{MilestoneConfig.PoolLimit + poolBonus} | UpgradeLevel:{UpgradeRegistry.Instance?.GetLevel("upgrade_pool_capacity")}");
 
                 _milestoneSystem?.SetPoolLimit(MilestoneConfig.PoolLimit + poolBonus);
                 _milestoneSystem?.Reset();
@@ -319,7 +324,19 @@ namespace RogueBlockBlast.Game
 
             ScoreView?.SetScore(0);
             BoardView.Build(_board);
-
+            _poolRerollsRemaining = Mathf.RoundToInt(
+                UpgradeRegistry.Instance?.GetEffect(
+                    _upgradeLibrary?.Get("upgrade_pool_reroll")) ?? 0f
+            );
+            _cardRerollsRemaining = Mathf.RoundToInt(
+                UpgradeRegistry.Instance?.GetEffect(
+                    _upgradeLibrary?.Get("upgrade_card_reroll")) ?? 0f
+            );
+            // Pool reroll butonu
+            bool hasPoolReroll = _poolRerollsRemaining > 0;
+            _poolRerollButton?.SetVisible(hasPoolReroll);
+            _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
+            _poolRerollButton.OnRerollClicked = OnPoolRerollClicked;
             GenerateNewPool();
             _poolDirty = true;
         }
@@ -374,7 +391,20 @@ namespace RogueBlockBlast.Game
             }
            
         }
-
+        private void OnPoolRerollClicked()
+        {
+            if (_poolRerollsRemaining <= 0) return;
+            if (!GameStateController.InputAllowed) return;
+ 
+            _poolRerollsRemaining--;
+            _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
+ 
+            // Mevcut pool'u temizle, yenisini üret
+            _milestoneSystem?.EnsureMinimumRemaining(6);
+            GenerateNewPool(skipValidCheck: false);
+ 
+            _poolDirty = true;
+        }
         // ── Dead Pool ────────────────────────────────────────────────────────
         private void HandleDeadPool()
         {
@@ -446,7 +476,7 @@ namespace RogueBlockBlast.Game
             }
  
             if (CardPool != null && CardPool.Count > 0)
-                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked, newlyUnlockedCard);
+                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked, newlyUnlockedCard, _cardRerollsRemaining );
         }
 
         private void HandlePoolLimitExhausted()

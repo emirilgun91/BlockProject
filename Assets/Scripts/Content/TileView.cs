@@ -82,26 +82,39 @@ namespace RogueBlockBlast.UI
         }
 
         /// <summary>
-        /// Yerleştirme FX — hücre yerleşince çağırılır.
-        /// Küçük punch-scale: tok bir "bırakma" hissi verir.
+        /// Yerleştirme FX — scale punch.
+        /// Renk animasyonu yok — Render() her frame rengi yönetiyor, çakışma olmasın.
         /// </summary>
         public void PlayPlaceFX()
         {
             _fxSequence?.Kill();
+            Vector3 current = _baseScale != Vector3.zero ? _baseScale : transform.localScale;
 
-            // Scale'i önce kesin olarak base'e al
-            transform.localScale = _baseScale;
-
-            // DOPunchScale yerine manuel sequence — garanti sıfırlama
             _fxSequence = DOTween.Sequence()
                 .Append(transform
-                    .DOScale(_baseScale * (1f + _placeScalePunch), _placeDuration * 0.4f)
+                    .DOScale(current * (1f + _placeScalePunch), _placeDuration * 0.35f)
                     .SetEase(Ease.OutQuad))
                 .Append(transform
-                    .DOScale(_baseScale, _placeDuration * 0.6f)
-                    .SetEase(Ease.OutBounce))
+                    .DOScale(current, _placeDuration * 0.65f)
+                    .SetEase(Ease.OutBack))
                 .SetAutoKill(true)
-                .OnKill(() => transform.localScale = _baseScale);
+                .OnKill(() => transform.localScale = current);
+        }
+
+        public void PlayRippleFX(float strength = 0.07f, float duration = 0.18f)
+        {
+            if (_fxSequence != null && _fxSequence.IsActive()) return;
+            Vector3 current = _baseScale != Vector3.zero ? _baseScale : transform.localScale;
+
+            DOTween.Sequence()
+                .Append(transform
+                    .DOScale(current * (1f + strength), duration * 0.4f)
+                    .SetEase(Ease.OutQuad))
+                .Append(transform
+                    .DOScale(current, duration * 0.6f)
+                    .SetEase(Ease.OutQuad))
+                .SetAutoKill(true)
+                .OnKill(() => transform.localScale = current);
         }
 
         /// <summary>

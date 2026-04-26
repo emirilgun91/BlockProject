@@ -1,4 +1,5 @@
-﻿using RogueBlockBlast.Core;
+﻿using System.Collections.Generic;
+using RogueBlockBlast.Core;
 using UnityEngine;
 
 namespace RogueBlockBlast.UI
@@ -16,8 +17,7 @@ namespace RogueBlockBlast.UI
         private static readonly Color ClearFlash = new Color(0.08f, 0.72f, 0.60f, 1f);
 
         /// <summary>
-        /// Yerleştirilen hücrelerde punch-scale çalıştırır.
-        /// piece.GetCells(rot) + anchor ile hesaplanır.
+        /// Yerleştirilen hücrelerde punch-scale + flash, komşularda ripple.
         /// </summary>
         public static void PlayPlaceFX(
             BoardView boardView,
@@ -28,10 +28,37 @@ namespace RogueBlockBlast.UI
             if (boardView == null || piece == null) return;
 
             var cells = piece.GetCells(rot);
+
+            // Yerleştirilen hücreler
+            var placedSet = new HashSet<Vector2Int>();
             foreach (var c in cells)
             {
-                var tile = boardView.GetTile(anchor.x + c.x, anchor.y + c.y);
+                var pos  = new Vector2Int(anchor.x + c.x, anchor.y + c.y);
+                var tile = boardView.GetTile(pos.x, pos.y);
                 tile?.PlayPlaceFX();
+                placedSet.Add(pos);
+            }
+
+            // Komşu hücreler — placed set'te olmayanlar
+            var neighborDirs = new Vector2Int[]
+            {
+                new( 1, 0), new(-1, 0),
+                new( 0, 1), new( 0,-1),
+            };
+
+            var visited = new HashSet<Vector2Int>(placedSet);
+
+            foreach (var c in cells)
+            {
+                var pos = new Vector2Int(anchor.x + c.x, anchor.y + c.y);
+                foreach (var dir in neighborDirs)
+                {
+                    var neighbor = pos + dir;
+                    if (!visited.Add(neighbor)) continue; // zaten işlendi
+
+                    var tile = boardView.GetTile(neighbor.x, neighbor.y);
+                    tile?.PlayRippleFX(strength: 0.07f, duration: 0.18f);
+                }
             }
         }
 

@@ -63,7 +63,7 @@ namespace RogueBlockBlast.Game
         private int                   _selectedPoolIndex = -1;
         private PieceDefinition       _currentPiece;
         private Rotation              _currentRot        = Rotation.R0;
-
+        private int _upgradeRevivesUsed = 0;
         private readonly HashSet<Vector2Int> _ghost = new();
         private bool _poolDirty = true;
 
@@ -181,13 +181,14 @@ namespace RogueBlockBlast.Game
         }
         // ── Pool ─────────────────────────────────────────────────────────────
         private void SelectPool(int index)
-        {
+        {  
             if (index < 0 || index >= _piecePool.Count) return;
 
             _selectedPoolIndex = index;
             _currentPiece      = _piecePool[index];
             _currentRot        = Rotation.R0;
             _poolDirty         = true;
+           
         }
 
         // ── Placement ────────────────────────────────────────────────────────
@@ -293,7 +294,7 @@ namespace RogueBlockBlast.Game
             Time.timeScale = 1f;
             GameOverUI.Instance?.Hide(); 
             Time.timeScale = 1f;
-            
+            _upgradeRevivesUsed = 0;
             _freeDeadPoolReroll = 0;
             _cardDeadPoolReroll = 0;
             _score              = 0;
@@ -307,6 +308,23 @@ namespace RogueBlockBlast.Game
             GameStateController.Reset();
             GameOverUI.Instance?.Hide();  
             DOTween.SetTweensCapacity(200,125);   
+            var reg = UpgradeRegistry.Instance;
+            int baseMaxCharge  = 3; // ComboSystem default
+            int barExpansion   = Mathf.RoundToInt(
+                reg?.GetEffect(_upgradeLibrary?.Get("upgrade_combo_bar")) ?? 0f);
+            _comboSystem.SetMaxCharge(baseMaxCharge + barExpansion);
+ 
+            // StartingCombo: base multiplier 1.0 → 1.1 → 1.2 → 1.3
+            float startingBonus = reg?.GetEffect(
+                _upgradeLibrary?.Get("upgrade_starting_combo")) ?? 0f;
+            _comboSystem.SetBaseMultiplier(1f + startingBonus);
+ 
+            // ComboGainBoost: BonusPerClear 0.1 → 0.13 → ...
+            // Reset çağrısı BonusPerClear'ı sıfırlamaz, SetBonusPerClear ile base set ediyoruz
+            float comboGainBonus = reg?.GetEffect(
+                _upgradeLibrary?.Get("upgrade_combo_gain")) ?? 0f;
+            _comboSystem.SetBonusPerClear(0.1f + comboGainBonus); // 0.1 base + upgrade bonus
+
             _comboSystem.Reset();
             if (_milestoneSystem != null)
             {
@@ -343,15 +361,18 @@ namespace RogueBlockBlast.Game
 
         private void SpawnNextFromPool()
         {
+            
             if (_piecePool.Count == 0) { GenerateNewPool(); return; }
             if (_selectedPoolIndex < 0 || _selectedPoolIndex >= _piecePool.Count) return;
 
             _currentPiece = _piecePool[_selectedPoolIndex];
             _currentRot   = Rotation.R0;
+            
         }
 
         private void GenerateNewPool(bool skipValidCheck = false)
         {
+           
             _piecePool.Clear();
 
             for (int i = 0; i < 3; i++)
@@ -366,6 +387,7 @@ namespace RogueBlockBlast.Game
             _currentRot        = Rotation.R0;
             if(!skipValidCheck && !HasAnyValidMoveInPool())
                 OnGameOver();
+            
             _poolDirty = true;
         }
 
@@ -393,6 +415,7 @@ namespace RogueBlockBlast.Game
         }
         private void OnPoolRerollClicked()
         {
+            
             if (_poolRerollsRemaining <= 0) return;
             if (!GameStateController.InputAllowed) return;
  
@@ -402,12 +425,28 @@ namespace RogueBlockBlast.Game
             // Mevcut pool'u temizle, yenisini üret
             _milestoneSystem?.EnsureMinimumRemaining(6);
             GenerateNewPool(skipValidCheck: false);
- 
+            
             _poolDirty = true;
         }
         // ── Dead Pool ────────────────────────────────────────────────────────
         private void HandleDeadPool()
         {
+            // DeadPoolRevive upgrade kontrolü
+            int reviveLevel = Mathf.RoundToInt(
+                UpgradeRegistry.Instance?.GetEffect(
+                    _upgradeLibrary?.Get("upgrade_dead_pool_revive")) ?? 0f);
+ 
+            if (reviveLevel > 0 && _upgradeRevivesUsed < reviveLevel)
+            {
+                _upgradeRevivesUsed++;
+                Debug.Log($"[DeadPool] Upgrade revive kullanıldı ({_upgradeRevivesUsed}/{reviveLevel})");
+                _milestoneSystem?.EnsureMinimumRemaining(6);
+                GenerateNewPool();
+                if (!HasAnyValidMoveInPool())
+                    OnGameOver(GameOverReason.NoMoves);
+                _poolDirty = true;
+                return;
+            }
           
             if (_freeDeadPoolReroll > 0)
             {

@@ -7,7 +7,7 @@ namespace RogueBlockBlast.Core
     /// Combo mantığını yönetir — UI veya Unity bağımlılığı yok.
     ///
     /// KURALLAR:
-    /// - Line clear → charge +1 (max 5)
+    /// - Line clear → charge +1 (max 3)
     ///   · charge < 3  → multiplier += 0.1
     ///   · charge == 3 → multiplier += 0.2 (max charge bonusu)
     /// - Placement, clear yok → charge -1 (min 0)
@@ -18,12 +18,12 @@ namespace RogueBlockBlast.Core
     public sealed class ComboSystem
     {
         // ── Config (kartlarla değiştirilebilir) ──────────────────────────────
-        public int   MaxCharge         { get; private set; } = 5;
+        public int   MaxCharge         { get; private set; } = 3;
         public float BonusPerClear     { get; private set; } = 0.1f;  // stage 1-2
         public float BonusAtMaxCharge  { get; private set; } = 0.2f;  // stage 3
 
         // ── State ────────────────────────────────────────────────────────────
-        public int   Charges    { get; private set; } = 5;
+        public int   Charges    { get; private set; } = 0;
         public float Multiplier { get; private set; } = 1f;
         public bool  IsMaxCharge => Charges >= MaxCharge;
 
@@ -45,7 +45,6 @@ namespace RogueBlockBlast.Core
         /// </summary>
         public void OnLineClear(int lineCount)
         {
-           
             if (lineCount <= 0) return;
 
             for (int i = 0; i < lineCount; i++)
@@ -76,7 +75,7 @@ namespace RogueBlockBlast.Core
 
             if (Charges == 0)
             {
-                Multiplier = 1f;
+                Multiplier = BaseMultiplier;  // 1.0 yerine base'e dön
                 OnComboReset?.Invoke();
             }
 
@@ -87,7 +86,7 @@ namespace RogueBlockBlast.Core
         public void Reset()
         {
             Charges    = 0;
-            Multiplier = 1f;
+            Multiplier = BaseMultiplier;  // 1.0 yerine base'e dön
             FireStateChanged();
         }
 
@@ -101,6 +100,34 @@ namespace RogueBlockBlast.Core
         public void SetBonusPerClear(float value)
         {
             BonusPerClear = value;
+        }
+
+        /// <summary>
+        /// Upgrade: ComboGainBoost — BonusPerClear'a kalıcı ekleme.
+        /// Her çağrıda kümülatif — Reset'te kaybolmaz.
+        /// </summary>
+        public void AddBonusPerClear(float delta)
+        {
+            BonusPerClear += delta;
+        }
+
+        /// <summary>
+        /// Upgrade: ComboBarExpansion — MaxCharge'ı artır (3→4→5).
+        /// </summary>
+        public void SetMaxCharge(int value)
+        {
+            MaxCharge = Mathf.Max(1, value);
+        }
+
+        /// <summary>
+        /// Upgrade: StartingCombo — Run başında ve her reset'te
+        /// 1.0 yerine bu değere döner.
+        /// </summary>
+        public float BaseMultiplier { get; private set; } = 1f;
+
+        public void SetBaseMultiplier(float value)
+        {
+            BaseMultiplier = Mathf.Max(1f, value);
         }
 
         // ── Private ──────────────────────────────────────────────────────────

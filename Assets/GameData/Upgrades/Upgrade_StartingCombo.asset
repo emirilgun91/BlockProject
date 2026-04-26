@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84c4220a04b34e2fb915479aee8786a0, type: 3}
   m_Name: Upgrade_StartingCombo
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
-  Id: Upgrade_StartingCombo
+  Id: upgrade_starting_combo
   NameKey: Combo Power
   DescriptionKey: Increase Combo Power
   Icon: {fileID: 0}

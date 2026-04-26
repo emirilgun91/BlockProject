@@ -7861,6 +7861,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!224 &637998227 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8857522338192698358, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+  m_PrefabInstance: {fileID: 8808523175065026702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &659539716
 GameObject:
   m_ObjectHideFlags: 0
@@ -9931,6 +9936,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!224 &1277160321 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7988803761762282081, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+  m_PrefabInstance: {fileID: 8808523175065026702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1291993592 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2933274491384363078, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
@@ -10315,6 +10325,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1383742777 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 969731362625199034, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+  m_PrefabInstance: {fileID: 8808523175065026702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1385523860
 GameObject:
   m_ObjectHideFlags: 0
@@ -11584,7 +11599,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1653974820}
   - component: {fileID: 1653974819}
-  - component: {fileID: 1653974821}
   m_Layer: 0
   m_Name: CoinWallet
   m_TagString: Untagged
@@ -11619,18 +11633,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1653974821
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1653974818}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9caced2e63894c9694ea7bba67e51e73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Core.UnlockRegistry
 --- !u!1 &1674512169
 GameObject:
   m_ObjectHideFlags: 0
@@ -12168,6 +12170,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1807547817 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1925564010483273571, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+  m_PrefabInstance: {fileID: 8808523175065026702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1823818439
 GameObject:
   m_ObjectHideFlags: 0
@@ -12360,7 +12367,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.10980392, g: 0.12941177, b: 0.19607843, a: 1}
+  m_Color: {r: 0, g: 0.35686275, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -12702,6 +12709,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.MilestoneView
   _fill: {fileID: 637998226}
+  _fillBarRect: {fileID: 637998227}
   _fillDuration: 0.3
   _thresholdText: {fileID: 1585382865}
   _piecesText: {fileID: 1078077702}
@@ -14378,6 +14386,10 @@ PrefabInstance:
       propertyPath: m_FillAmount
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3889276774447277771, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+      propertyPath: _poolContainer
+      value: 
+      objectReference: {fileID: 1277160321}
     - target: {fileID: 4420849849924338215, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -14434,6 +14446,10 @@ PrefabInstance:
       propertyPath: m_SortingLayerID
       value: 836110429
       objectReference: {fileID: 0}
+    - target: {fileID: 4727768524768904137, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+      propertyPath: _poolContainer
+      value: 
+      objectReference: {fileID: 1807547817}
     - target: {fileID: 5517426411577011629, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -14530,6 +14546,10 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6219963280244004624, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+      propertyPath: _poolContainer
+      value: 
+      objectReference: {fileID: 1383742777}
     - target: {fileID: 6341632526028882620, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

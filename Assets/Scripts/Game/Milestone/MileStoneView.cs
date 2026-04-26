@@ -25,8 +25,9 @@ namespace RogueBlockBlast.UI
     {
         // ── Inspector ────────────────────────────────────────────────────────
         [Header("Progress Bar")]
-        [SerializeField] private Image    _fill;
-        [SerializeField] private float    _fillDuration = 0.3f;
+        [SerializeField] private Image         _fill;
+        [SerializeField] private RectTransform _fillBarRect;  // Fill veya ProgressBar rect — punch için
+        [SerializeField] private float         _fillDuration = 0.3f;
 
         [Header("Text")]
         [SerializeField] private TMP_Text _thresholdText;
@@ -134,23 +135,58 @@ namespace RogueBlockBlast.UI
                 .SetAutoKill(true);
         }
 
-        /// <summary>
-        /// Milestone'a ulaşıldığında dışarıdan çağrılır — kutlama animasyonu.
-        /// </summary>
+ 
         public void PlayMilestoneReachedFX()
         {
+            
             if (_fill == null) return;
 
+            // Önceki tüm animasyonları temizle ki çakışma olmasın
             _milestoneSequence?.Kill();
-            _milestoneSequence = DOTween.Sequence()
-                // Teal flash
-                .Append(_fill.DOColor(_colorComplete, 0.15f))
-                // Fill sıfıra çek (yeni pencere başlıyor)
-                .AppendInterval(0.3f)
-                .Append(_fill.DOFillAmount(0f, 0.25f).SetEase(Ease.InQuad))
-                // Renge geri dön
-                .Append(_fill.DOColor(_colorNormal, 0.2f))
-                .SetAutoKill(true);
+            _fill.DOKill();
+            if (_fillBarRect != null) _fillBarRect.DOKill();
+
+            _milestoneSequence = DOTween.Sequence();
+
+            // 1. TAMAMLANMA (ZORUNLU DOLDURMA)
+            // Ne kadar kalmış olursa olsun, önce barı hızla %100'e (1f) çek.
+            // Bu sayede efekt her zaman bar tam doluyken yaşanır.
+            _milestoneSequence.Append(_fill.DOFillAmount(1f, 0.45f).SetEase(Ease.OutQuad));
+
+            // 2. BÜYÜME (POP) VE TEAL'E GEÇİŞ
+            // Bar dolduğu an şişme ve Teal renge geçiş başlar.
+            if (_fillBarRect != null)
+            {
+                _milestoneSequence.Append(_fillBarRect.DOScaleY(0.0045f, 0.3f).SetEase(Ease.OutBack, 1.5f));
+            }
+            else
+            {
+                _milestoneSequence.AppendInterval(0.3f);
+            }
+            _milestoneSequence.Join(_fill.DOColor(_colorComplete, 0.2f).SetEase(Ease.OutQuad));
+
+            // 3. ZİRVEDE PARLAMA (BEYAZ BURST)
+            _milestoneSequence.Append(_fill.DOColor(Color.white, 0.15f).SetEase(Ease.OutCubic));
+
+            // 4. ASILI KALMA (TADINI ÇIKARMA)
+            // Şişkin ve bembeyaz haldeyken çok kısa beklet ki oyuncu "Başardım!" hissini alsın.
+            _milestoneSequence.AppendInterval(0.25f);
+
+            // 5. TAHLİYE, KÜÇÜLME VE NORMALE DÖNME
+            // Bar sıfıra akar, boyutu küçülür ve rengi aslına döner.
+            if (_fillBarRect != null)
+            {
+                _milestoneSequence.Append(_fillBarRect.DOScaleY(0.002f, 0.4f).SetEase(Ease.InOutQuad));
+            }
+            else
+            {
+                _milestoneSequence.AppendInterval(0.4f);
+            }
+    
+            _milestoneSequence.Join(_fill.DOFillAmount(0f, 0.5f).SetEase(Ease.InOutSine));
+            _milestoneSequence.Join(_fill.DOColor(_colorNormal, 0.4f).SetEase(Ease.InOutQuad));
+
+            _milestoneSequence.SetAutoKill(true);
         }
     }
 }

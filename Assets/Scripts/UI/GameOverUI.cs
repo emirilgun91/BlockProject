@@ -136,7 +136,7 @@ namespace RogueBlockBlast.UI
         {
             Time.timeScale = 1f;
             Game.GameStateController.Reset();
-            SceneManager.LoadScene(_mainMenuSceneName);
+            SceneTransition.Instance?.LoadScene(_mainMenuSceneName);
         }
 
         /// <summary>

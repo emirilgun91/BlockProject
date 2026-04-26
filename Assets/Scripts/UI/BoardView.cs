@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using UnityEngine;
@@ -15,87 +17,119 @@ namespace RogueBlockBlast.UI
         [Header("Prefabs")]
         public TileView TilePrefab;
 
+        [Header("Intro Animation")]
+        [SerializeField] private bool  _playIntroOnBuild  = true;
+        [SerializeField] private float _introStagger      = 0.008f;
+        [SerializeField] private float _introTileDuration = 0.25f;
+
         private TileView[,] _tiles;
 
         // ── Build ────────────────────────────────────────────────────────────
         public void Build(BoardModel board)
         {
-            Debug.Log($"[BoardView.Build] board: {board.Width}x{board.Height} | TilePrefab null? {TilePrefab == null}");
-
-            if (TilePrefab == null)
-            {
-                Debug.LogError("[BoardView.Build] TilePrefab is NOT assigned.");
-                return;
-            }
+            if (TilePrefab == null) { Debug.LogError("[BoardView] TilePrefab null"); return; }
 
             for (int i = transform.childCount - 1; i >= 0; i--)
                 Destroy(transform.GetChild(i).gameObject);
 
             _tiles = new TileView[board.Width, board.Height];
-
-            int created = 0;
+            float targetScale = CellSize * 0.95f;
 
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
             {
-                GameObject go = Instantiate(TilePrefab.gameObject, transform);
-                go.name            = $"Tile_{x}_{y}";
-                go.transform.position   = GridToWorldCenter(x, y);
-                go.transform.localScale = Vector3.one * (CellSize * 0.95f);
+                var go = Instantiate(TilePrefab.gameObject, transform);
+                go.name               = $"Tile_{x}_{y}";
+                go.transform.position = GridToWorldCenter(x, y);
+
+                // 1. Önce asıl hedef scale değerini ata
+                go.transform.localScale = Vector3.one * targetScale;
 
                 var tv = go.GetComponent<TileView>();
-                if (tv == null)
+                if (tv == null) { Destroy(go); continue; }
+
+                // 2. Init() çağırarak bu doğru scale değerinin _baseScale olarak kaydedilmesini sağla
+                tv.Init();
+
+                // 3. Eğer intro animasyonu oynayacaksa, şimdi sıfırla
+                if (_playIntroOnBuild)
                 {
-                    Debug.LogError("[BoardView.Build] TilePrefab has NO TileView component!");
-                    Destroy(go);
-                    continue;
+                    go.transform.localScale = Vector3.zero;
                 }
-                //tv.Init();
+
                 var sr = go.GetComponent<SpriteRenderer>();
                 if (sr != null) sr.sortingOrder = 10;
 
                 _tiles[x, y] = tv;
-                created++;
             }
 
-            Debug.Log($"[BoardView.Build] created={created} | children={transform.childCount}");
+            if (_playIntroOnBuild)
+                StartCoroutine(PlayIntro(board.Width, board.Height, targetScale));
         }
 
-        // ── Mouse → Cell (sınır dışında null döner — orijinal davranış) ──────
+        // ── Intro ────────────────────────────────────────────────────────────
+        private IEnumerator PlayIntro(int width, int height, float targetScale)
+        {
+            var wait      = new WaitForSeconds(_introStagger);
+            int diagonals = width + height - 1;
+
+            for (int d = 0; d < diagonals; d++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int y = d - x;
+                    if (y < 0 || y >= height) continue;
+
+                    // y=0 board'da alt — görsel olarak üst = height-1-y
+                    int vy   = height - 1 - y;
+                    var tile = _tiles[x, vy];
+                    if (tile == null) continue;
+
+                    tile.transform
+                        .DOScale(Vector3.one * targetScale, _introTileDuration)
+                        .SetEase(Ease.OutBack, 1.5f);
+                }
+                yield return wait;
+            }
+        }
+
+        // ── Mouse Helpers ────────────────────────────────────────────────────
+        public bool IsMouseOverBoard(Camera cam)
+        {
+            if (_tiles == null || cam == null || Mouse.current == null) return false;
+
+            Vector2 mp    = Mouse.current.position.ReadValue();
+            Vector3 w3    = cam.ScreenToWorldPoint(new Vector3(mp.x, mp.y, 0f));
+            Vector2 local = new Vector2(w3.x, w3.y) - OriginWorld;
+
+            float bx = local.x / CellSize;
+            float by = local.y / CellSize;
+
+            return bx >= 0 && bx < _tiles.GetLength(0) &&
+                   by >= 0 && by < _tiles.GetLength(1);
+        }
+
         public Vector2Int? TryGetCellUnderMouse(Camera cam)
         {
-            var raw = GetRawCellUnderMouse(cam);
+            var raw = GetRawCell(cam);
             if (raw == null) return null;
 
-            int w = _tiles.GetLength(0);
-            int h = _tiles.GetLength(1);
+            int w = _tiles.GetLength(0), h = _tiles.GetLength(1);
+            int x = raw.Value.x,         y = raw.Value.y;
 
-            int x = raw.Value.x;
-            int y = raw.Value.y;
-
-            if (x < 0 || y < 0 || x >= w || y >= h)
-                return null;
-
-            return new Vector2Int(x, y);
+            return (x >= 0 && y >= 0 && x < w && y < h)
+                ? new Vector2Int(x, y)
+                : (Vector2Int?)null;
         }
 
-        // ── Mouse → Cell — shape'e göre clamp'li (sınırda kalar, null dönmez) 
-        /// <summary>
-        /// Mouse pozisyonunu board içinde tutar.
-        /// Shape'in tüm hücreleri board sınırı içinde kalacak şekilde anchor clamp'lenir.
-        /// Board tamamen dışındaysa null döner.
-        /// </summary>
         public Vector2Int? TryGetClampedCellUnderMouse(Camera cam, PieceDefinition piece, Rotation rot)
         {
             if (_tiles == null || piece == null) return null;
 
-            var raw = GetRawCellUnderMouse(cam);
+            var raw = GetRawCell(cam);
             if (raw == null) return null;
 
-            int w = _tiles.GetLength(0);
-            int h = _tiles.GetLength(1);
-
-            // Shape'in bounding box'ını hesapla
+            int w = _tiles.GetLength(0), h = _tiles.GetLength(1);
             var cells = piece.GetCells(rot);
 
             int minX = int.MaxValue, maxX = int.MinValue;
@@ -103,19 +137,14 @@ namespace RogueBlockBlast.UI
 
             foreach (var c in cells)
             {
-                if (c.x < minX) minX = c.x;
-                if (c.x > maxX) maxX = c.x;
-                if (c.y < minY) minY = c.y;
-                if (c.y > maxY) maxY = c.y;
+                if (c.x < minX) minX = c.x; if (c.x > maxX) maxX = c.x;
+                if (c.y < minY) minY = c.y; if (c.y > maxY) maxY = c.y;
             }
 
-            // Anchor'u clamp'le:
-            // anchor + minX >= 0          → anchor >= -minX
-            // anchor + maxX <= width - 1  → anchor <= width - 1 - maxX
-            int clampedX = Mathf.Clamp(raw.Value.x, -minX, w - 1 - maxX);
-            int clampedY = Mathf.Clamp(raw.Value.y, -minY, h - 1 - maxY);
+            int cx = Mathf.Clamp(raw.Value.x, -minX, w - 1 - maxX);
+            int cy = Mathf.Clamp(raw.Value.y, -minY, h - 1 - maxY);
 
-            return new Vector2Int(clampedX, clampedY);
+            return new Vector2Int(cx, cy);
         }
 
         // ── Render ───────────────────────────────────────────────────────────
@@ -130,76 +159,48 @@ namespace RogueBlockBlast.UI
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
             {
-                bool  isFilled  = board.IsFilled(x, y);
-                Color baseColor = isFilled ? board.GetCellColor(x, y) : emptyCell;
-                if (isFilled)
-                    _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
+                bool  filled    = board.IsFilled(x, y);
+                Color baseColor = filled ? board.GetCellColor(x, y) : emptyCell;
+
                 if (ghostCells != null && ghostCells.Contains(new Vector2Int(x, y)))
-                    baseColor = isFilled ? ghostBad : ghostOk;
+                    baseColor = filled ? ghostBad : ghostOk;
 
                 _tiles[x, y].SetColor(baseColor);
-                if (isFilled)
+
+                if (filled)
                     _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
             }
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
-        private Vector2Int? GetRawCellUnderMouse(Camera cam)
-        {
-            if (_tiles == null || cam == null)    return null;
-            if (Mouse.current == null)             return null;
+        // ── Accessors ────────────────────────────────────────────────────────
+        public Vector3 GetTileWorldPosition(int x, int y) => GridToWorldCenter(x, y);
 
-            Vector2 mousePos    = Mouse.current.position.ReadValue();
-            Vector3 mouseWorld3 = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0f));
-            Vector2 mouseWorld  = new Vector2(mouseWorld3.x, mouseWorld3.y);
-
-            Vector2 local = mouseWorld - OriginWorld;
-
-            int x = Mathf.FloorToInt(local.x / CellSize);
-            int y = Mathf.FloorToInt(local.y / CellSize);
-
-            return new Vector2Int(x, y);
-        }
-        /// <summary>Tile'ın dünya pozisyonunu döndürür — VFX için.</summary>
-        public Vector3 GetTileWorldPosition(int x, int y) =>
-            GridToWorldCenter(x, y);
-        /// <summary>Verilen koordinattaki TileView'u döndürür. Sınır dışıysa null.</summary>
         public TileView GetTile(int x, int y)
         {
-            if (_tiles == null)           return null;
-            if (x < 0 || y < 0)          return null;
-            if (x >= _tiles.GetLength(0)) return null;
-            if (y >= _tiles.GetLength(1)) return null;
+            if (_tiles == null || x < 0 || y < 0 ||
+                x >= _tiles.GetLength(0) || y >= _tiles.GetLength(1)) return null;
             return _tiles[x, y];
         }
-        public bool IsMouseOverBoard(Camera cam)
+
+        // ── Private ──────────────────────────────────────────────────────────
+        private Vector2Int? GetRawCell(Camera cam)
         {
-            if (_tiles == null || cam == null) return false;
-            if (Mouse.current == null) return false;
+            if (_tiles == null || cam == null || Mouse.current == null) return null;
 
-            Vector2 mousePos    = Mouse.current.position.ReadValue();
-            Vector3 world3      = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0f));
-            Vector2 local       = new Vector2(world3.x, world3.y) - OriginWorld;
+            Vector2 mp    = Mouse.current.position.ReadValue();
+            Vector3 w3    = cam.ScreenToWorldPoint(new Vector3(mp.x, mp.y, 0f));
+            Vector2 local = new Vector2(w3.x, w3.y) - OriginWorld;
 
-            int x = Mathf.FloorToInt(local.x / CellSize);
-            int y = Mathf.FloorToInt(local.y / CellSize);
-
-            int w = _tiles.GetLength(0);
-            int h = _tiles.GetLength(1);
-
-            return x >= 0 && y >= 0 && x < w && y < h;
-        }
-        
- 
-     
-       
-        private Vector3 GridToWorldCenter(int x, int y)
-        {
-            return new Vector3(
-                OriginWorld.x + (x + 0.5f) * CellSize,
-                OriginWorld.y + (y + 0.5f) * CellSize,
-                0f
+            return new Vector2Int(
+                Mathf.FloorToInt(local.x / CellSize),
+                Mathf.FloorToInt(local.y / CellSize)
             );
         }
+
+        private Vector3 GridToWorldCenter(int x, int y) => new Vector3(
+            OriginWorld.x + (x + 0.5f) * CellSize,
+            OriginWorld.y + (y + 0.5f) * CellSize,
+            0f
+        );
     }
 }

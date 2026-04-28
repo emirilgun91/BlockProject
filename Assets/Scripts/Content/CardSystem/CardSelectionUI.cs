@@ -25,7 +25,7 @@ namespace RogueBlockBlast.UI
         [Header("Card Reroll")]
         [SerializeField] private GameObject _rerollButton;    // reroll butonu root
         [SerializeField] private TMP_Text   _rerollCountText; // "x2"
-
+        [SerializeField] private AudioClip CardSelected;
         private Action<CardSO> _onCardPicked;
         private bool           _fadingIn;
         private bool           _isOpen;
@@ -36,6 +36,7 @@ namespace RogueBlockBlast.UI
         private int          _rerollsRemaining;
         // Reroll'da gösterilen kartları exclude etmek için
         private readonly HashSet<string> _shownCardIds = new();
+        
 
         private void Awake()
         {
@@ -219,6 +220,7 @@ namespace RogueBlockBlast.UI
 
         private void CloseAndResume(CardSO card)
         {
+            AudioManager.Instance.PlaySFX(CardSelected);
             _fadingIn      = false;
             Time.timeScale = 1f;
             Game.GameStateController.UnlockInput();

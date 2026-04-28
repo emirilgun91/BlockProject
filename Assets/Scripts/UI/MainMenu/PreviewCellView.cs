@@ -4,19 +4,7 @@ using UnityEngine.UI;
 
 namespace RogueBlockBlast.UI
 {
-    /// <summary>
-    /// PreviewBoard'daki tek hücre.
-    ///
-    /// 3 durum:
-    /// - Empty: koyu, boş hücre
-    /// - Filled: renkli blok
-    /// - Corner: statik köşe dekorasyonu (hiç değişmez, breathe animasyonu)
-    ///
-    /// Animasyonlar:
-    /// - PopIn:  scale 0 → 1.1 → 1 (overshoot bounce)
-    /// - PopOut: scale 1 → 0 + rotate
-    /// - Breathe: brightness 1 → 1.25 → 1 (corner cell)
-    /// </summary>
+  
     public sealed class PreviewCellView : MonoBehaviour
     {
         [Header("References")]

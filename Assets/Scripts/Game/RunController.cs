@@ -76,6 +76,8 @@ namespace RogueBlockBlast.Game
         [Header ("SFX")]
         [SerializeField] private AudioClip GameOverSFX;
         [SerializeField] private AudioClip LineClearSFX;
+
+        [SerializeField] private AudioClip PlacePiece;
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {  
@@ -201,7 +203,7 @@ namespace RogueBlockBlast.Game
             FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
             // FX: yerleştirme punch
             BoardFX.PlayPlaceFX(BoardView, _currentPiece, anchor, _currentRot);
-
+            AudioManager.Instance.PlaySFX(PlacePiece);
             // Stats
             RunStatsTracker.Instance?.RecordPlacement();
 

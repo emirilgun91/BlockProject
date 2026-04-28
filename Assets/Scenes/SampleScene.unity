@@ -8155,11 +8155,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e2dcdbe483019954c98ebb2f4c11c3a7, type: 2}
   - {fileID: 11400000, guid: 476989abff4304345824878d3747a801, type: 2}
   _upgradeLibrary: {fileID: 11400000, guid: 0e28f486cc7339442b6b2661d79ef079, type: 2}
-  mainLoopMusic: {fileID: 8300000, guid: 3c0d3b49cbf100046bbb012852dd4e2a, type: 3}
+  mainLoopMusic: {fileID: 8300000, guid: edfd7b63fa7dbde4d95e25c1b3befa81, type: 3}
   MilestoneConfig: {fileID: 11400000, guid: 88c4c4ba54f8d1644874bc5ee0305cd3, type: 2}
   LineClearVFX: {fileID: 1355268666}
   GameOverSFX: {fileID: 8300000, guid: d92eeaacec51ff347ad73a07f378db16, type: 3}
   LineClearSFX: {fileID: 8300000, guid: 97a75977d2420bf4d8bc9899a8338b80, type: 3}
+  PlacePiece: {fileID: 8300000, guid: 09f8dc09efedc414784e7ba556669245, type: 3}
 --- !u!4 &700632875
 Transform:
   m_ObjectHideFlags: 0
@@ -11381,6 +11382,8 @@ MonoBehaviour:
   - {fileID: 338691894}
   - {fileID: 2085227440}
   - {fileID: 1268204813}
+  _comboPanel: {fileID: 1545084395}
+  _colorResetFlash: {r: 0.85, g: 0.22, b: 0.22, a: 1}
   _multiplierText: {fileID: 150225771}
   _colorEmpty: {r: 1, g: 1, b: 1, a: 1}
   _colorFilled: {r: 1, g: 1, b: 1, a: 1}
@@ -11389,6 +11392,11 @@ MonoBehaviour:
   _emptyDuration: 0.25
   _glowPunchScale: 2
   _textPunchScale: 1.25
+--- !u!224 &1545084395 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3426546088036777722, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+  m_PrefabInstance: {fileID: 8808523175065026702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1545399975 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4208055692426804856, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
@@ -12719,6 +12727,7 @@ MonoBehaviour:
   _dangerRatio: 0.8
   _newCardText: {fileID: 341533590}
   _newCardShowDuration: 2.5
+  MilestoneReach: {fileID: 8300000, guid: c58a6e6d4ceb56e4882a7d60561a7afc, type: 3}
 --- !u!224 &2111583962 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8523964409827054053, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
@@ -12938,6 +12947,10 @@ PrefabInstance:
       propertyPath: _newBadge
       value: 
       objectReference: {fileID: 1509733042}
+    - target: {fileID: 1679176181731473999, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
+      propertyPath: CardSelected
+      value: 
+      objectReference: {fileID: 8300000, guid: 973cbfce50fc9634b8c2729624d4cc4d, type: 3}
     - target: {fileID: 1679176181731473999, guid: 258349fde94f39141af2d65c79a41e8a, type: 3}
       propertyPath: _rerollButton
       value: 

@@ -66,6 +66,7 @@ namespace RogueBlockBlast.UI
 
         private void OnNewRunClicked()
         {
+            Debug.LogWarning("Clicked");
             SceneTransition.Instance?.LoadScene(_gameplaySceneName);        }
 
         private void OnShapeShopClicked()

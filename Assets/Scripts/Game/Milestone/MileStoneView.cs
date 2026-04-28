@@ -37,16 +37,17 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Color _colorNormal  = new Color(0.91f, 0.64f, 0.19f, 1f); // amber
         [SerializeField] private Color _colorDanger  = new Color(0.75f, 0.24f, 0.17f, 1f); // kırmızı — az kaldı
         [SerializeField] private Color _colorComplete = new Color(0.08f, 0.72f, 0.60f, 1f); // teal — milestone!
-
+        
         [Header("Danger Threshold")]
         [Tooltip("Pool'un yüzde kaçı dolunca renk kırmızıya döner.")]
         [Range(0f, 1f)]
         [SerializeField] private float _dangerRatio = 0.80f;
-
+        
         [Header("New Card Notification")]
         [SerializeField] private TMP_Text _newCardText;        // "New Card Earned!" yazacak TMP
         [SerializeField] private float    _newCardShowDuration = 2.5f;
 
+        [SerializeField] private AudioClip MilestoneReach;
         // ── Runtime ──────────────────────────────────────────────────────────
         private MilestoneSystem _system;
         private Sequence        _milestoneSequence;
@@ -138,7 +139,7 @@ namespace RogueBlockBlast.UI
  
         public void PlayMilestoneReachedFX()
         {
-            
+            AudioManager.Instance.PlaySFX(MilestoneReach);
             if (_fill == null) return;
 
             // Önceki tüm animasyonları temizle ki çakışma olmasın

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace RogueBlockBlast.UI
 {
     /// <summary>
-    /// Combo UI — 5 charge bar + multiplier text.
+    /// Combo UI — 3 charge bar + multiplier text.
     ///
     /// Hierarchy:
     ///  ComboBoard
@@ -26,7 +26,11 @@ namespace RogueBlockBlast.UI
     {
         // ── Inspector ────────────────────────────────────────────────────────
         [Header("Charge Bars")]
-        [SerializeField] private Image[] _chargeBars;   
+        [SerializeField] private Image[] _chargeBars;
+
+        [Header("Reset FX")]
+        [SerializeField] private RectTransform _comboPanel;    // ComboBoard RectTransform — shake için
+        [SerializeField] private Color _colorResetFlash = new Color(0.85f, 0.22f, 0.22f, 1f); // kırmızı
 
         [Header("Text")]
         [SerializeField] private TMP_Text _multiplierText;
@@ -71,38 +75,55 @@ namespace RogueBlockBlast.UI
             if (_multiplierText != null)
                 _multiplierBaseScale = _multiplierText.transform.localScale;
 
-            ApplyState(new ComboState(0, 5, 1f, false), animate: false);
+            ApplyState(new ComboState(0, 3, 1f, false), animate: false);
         }
 
         // ── Handlers ─────────────────────────────────────────────────────────
         private void HandleStateChanged(ComboState state)
-        
-        { 
-            FrameFeedbackController.Instance?.OnComboChanged(state.Multiplier);
+        {
             // Max charge düştüyse glow'u durdur
             if (_lastCharges >= state.MaxCharge && state.Charges < state.MaxCharge)
                 StopMaxGlow();
-           
 
             ApplyState(state, animate: true);
         }
 
         private void HandleMaxCharge()
         {
-            
-            if (_chargeBars != null && _chargeBars.Length >= 5)
-                PlayMaxGlow(_chargeBars[4]);
-            
+            // 3. bar'a özel glow animasyonu
+            if (_chargeBars != null && _chargeBars.Length >= 3)
+                PlayMaxGlow(_chargeBars[2]);
         }
 
         private void HandleReset()
         {
-            FrameFeedbackController.Instance?.OnComboBreak();
+            // 1. Panel shake
+            if (_comboPanel != null)
+            {
+                _comboPanel.DOKill();
+                _comboPanel.DOShakeAnchorPos(0.3f, strength: new Vector2(5f, 2f), vibrato: 8, randomness: 45f)
+                           .SetEase(Ease.OutQuad);
+            }
+
+            // 2. Multiplier text shake
             if (_multiplierText != null)
             {
+                _multiplierText.transform.DOKill();
                 _multiplierText.transform
-                    .DOShakeScale(0.25f, 0.2f, 5, 45f)
+                    .DOShakeScale(0.25f, 0.18f, 5, 45f)
                     .OnComplete(() => _multiplierText.transform.localScale = _multiplierBaseScale);
+            }
+
+            // 3. Bar'lar: kırmızı flash → boş renge dön
+            if (_chargeBars == null) return;
+            foreach (var bar in _chargeBars)
+            {
+                if (bar == null) continue;
+                bar.DOKill();
+                DOTween.Sequence()
+                    .Append(bar.DOColor(_colorResetFlash, 0.08f).SetEase(Ease.OutQuad))
+                    .Append(bar.DOColor(_colorEmpty,      0.25f).SetEase(Ease.OutQuad))
+                    .SetAutoKill(true);
             }
         }
 
@@ -149,6 +170,7 @@ namespace RogueBlockBlast.UI
                 }
 
                 float duration = shouldBeFilled ? _fillDuration : _emptyDuration;
+
                 _chargeBars[i].DOColor(targetColor, duration).SetEase(Ease.OutQuad);
                 _chargeBars[i].DOFillAmount(shouldBeFilled ? 1f : 0f, duration).SetEase(Ease.OutQuad);
             }
@@ -194,7 +216,7 @@ namespace RogueBlockBlast.UI
         {
             _glowSequence?.Kill();
 
-            if (_chargeBars != null && _chargeBars.Length >= 5 && _chargeBars[4] != null)
+            if (_chargeBars != null && _chargeBars.Length >= 3 && _chargeBars[2] != null)
                 _chargeBars[2].DOColor(_colorEmpty, _emptyDuration);
         }
     }

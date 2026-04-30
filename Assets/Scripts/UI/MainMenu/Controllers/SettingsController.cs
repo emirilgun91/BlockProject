@@ -66,9 +66,9 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Button   _closeButton;
 
         // ── PlayerPrefs keys (AudioManager ile eşleşmeli) ────────────────────
-        private const string MASTER_KEY     = "MainMixer";
-        private const string MUSIC_KEY      = "Music";
-        private const string SFX_KEY        = "SFX";
+        private const string MASTER_KEY = "MasterVolume";
+        private const string MUSIC_KEY  = "MusicVolume";
+        private const string SFX_KEY    = "SFXVolume";
         private const string FULLSCREEN_KEY = "Fullscreen";
 
         // Panel açılınca önceki değerleri sakla — Cancel için

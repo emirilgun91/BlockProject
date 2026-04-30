@@ -109,7 +109,7 @@ namespace RogueBlockBlast.UI
                         delay,
                         onArrive: () =>
                         {
-                            AudioManager.Instance?.PlaySFX(ScorePopupSfx);
+                            AudioManager.Instance?.PlayScoreSFX(ScorePopupSfx);
                             arrivedCount++;
                             if (arrivedCount >= totalTiles)
                                 onAllArrived?.Invoke();

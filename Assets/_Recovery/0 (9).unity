@@ -10281,7 +10281,7 @@ MonoBehaviour:
   _popupWaveDelay: 0.025
   _tileBurstPrefab: {fileID: 4253153613157751858, guid: e2ef2f5cd17af8c489a4c81e5c81d7e6, type: 3}
   lineCountsfx: {fileID: 8300000, guid: 97a75977d2420bf4d8bc9899a8338b80, type: 3}
-  ScorePopupSfx: {fileID: 8300000, guid: 1e7b921e0daf0484a989e0d8e6e3bb2a, type: 3}
+  ScorePopupSfx: {fileID: 8300000, guid: 1be2fcc16ab0da84f99ba7c633037620, type: 3}
 --- !u!1 &1359158157
 GameObject:
   m_ObjectHideFlags: 0
@@ -10505,6 +10505,10 @@ MonoBehaviour:
   musicSource: {fileID: 1388591292}
   sfxSource: {fileID: 1388591291}
   musicFadeDuration: 0.3
+  sfxCooldown: 0.05
+  comboPitchStep: 0.05
+  maxComboPitch: 1.5
+  comboResetTime: 0.5
 --- !u!4 &1388591290
 Transform:
   m_ObjectHideFlags: 0

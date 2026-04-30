@@ -68,14 +68,21 @@ namespace RogueBlockBlast.UI
         private IEnumerator TransitionRoutine(string sceneName, Action onFadeComplete)
         {
             _isTransitioning = true;
-
             // Fade out — siyaha solar
             yield return StartCoroutine(FadeOut());
-
             onFadeComplete?.Invoke();
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+    
+            // EĞER SAHNE YOKSA BURADA asyncLoad NULL DÖNER
+            if (asyncLoad == null)
+            {
+                _fadeGroup.alpha = 0f;
+                _fadeGroup.blocksRaycasts = false;
+                _isTransitioning = false;
+                yield break; 
+            }
 
-            // Sahne yükle
-            yield return SceneManager.LoadSceneAsync(sceneName);
+            yield return asyncLoad;
 
             // Kısa bekleme — sahne settle olsun
             yield return new WaitForSecondsRealtime(0.05f);

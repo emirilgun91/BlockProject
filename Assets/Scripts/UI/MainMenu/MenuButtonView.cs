@@ -89,7 +89,7 @@ namespace RogueBlockBlast.UI
             yield return new WaitForEndOfFrame(); 
 
             _originalPos = _rect.anchoredPosition; 
-            Debug.Log("Gerçek Pozisyon: " + _originalPos);
+            
             EvaluateLockState();
         }
 

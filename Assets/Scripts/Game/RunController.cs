@@ -116,6 +116,10 @@ namespace RogueBlockBlast.Game
  
                 UnlockRegistry.Instance.Init(shapeIds, cardIds);
                 UnlockRegistry.Instance.InitMilestones(milestoneLabels);
+                var lockedShapeIds = ShapeLibrary.Shapes
+                    .Where(s => s != null && s.LockedByDefault)
+                    .Select(s => s.Id);
+                UnlockRegistry.Instance.RegisterLockedShapes(lockedShapeIds);
             }
             if (ShapeLibrary != null)
             {
@@ -243,8 +247,17 @@ namespace RogueBlockBlast.Game
                 _maxComboReached = _comboSystem.Multiplier;
             
             // Skor — multiplier ComboSystem'den
+            float shapeBonus = 0f;
+            var shapeCardReg = ShapeCardEffectRegistry.Instance;
+            if (shapeCardReg != null && shapeCardReg.HasAnyEffect(_currentPiece.Id))
+            {
+                float bonusPerTile = shapeCardReg.GetScoreBonus(_currentPiece.Id);
+                if (bonusPerTile > 0f)
+                    shapeBonus = bonusPerTile * _currentPiece.GetCells(_currentRot).Count;
+            }
+ 
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
-                tileValueSum,
+                tileValueSum + shapeBonus,
                 _comboSystem.Multiplier,
                 _globalScoreMultiplier
             );
@@ -290,7 +303,8 @@ namespace RogueBlockBlast.Game
 
         // ── Run ──────────────────────────────────────────────────────────────
         private void NewRun()
-        {
+        {   
+            ShapeCardEffectRegistry.Instance?.Reset();
             if (Width  <= 0) Width  = 8;
             if (Height <= 0) Height = 8;
             Time.timeScale = 1f;

@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_ 2
+  m_Name: Card_Shape_C
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_Phantom Drop
-  CardName: Phantom Drop
-  Description: If your pool reaches 0, you get exactly 1 "Phantom Block" (a 1x1 wild
-    card that clears any line it touches) to save your run.
-  Icon: {fileID: 7740770645608920724, guid: 793217a0efea3cc428d432623f0b2632, type: 3}
-  Rarity: 1
-  Effects:
-  - Type: 0
-    Value: 1.25
-    Description: 
-  BaseWeight: 30
-  IsUnique: 1
+  Id: Card_Shape_C
+  CardName: C
+  Description: C Tile Value +4, Spawn Rate -%8
+  Icon: {fileID: 0}
+  Rarity: 0
+  Effects: []
+  BaseWeight: 100
+  IsUnique: 0
   LockedByDefault: 0
   RequiredShapeId: 
-  IsShapeCard: 0
-  TargetShapeId: 
-  ShapeEffects: []
+  IsShapeCard: 1
+  TargetShapeId: Shape_C
+  ShapeEffects:
+  - EffectType: 0
+    Value: 4
+  - EffectType: 1
+    Value: -8

@@ -25,6 +25,13 @@ namespace RogueBlockBlast.Game
         {
             if (card == null) return;
 
+            // ── Shape Card — önce kontrol et, Effects'e bakmadan Registry'e yönlendir
+            if (card.IsShapeCard)
+            {
+                ShapeCardEffectRegistry.Instance?.Register(card);
+                return; // shape kartların başka Effects'i olmaz (tasarım kararı)
+            }
+
             foreach (var effect in card.Effects)
             {
                 switch (effect.Type)
@@ -74,7 +81,6 @@ namespace RogueBlockBlast.Game
                     default:
                         Debug.LogWarning($"[Card] Bilinmeyen efekt tipi: {effect.Type}");
                         break;
-                    
                 }
             }
         }

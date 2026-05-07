@@ -10,18 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_ 4
+  m_Name: Card_Shape_I3
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_L34
-  CardName: L is OP
-  Description: dsdsad
-  Icon: {fileID: -1434779733409912027, guid: 5309c8e77b2de7a49a615c974e42731b, type: 3}
-  Rarity: 2
-  Effects:
-  - Type: 0
-    Value: 1
-    Description: 
-  BaseWeight: 50
+  Id: Card_Shape_I3
+  CardName: I3
+  Description: I3 Tile Value +2, Spawn Rate -%5
+  Icon: {fileID: 0}
+  Rarity: 0
+  Effects: []
+  BaseWeight: 30
   IsUnique: 0
   LockedByDefault: 0
   RequiredShapeId: 
+  IsShapeCard: 1
+  TargetShapeId: Shape_I3
+  ShapeEffects:
+  - EffectType: 0
+    Value: 2
+  - EffectType: 1
+    Value: -5

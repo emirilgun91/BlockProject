@@ -52,12 +52,25 @@ namespace RogueBlockBlast.Core
                 PlayerPrefs.SetInt(CardKeyPrefix + cardId, 1);
         }
 
+        // Kilitli olarak tanınan shape ID'leri (LockedByDefault=true olanlar Init'te eklenir)
+        private readonly HashSet<string> _lockedShapes = new();
+
         // ── Shape ────────────────────────────────────────────────────────────
 
         public bool IsShapeUnlocked(string shapeId)
         {
             if (string.IsNullOrEmpty(shapeId)) return false;
             return _unlockedShapes.Contains(shapeId);
+        }
+
+        /// <summary>
+        /// Bu shape daha önce "kilitli" olarak Init'e geçildi mi?
+        /// False dönerse shape hiç kilitlenmemiş demektir — baştan açık kabul edilir.
+        /// </summary>
+        public bool IsShapeKnownAsLocked(string shapeId)
+        {
+            if (string.IsNullOrEmpty(shapeId)) return false;
+            return _lockedShapes.Contains(shapeId);
         }
 
         public void UnlockShape(string shapeId)
@@ -113,6 +126,8 @@ namespace RogueBlockBlast.Core
             IEnumerable<string> cardIds)
         {
             _unlockedShapes.Clear();
+            _lockedShapes.Clear();
+
             foreach (var id in shapeIds)
                 if (PlayerPrefs.GetInt(ShapeKeyPrefix + id, 0) == 1)
                     _unlockedShapes.Add(id);
@@ -121,6 +136,17 @@ namespace RogueBlockBlast.Core
             foreach (var id in cardIds)
                 if (PlayerPrefs.GetInt(CardKeyPrefix + id, 0) == 1)
                     _unlockedCards.Add(id);
+        }
+
+        /// <summary>
+        /// Hangi shape'lerin LockedByDefault=true olduğunu bildirir.
+        /// RunController.Start() içinde Init'ten hemen sonra çağrılmalı.
+        /// </summary>
+        public void RegisterLockedShapes(IEnumerable<string> lockedShapeIds)
+        {
+            _lockedShapes.Clear();
+            foreach (var id in lockedShapeIds)
+                _lockedShapes.Add(id);
         }
 
         public void InitMilestones(IEnumerable<string> milestoneLabels)

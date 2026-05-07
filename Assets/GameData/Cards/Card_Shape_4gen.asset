@@ -10,18 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_ 5
+  m_Name: Card_Shape_4gen
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: dsada
-  CardName: sasd
-  Description: dsdsad
-  Icon: {fileID: -3208143649089112684, guid: 91b78f6060d386d4aa8c65b23ee6ce9d, type: 3}
-  Rarity: 2
-  Effects:
-  - Type: 2
-    Value: 1
-    Description: 
-  BaseWeight: 50
+  Id: Card_Shape_4gen
+  CardName: 4gen
+  Description: 4gen Tile Value +2, Spawn Rate -%5
+  Icon: {fileID: 0}
+  Rarity: 0
+  Effects: []
+  BaseWeight: 45
   IsUnique: 0
   LockedByDefault: 0
   RequiredShapeId: 
+  IsShapeCard: 1
+  TargetShapeId: Shape_4Gen
+  ShapeEffects:
+  - EffectType: 0
+    Value: 2
+  - EffectType: 1
+    Value: -5

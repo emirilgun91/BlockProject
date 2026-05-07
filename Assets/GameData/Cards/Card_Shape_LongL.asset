@@ -10,18 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_ 3
+  m_Name: Card_Shape_LongL
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_L
-  CardName: L is OP
-  Description: L Card is great to use
-  Icon: {fileID: -1434779733409912027, guid: 5309c8e77b2de7a49a615c974e42731b, type: 3}
-  Rarity: 2
-  Effects:
-  - Type: 0
-    Value: 1
-    Description: 
-  BaseWeight: 50
+  Id: Card_Shape_LongL
+  CardName: Long L
+  Description: Long L Tile Value +3, Spawn Rate -%12
+  Icon: {fileID: 0}
+  Rarity: 0
+  Effects: []
+  BaseWeight: 40
   IsUnique: 0
   LockedByDefault: 0
   RequiredShapeId: 
+  IsShapeCard: 1
+  TargetShapeId: Shape_LongL
+  ShapeEffects:
+  - EffectType: 0
+    Value: 3
+  - EffectType: 1
+    Value: -12

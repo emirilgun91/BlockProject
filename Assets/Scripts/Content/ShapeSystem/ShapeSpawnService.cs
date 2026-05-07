@@ -12,13 +12,22 @@ namespace RogueBlockBlast.Core
             if (library == null || library.Shapes == null || library.Shapes.Count == 0)
                 return null;
 
-            var reg = ShapeUpgradeRegistry.Instance;
+            var upgradeReg = ShapeUpgradeRegistry.Instance;
+            var cardReg    = ShapeCardEffectRegistry.Instance;
             int totalWeight = 0;
 
             for (int i = 0; i < library.Shapes.Count; i++)
             {
-                if (!library.Shapes[i].IsUnlocked) continue;
-                totalWeight += reg.GetEffectiveWeight(library.Shapes[i].Id, library.Shapes[i].BaseWeight);
+                var shape = library.Shapes[i];
+                if (!shape.IsUnlocked) continue;
+
+                int w = upgradeReg.GetEffectiveWeight(shape.Id, shape.BaseWeight);
+
+                // Kart etkisi — float delta'yı int'e yuvarlayarak ekle, minimum 1'de tut
+                if (cardReg != null && cardReg.HasAnyEffect(shape.Id))
+                    w = Mathf.Max(1, w + Mathf.RoundToInt(cardReg.GetWeightDelta(shape.Id)));
+
+                totalWeight += w;
             }
 
             if (totalWeight <= 0) return null;
@@ -28,11 +37,17 @@ namespace RogueBlockBlast.Core
 
             for (int i = 0; i < library.Shapes.Count; i++)
             {
-                if (!library.Shapes[i].IsUnlocked) continue;
+                var shape = library.Shapes[i];
+                if (!shape.IsUnlocked) continue;
 
-                cumulative += reg.GetEffectiveWeight(library.Shapes[i].Id, library.Shapes[i].BaseWeight);
+                int w = upgradeReg.GetEffectiveWeight(shape.Id, shape.BaseWeight);
+
+                if (cardReg != null && cardReg.HasAnyEffect(shape.Id))
+                    w = Mathf.Max(1, w + Mathf.RoundToInt(cardReg.GetWeightDelta(shape.Id)));
+
+                cumulative += w;
                 if (roll < cumulative)
-                    return PieceFactory.Create(library.Shapes[i]);
+                    return PieceFactory.Create(shape);
             }
 
             return null;

@@ -37,6 +37,18 @@ namespace RogueBlockBlast.Content
         [Tooltip("Bu kart hangi shape unlock edilince kullanılabilir olur. Boş bırakılırsa shape bağımlılığı yok.")]
         public string RequiredShapeId = "";
 
+        // ── Shape Card ────────────────────────────────────────────────────────
+
+        [Header("Shape Card")]
+        [Tooltip("Bu kart belirli bir şekli etkiliyor mu?")]
+        public bool IsShapeCard = false;
+
+        [Tooltip("Etkilenen şeklin Id'si (ShapeSO.Id ile eşleşmeli). IsShapeCard true olduğunda doldur.")]
+        public string TargetShapeId = "";
+
+        [Tooltip("Bu kartın şekle uyguladığı etkiler. Birden fazla olabilir (örn. hem score hem weight).")]
+        public List<ShapeEffectEntry> ShapeEffects = new List<ShapeEffectEntry>();
+
         /// <summary>
         /// Runtime'da bu kart kullanılabilir mi?
         /// İki koşulun ikisi de sağlanmalı:
@@ -47,19 +59,36 @@ namespace RogueBlockBlast.Content
         {
             get
             {
-                // Kart kilidi
+                // 1. Kart kilidi
                 bool cardUnlocked = !LockedByDefault ||
                     (UnlockRegistry.Instance != null &&
                      UnlockRegistry.Instance.IsCardUnlocked(Id));
 
                 if (!cardUnlocked) return false;
 
-                // Shape bağımlılığı
+                // 2. Shape bağımlılığı (genel)
                 if (!string.IsNullOrEmpty(RequiredShapeId))
                 {
                     bool shapeUnlocked = UnlockRegistry.Instance != null &&
                                         UnlockRegistry.Instance.IsShapeUnlocked(RequiredShapeId);
                     if (!shapeUnlocked) return false;
+                }
+
+                // 3. Shape kart ise hedef şekil erişilebilir olmalı.
+                // UnlockRegistry sadece LockedByDefault=true olanları takip eder.
+                // LockedByDefault=false shape'ler registry'e hiç girmez → IsShapeUnlocked false döner.
+                // Bu yüzden: registry'de varsa unlock'lu, yoksa PlayerPrefs'te hiç kaydedilmemiş
+                // demektir — yani baştan açık (LockedByDefault=false). İkisi de geçerli.
+                if (IsShapeCard && !string.IsNullOrEmpty(TargetShapeId))
+                {
+                    var reg = UnlockRegistry.Instance;
+                    if (reg == null) return false;
+
+                    // Açıkça unlock edilmiş mi VEYA hiç kilitlenmemiş mi?
+                    bool explicitlyUnlocked = reg.IsShapeUnlocked(TargetShapeId);
+                    bool neverLocked        = !reg.IsShapeKnownAsLocked(TargetShapeId);
+
+                    if (!explicitlyUnlocked && !neverLocked) return false;
                 }
 
                 return true;
@@ -70,6 +99,9 @@ namespace RogueBlockBlast.Content
         {
             if (string.IsNullOrWhiteSpace(Id))
                 Id = name;
+
+            if (IsShapeCard && string.IsNullOrWhiteSpace(TargetShapeId))
+                Debug.LogWarning($"[CardSO] '{Id}' IsShapeCard=true ama TargetShapeId boş!", this);
         }
     }
 }

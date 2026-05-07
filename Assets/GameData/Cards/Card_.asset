@@ -22,4 +22,10 @@ MonoBehaviour:
   - Type: 2
     Value: 1
     Description: 
-  BaseWeight: 50
+  BaseWeight: 30
+  IsUnique: 0
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

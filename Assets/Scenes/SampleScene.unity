@@ -5424,6 +5424,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1 &176737616
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 176737618}
+  - component: {fileID: 176737617}
+  m_Layer: 0
+  m_Name: ShapeCardEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &176737617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 176737616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa7fa59d6be49149f77985b7133999f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Core.ShapeCardEffectRegistry
+--- !u!4 &176737618
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 176737616}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 935.35583, y: 497.89166, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &225047130
 GameObject:
   m_ObjectHideFlags: 0
@@ -8152,8 +8196,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a759cb18b1acf8644b486023ffe51564, type: 2}
   - {fileID: 11400000, guid: 0ddeb60e2dd303a4b89fdbcf7f223c59, type: 2}
   - {fileID: 11400000, guid: 718ea13c0b33cdd47b4ba19eb4938e5c, type: 2}
-  - {fileID: 11400000, guid: e2dcdbe483019954c98ebb2f4c11c3a7, type: 2}
-  - {fileID: 11400000, guid: 476989abff4304345824878d3747a801, type: 2}
+  - {fileID: 11400000, guid: a5940a6bfc85b6e4d94991bf28a57027, type: 2}
+  - {fileID: 11400000, guid: 4a5dc673d0e49cf40b6c183c89e86f77, type: 2}
+  - {fileID: 11400000, guid: 6c1a3c106f3231246bf26fc738694155, type: 2}
+  - {fileID: 11400000, guid: 8ea2fed00f4a4904591d5dcf5fcbf452, type: 2}
+  - {fileID: 11400000, guid: 94199335d72bcdf43b12e0a173974fce, type: 2}
+  - {fileID: 11400000, guid: e19d8ba24f371874c8e0d7bbee1d5a14, type: 2}
+  - {fileID: 11400000, guid: d4421e40112e21740ac6cef088f205b0, type: 2}
+  - {fileID: 11400000, guid: 8fd83a929d261ad4396a305f5546150a, type: 2}
+  - {fileID: 11400000, guid: 5a239437ac61907469ddc6e65bd4e364, type: 2}
+  - {fileID: 11400000, guid: 481d9f3945dd47645a9f308aa4fe5a4e, type: 2}
+  - {fileID: 11400000, guid: 6542a5d81b20ecb4da92350a2d87f072, type: 2}
+  - {fileID: 11400000, guid: d070f72be1cd6bd47aa554dfa6c375c5, type: 2}
+  - {fileID: 11400000, guid: edfe9e3b72ae2c74084955cc28cab8c7, type: 2}
+  - {fileID: 11400000, guid: b58384cc083986b4d8f71ea83e44bec3, type: 2}
   _upgradeLibrary: {fileID: 11400000, guid: 0e28f486cc7339442b6b2661d79ef079, type: 2}
   mainLoopMusic: {fileID: 8300000, guid: d950f03ea7b58a34dad2371446f9384a, type: 3}
   MilestoneConfig: {fileID: 11400000, guid: 88c4c4ba54f8d1644874bc5ee0305cd3, type: 2}
@@ -10505,6 +10561,10 @@ MonoBehaviour:
   musicSource: {fileID: 1388591292}
   sfxSource: {fileID: 1388591291}
   musicFadeDuration: 0.3
+  sfxCooldown: 0.05
+  comboPitchStep: 0.05
+  maxComboPitch: 1.5
+  comboResetTime: 0.5
 --- !u!4 &1388591290
 Transform:
   m_ObjectHideFlags: 0
@@ -15020,3 +15080,4 @@ SceneRoots:
   - {fileID: 1470068222}
   - {fileID: 1653974820}
   - {fileID: 1359158159}
+  - {fileID: 176737618}

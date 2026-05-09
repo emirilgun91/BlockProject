@@ -177,7 +177,13 @@ namespace RogueBlockBlast.Game
                 }
             }
             }
-            BoardView.Render(_board, _ghost);
+            float ghostTileValue = _currentPiece?.TileValue ?? 0f;
+            if (_currentPiece != null)
+            {
+                float bonus = ShapeCardEffectRegistry.Instance?.GetScoreBonus(_currentPiece.Id) ?? 0f;
+                ghostTileValue += bonus;
+            }
+            BoardView.Render(_board, _ghost, ghostTileValue);
 
             if (_poolDirty && PoolView != null)
             {
@@ -246,7 +252,7 @@ namespace RogueBlockBlast.Game
             if (_comboSystem.Multiplier > _maxComboReached)
                 _maxComboReached = _comboSystem.Multiplier;
             
-            // Skor — multiplier ComboSystem'den
+            // Shape Card bonus hesapla
             float shapeBonus = 0f;
             var shapeCardReg = ShapeCardEffectRegistry.Instance;
             if (shapeCardReg != null && shapeCardReg.HasAnyEffect(_currentPiece.Id))
@@ -255,12 +261,20 @@ namespace RogueBlockBlast.Game
                 if (bonusPerTile > 0f)
                     shapeBonus = bonusPerTile * _currentPiece.GetCells(_currentRot).Count;
             }
- 
+
+// Normal skor — line clear yoksa tileValueSum=0, sorun yok
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
-                tileValueSum + shapeBonus,
+                tileValueSum,
                 _comboSystem.Multiplier,
                 _globalScoreMultiplier
             );
+
+// Shape bonus ayrı ekleniyor — tileValueSum=0 engelini aşar
+            if (shapeBonus > 0f)
+            {
+                gainedScore += Mathf.RoundToInt(
+                    shapeBonus * _comboSystem.Multiplier * _globalScoreMultiplier);
+            }
             _score += gainedScore;
 
             // Milestone: score güncelle

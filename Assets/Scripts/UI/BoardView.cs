@@ -41,21 +41,14 @@ namespace RogueBlockBlast.UI
                 var go = Instantiate(TilePrefab.gameObject, transform);
                 go.name               = $"Tile_{x}_{y}";
                 go.transform.position = GridToWorldCenter(x, y);
-
-                // 1. Önce asıl hedef scale değerini ata
-                go.transform.localScale = Vector3.one * targetScale;
+                go.transform.localScale = _playIntroOnBuild
+                    ? Vector3.zero
+                    : Vector3.one * targetScale;
 
                 var tv = go.GetComponent<TileView>();
                 if (tv == null) { Destroy(go); continue; }
 
-                // 2. Init() çağırarak bu doğru scale değerinin _baseScale olarak kaydedilmesini sağla
                 tv.Init();
-
-                // 3. Eğer intro animasyonu oynayacaksa, şimdi sıfırla
-                if (_playIntroOnBuild)
-                {
-                    go.transform.localScale = Vector3.zero;
-                }
 
                 var sr = go.GetComponent<SpriteRenderer>();
                 if (sr != null) sr.sortingOrder = 10;
@@ -88,9 +81,15 @@ namespace RogueBlockBlast.UI
                     tile.transform
                         .DOScale(Vector3.one * targetScale, _introTileDuration)
                         .SetEase(Ease.OutBack, 1.5f);
+                    
                 }
+                
                 yield return wait;
             }
+            yield return new WaitForSeconds(_introTileDuration + _introStagger * (width + height));
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                _tiles[x, y]?.RefreshBaseScale();
         }
 
         // ── Mouse Helpers ────────────────────────────────────────────────────
@@ -148,7 +147,12 @@ namespace RogueBlockBlast.UI
         }
 
         // ── Render ───────────────────────────────────────────────────────────
-        public void Render(BoardModel board, ISet<Vector2Int> ghostCells)
+
+        /// <summary>
+        /// ghostTileValue: ghost hücrelerde gösterilecek puan değeri.
+        /// RunController'dan _currentPiece.TileValue + shape bonus geçilir.
+        /// </summary>
+        public void Render(BoardModel board, ISet<Vector2Int> ghostCells, float ghostTileValue = 0f)
         {
             if (_tiles == null) return;
 
@@ -159,16 +163,30 @@ namespace RogueBlockBlast.UI
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
             {
-                bool  filled    = board.IsFilled(x, y);
-                Color baseColor = filled ? board.GetCellColor(x, y) : emptyCell;
+                bool filled  = board.IsFilled(x, y);
+                bool isGhost = ghostCells != null && ghostCells.Contains(new Vector2Int(x, y));
 
-                if (ghostCells != null && ghostCells.Contains(new Vector2Int(x, y)))
-                    baseColor = filled ? ghostBad : ghostOk;
+                // ── Renk ────────────────────────────────────────
+                Color color = filled ? board.GetCellColor(x, y) : emptyCell;
+                if (isGhost) color = filled ? ghostBad : ghostOk;
+                _tiles[x, y].SetColor(color);
 
-                _tiles[x, y].SetColor(baseColor);
-
-                if (filled)
+                // ── Değer (explicit, her durum için net karar) ──
+                if (filled && !isGhost)
+                {
+                    // Dolu tile — board'daki değeri göster
                     _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
+                }
+                else if (!filled && isGhost && ghostTileValue > 0f)
+                {
+                    // Geçerli ghost — yerleşince kazanılacak değer
+                    _tiles[x, y].SetTileValue(ghostTileValue);
+                }
+                else
+                {
+                    // Boş tile veya geçersiz ghost — değer gösterme
+                    _tiles[x, y].ClearValue();
+                }
             }
         }
 

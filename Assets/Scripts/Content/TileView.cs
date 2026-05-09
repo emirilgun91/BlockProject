@@ -70,6 +70,10 @@ namespace RogueBlockBlast.UI
             if (_scoreText != null)
                 _scoreText.text = string.Empty;
         }
+        public void ClearValue()
+        {
+            if (_scoreText != null) _scoreText.text = string.Empty;
+        }
 
         /// <summary>
         /// Tile value'yu gösterir.
@@ -127,6 +131,7 @@ namespace RogueBlockBlast.UI
         /// <param name="emptyColor">Animasyon sonunda dönülecek boş hücre rengi.</param>
         public void PlayClearFX(float delay = 0f, Color? flashColor = null, Color? emptyColor = null)
         {
+            
             _fxSequence?.Kill();
 
             Color tileColor  = _sr.color;                        // yerleştirilen parçanın rengi
@@ -164,7 +169,11 @@ namespace RogueBlockBlast.UI
                 })
                 .SetUpdate(false);
         }
-
+        public void RefreshBaseScale()
+        {
+            if (transform.localScale != Vector3.zero)
+                _baseScale = transform.localScale;
+        }
         /// <summary>Clear FX sonrası hücreyi boş renge döndürür.</summary>
         public void RestoreEmpty(Color emptyColor)
         {

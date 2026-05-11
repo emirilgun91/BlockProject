@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Game;
@@ -7,7 +8,8 @@ namespace RogueBlockBlast.Core
 {
     public static class ShapeSpawnService
     {
-        public static PieceDefinition GetRandomWeighted(ShapeLibrarySO library)
+        /// <param name="filter">Opsiyonel filtre — null ise tüm unlock'lu şekiller dahil edilir.</param>
+        public static PieceDefinition GetRandomWeighted(ShapeLibrarySO library, Func<ShapeSO, bool> filter = null)
         {
             if (library == null || library.Shapes == null || library.Shapes.Count == 0)
                 return null;
@@ -20,10 +22,10 @@ namespace RogueBlockBlast.Core
             {
                 var shape = library.Shapes[i];
                 if (!shape.IsUnlocked) continue;
+                if (filter != null && !filter(shape)) continue;
 
                 int w = upgradeReg.GetEffectiveWeight(shape.Id, shape.BaseWeight);
 
-                // Kart etkisi — float delta'yı int'e yuvarlayarak ekle, minimum 1'de tut
                 if (cardReg != null && cardReg.HasAnyEffect(shape.Id))
                     w = Mathf.Max(1, w + Mathf.RoundToInt(cardReg.GetWeightDelta(shape.Id)));
 
@@ -39,6 +41,7 @@ namespace RogueBlockBlast.Core
             {
                 var shape = library.Shapes[i];
                 if (!shape.IsUnlocked) continue;
+                if (filter != null && !filter(shape)) continue;
 
                 int w = upgradeReg.GetEffectiveWeight(shape.Id, shape.BaseWeight);
 

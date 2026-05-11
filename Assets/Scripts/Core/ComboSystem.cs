@@ -22,6 +22,10 @@ namespace RogueBlockBlast.Core
         public float BonusPerClear     { get; private set; } = 0.1f;  // stage 1-2
         public float BonusAtMaxCharge  { get; private set; } = 0.2f;  // stage 3
 
+        // ── Soft Landing ─────────────────────────────────────────────────────
+        private bool  _softLandingActive;
+        private float _softLandingFactor = 0.5f;
+
         // ── State ────────────────────────────────────────────────────────────
         public int   Charges    { get; private set; } = 0;
         public float Multiplier { get; private set; } = 1f;
@@ -75,7 +79,10 @@ namespace RogueBlockBlast.Core
 
             if (Charges == 0)
             {
-                Multiplier = BaseMultiplier;  // 1.0 yerine base'e dön
+                // Soft Landing: reset yerine mevcut combo'nun yarısına düş
+                Multiplier = _softLandingActive
+                    ? Mathf.Max(BaseMultiplier, Multiplier * _softLandingFactor)
+                    : BaseMultiplier;
                 OnComboReset?.Invoke();
             }
 
@@ -85,8 +92,20 @@ namespace RogueBlockBlast.Core
         /// <summary>Run başında sıfırlar.</summary>
         public void Reset()
         {
+            Charges             = 0;
+            Multiplier          = BaseMultiplier;
+            _softLandingActive  = false;
+            FireStateChanged();
+        }
+
+        /// <summary>
+        /// Momentum Shield gibi zorla sıfırlamalar için — OnComboReset tetiklenmez,
+        /// bu sayede Hyperfocus cezası yanlışlıkla uygulanmaz.
+        /// </summary>
+        public void ForceResetToBase()
+        {
             Charges    = 0;
-            Multiplier = BaseMultiplier;  // 1.0 yerine base'e dön
+            Multiplier = BaseMultiplier;
             FireStateChanged();
         }
 
@@ -100,6 +119,13 @@ namespace RogueBlockBlast.Core
         public void SetBonusPerClear(float value)
         {
             BonusPerClear = value;
+        }
+
+        /// <summary>Soft Landing kartı: reset yerine mevcut combo'yu yarıya indir.</summary>
+        public void SetSoftLanding(float factor)
+        {
+            _softLandingActive = true;
+            _softLandingFactor = Mathf.Clamp01(factor);
         }
 
         /// <summary>

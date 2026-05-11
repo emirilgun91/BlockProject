@@ -1,35 +1,26 @@
-﻿using RogueBlockBlast.Content;
+using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using UnityEngine;
 
 namespace RogueBlockBlast.Game
 {
-    /// <summary>
-    /// Seçilen kartın efektlerini ilgili sistemlere uygular.
-    /// RunController'dan çağrılır: CardEffectApplier.Apply(card, ...)
-    ///
-    /// Yeni efekt tipi eklemek için sadece switch'e yeni case ekle.
-    /// </summary>
     public static class CardEffectApplier
     {
-        /// <summary>
-        /// Kartın tüm efektlerini sistemlere uygular.
-        /// </summary>
         public static void Apply(
-            Content.CardSO      card,
-            ComboSystem         comboSystem,
-            MilestoneSystem     milestoneSystem,
-            ref int             deadPoolRerolls,
-            ref float           globalScoreMultiplier,
-            ref int             coinBonusPerMilestone)
+            Content.CardSO  card,
+            ComboSystem     comboSystem,
+            MilestoneSystem milestoneSystem,
+            ref int         deadPoolRerolls,
+            ref float       globalScoreMultiplier,
+            ref int         coinBonusPerMilestone,
+            RunCardState    cardState)
         {
             if (card == null) return;
 
-            // ── Shape Card — önce kontrol et, Effects'e bakmadan Registry'e yönlendir
             if (card.IsShapeCard)
             {
                 ShapeCardEffectRegistry.Instance?.Register(card);
-                return; // shape kartların başka Effects'i olmaz (tasarım kararı)
+                return;
             }
 
             foreach (var effect in card.Effects)
@@ -38,44 +29,146 @@ namespace RogueBlockBlast.Game
                 {
                     // ── Combo ────────────────────────────────────────────────
                     case Content.CardEffectType.ComboDecayImmunity:
-                        // ComboSystem'e ileride eklenecek flag
-                        Debug.Log($"[Card] ComboDecayImmunity aktif");
+                        Debug.Log("[Card] ComboDecayImmunity aktif");
                         break;
 
                     case Content.CardEffectType.ComboBonusPerClear:
-                        comboSystem?.SetBonusPerClear(
-                            comboSystem.BonusPerClear + effect.Value);
-                        Debug.Log($"[Card] ComboBonusPerClear +{effect.Value}");
+                        comboSystem?.SetBonusPerClear(comboSystem.BonusPerClear + effect.Value);
                         break;
 
                     // ── Score ────────────────────────────────────────────────
                     case Content.CardEffectType.ScoreMultiplierBonus:
-                        globalScoreMultiplier += effect.Value;
-                        Debug.Log($"[Card] ScoreMultiplierBonus +{effect.Value}");
-                        break;
-
                     case Content.CardEffectType.LineScoreBonus:
-                        // RunController'da DoPlace içinde kullanılır
-                        // globalScoreMultiplier yerine ayrı field gerekebilir
                         globalScoreMultiplier += effect.Value;
-                        Debug.Log($"[Card] LineScoreBonus +{effect.Value}");
                         break;
 
                     // ── Pool / Survival ──────────────────────────────────────
                     case Content.CardEffectType.ExtraDeadPoolReroll:
                         deadPoolRerolls += Mathf.RoundToInt(effect.Value);
-                        Debug.Log($"[Card] ExtraDeadPoolReroll +{effect.Value}");
                         break;
 
                     case Content.CardEffectType.PoolLimitBonus:
-                        // MilestoneSystem'e ileride eklenecek
                         Debug.Log($"[Card] PoolLimitBonus +{effect.Value}");
                         break;
 
                     // ── Coin ─────────────────────────────────────────────────
                     case Content.CardEffectType.CoinBonusOnMilestone:
                         coinBonusPerMilestone += Mathf.RoundToInt(effect.Value);
-                        Debug.Log($"[Card] CoinBonusOnMilestone +{effect.Value}");
+                        break;
+
+                    // ── Diet Plan ────────────────────────────────────────────
+                    case Content.CardEffectType.DietPlanMaxSize:
+                        cardState.HasDietPlan    = true;
+                        cardState.DietPlanMaxSize = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.DietPlanScoreFactor:
+                        cardState.HasDietPlan         = true;
+                        cardState.DietPlanScoreFactor  = effect.Value;
+                        break;
+
+                    // ── Ghost Drop ───────────────────────────────────────────
+                    case Content.CardEffectType.GhostDropMaxUses:
+                        cardState.HasGhostDrop    = true;
+                        cardState.GhostDropMaxUses = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Soft Landing ─────────────────────────────────────────
+                    case Content.CardEffectType.SoftLandingFactor:
+                        comboSystem?.SetSoftLanding(effect.Value);
+                        break;
+
+                    // ── Slow Burn ─────────────────────────────────────────────
+                    case Content.CardEffectType.SlowBurnEarlyCount:
+                        cardState.HasSlowBurn        = true;
+                        cardState.SlowBurnEarlyCount  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.SlowBurnEarlyFactor:
+                        cardState.HasSlowBurn         = true;
+                        cardState.SlowBurnEarlyFactor  = effect.Value;
+                        break;
+
+                    case Content.CardEffectType.SlowBurnLateCount:
+                        cardState.HasSlowBurn       = true;
+                        cardState.SlowBurnLateCount  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.SlowBurnLateFactor:
+                        cardState.HasSlowBurn        = true;
+                        cardState.SlowBurnLateFactor  = effect.Value;
+                        break;
+
+                    // ── Hyperfocus ────────────────────────────────────────────
+                    case Content.CardEffectType.HyperfocusComboMultiplier:
+                        cardState.HasHyperfocus = true;
+                        if (comboSystem != null)
+                        {
+                            comboSystem.SetBonusPerClear(comboSystem.BonusPerClear * effect.Value);
+                            comboSystem.SetBonusAtMaxCharge(comboSystem.BonusAtMaxCharge * effect.Value);
+                        }
+                        break;
+
+                    case Content.CardEffectType.HyperfocusPenaltyShapes:
+                        cardState.HasHyperfocus           = true;
+                        cardState.HyperfocusPenaltyShapes  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Tunnel Vision ─────────────────────────────────────────
+                    case Content.CardEffectType.TunnelVisionMultiplier:
+                        cardState.HasTunnelVision        = true;
+                        cardState.TunnelVisionMultiplier  = effect.Value;
+                        break;
+
+                    // ── Line Master ───────────────────────────────────────────
+                    case Content.CardEffectType.LineMasterMultiplier:
+                        cardState.HasLineMaster       = true;
+                        cardState.LineMasterMultiplier = effect.Value;
+                        break;
+
+                    // ── Bounty Hunter ─────────────────────────────────────────
+                    case Content.CardEffectType.BountyHunterCoinPerClear:
+                        cardState.HasBountyHunter          = true;
+                        cardState.BountyHunterCoinPerClear  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.BountyHunterThresholdScale:
+                        cardState.HasBountyHunter = true;
+                        milestoneSystem?.ScalePermanent(effect.Value);
+                        break;
+
+                    // ── Future Investment ─────────────────────────────────────
+                    case Content.CardEffectType.FutureInvestmentCurrentScale:
+                        cardState.HasFutureInvestment = true;
+                        milestoneSystem?.ScaleCurrentWindow(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.FutureInvestmentNextDiscount:
+                        cardState.HasFutureInvestment             = true;
+                        cardState.FutureInvestmentPendingDiscount += effect.Value;
+                        break;
+
+                    // ── First Picks ───────────────────────────────────────────
+                    case Content.CardEffectType.FirstPicksFreeCount:
+                        cardState.HasFirstPicks       = true;
+                        cardState.FirstPicksFreeCount  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Momentum Shield ───────────────────────────────────────
+                    case Content.CardEffectType.MomentumShieldMinMultiplier:
+                        cardState.HasMomentumShield            = true;
+                        cardState.MomentumShieldMinMultiplier   = effect.Value;
+                        break;
+
+                    // ── Hoarder ───────────────────────────────────────────────
+                    case Content.CardEffectType.HoarderMinRemaining:
+                        cardState.HasHoarder          = true;
+                        cardState.HoarderMinRemaining  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.HoarderPoolBonus:
+                        cardState.HasHoarder       = true;
+                        cardState.HoarderPoolBonus  = Mathf.RoundToInt(effect.Value);
                         break;
 
                     default:

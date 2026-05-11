@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Content;
@@ -29,21 +30,20 @@ namespace RogueBlockBlast.Game
         [SerializeField] private ScoreView         ScoreView;
         [SerializeField] private ComboView         ComboView;
         [SerializeField] private MilestoneView     MilestoneView;
-       
+
         [Header("UI — Reroll")]
         [SerializeField] private PoolRerollButton _poolRerollButton;
- 
-// Reroll hakları — run başında upgrade'den okunur
+
         private int _poolRerollsRemaining  = 0;
         private int _cardRerollsRemaining  = 0;
-        
+
         [SerializeField] private List<CardSO> CardPool;
         private float _globalScoreMultiplier  = 1f;
         private int   _coinBonusPerMilestone  = 0;
-        
+
         [Header("Upgrades")]
         [SerializeField] private UpgradeLibrarySO _upgradeLibrary;
-        
+
         [SerializeField] private AudioClip mainLoopMusic;
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
@@ -54,7 +54,10 @@ namespace RogueBlockBlast.Game
         private ScoreSystem     _scoreSystem     = new ScoreSystem();
         private ComboSystem     _comboSystem     = new ComboSystem();
         private MilestoneSystem _milestoneSystem;
-        
+
+        // ── Card state ───────────────────────────────────────────────────────
+        private readonly RunCardState _cardState = new RunCardState();
+
         // ── State ────────────────────────────────────────────────────────────
         private int _score = 0;
         private int _coins = 0;
@@ -70,17 +73,16 @@ namespace RogueBlockBlast.Game
         private int       _freeDeadPoolReroll = 1;
         private int       _cardDeadPoolReroll = 0;
         private const int CardRerollCost      = 300;
-        
+
         [SerializeField] private LineClearVFX LineClearVFX;
-        //SFX
         [Header ("SFX")]
         [SerializeField] private AudioClip GameOverSFX;
         [SerializeField] private AudioClip LineClearSFX;
-
         [SerializeField] private AudioClip PlacePiece;
+
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
-        {  
+        {
             UpgradeRegistry.Instance?.Init(_upgradeLibrary);
             ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
             int poolBonus = Mathf.RoundToInt(
@@ -91,29 +93,24 @@ namespace RogueBlockBlast.Game
             _milestoneSystem.OnMilestoneReached   += HandleMilestoneReached;
             _milestoneSystem.OnPoolLimitExhausted += HandlePoolLimitExhausted;
             MilestoneView?.Bind(_milestoneSystem);
-            
-            
+
             ComboView?.Bind(_comboSystem);
+            _comboSystem.OnComboReset += HandleHyperfocusPenalty;
+
             if (mainLoopMusic != null)
-            {
                 AudioManager.Instance.PlayMusic(mainLoopMusic);
-            }
+
             if (UnlockRegistry.Instance != null)
             {
-                // Shape ID'lerini topla
                 var shapeIds = ShapeLibrary.Shapes
                     .Where(s => s != null)
                     .Select(s => s.Id);
- 
-                // Card ID'lerini topla
                 var cardIds = CardPool
                     .Where(c => c != null)
                     .Select(c => c.Id);
- 
-                // Milestone label'larını topla
                 var milestoneLabels = MilestoneConfig.Milestones
                     .Select(m => m.Label);
- 
+
                 UnlockRegistry.Instance.Init(shapeIds, cardIds);
                 UnlockRegistry.Instance.InitMilestones(milestoneLabels);
                 var lockedShapeIds = ShapeLibrary.Shapes
@@ -121,18 +118,14 @@ namespace RogueBlockBlast.Game
                     .Select(s => s.Id);
                 UnlockRegistry.Instance.RegisterLockedShapes(lockedShapeIds);
             }
-            if (ShapeLibrary != null)
-            {
-                var shapeIds = ShapeLibrary.Shapes
-                    .Where(s => s != null)
-                    .Select(s => s.Id);
-            }
-           
+
             NewRun();
         }
 
         private void OnDestroy()
         {
+            _comboSystem.OnComboReset -= HandleHyperfocusPenalty;
+
             if (_milestoneSystem != null)
             {
                 _milestoneSystem.OnMilestoneReached   -= HandleMilestoneReached;
@@ -146,8 +139,12 @@ namespace RogueBlockBlast.Game
             if (!GameStateController.InputAllowed) return;
             if (Keyboard.current != null)
             {
-                if (Keyboard.current.qKey.wasPressedThisFrame) _currentRot = PrevRot(_currentRot);
-                if (Keyboard.current.eKey.wasPressedThisFrame) _currentRot = NextRot(_currentRot);
+                // First Picks blocks rotation while free placements remain
+                bool canRotate = !(_cardState.HasFirstPicks &&
+                                   _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
+
+                if (Keyboard.current.qKey.wasPressedThisFrame && canRotate) _currentRot = PrevRot(_currentRot);
+                if (Keyboard.current.eKey.wasPressedThisFrame && canRotate) _currentRot = NextRot(_currentRot);
                 if (Keyboard.current.rKey.wasPressedThisFrame) NewRun();
 
                 if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectPool(0);
@@ -158,25 +155,26 @@ namespace RogueBlockBlast.Game
             _ghost.Clear();
             if (BoardView.IsMouseOverBoard(MainCamera))
             {
-            var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
+                var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
 
-            if (cell.HasValue)
-            {
-                var  anchor   = cell.Value;
-                bool canPlace = PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot);
-
-                var cells = _currentPiece.GetCells(_currentRot);
-                for (int i = 0; i < cells.Count; i++)
-                    _ghost.Add(anchor + cells[i]);
-
-                if (Mouse.current != null &&
-                    Mouse.current.leftButton.wasPressedThisFrame &&
-                    canPlace)
+                if (cell.HasValue)
                 {
-                    DoPlace(anchor);
+                    var  anchor   = cell.Value;
+                    bool canPlace = PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot);
+
+                    var cells = _currentPiece.GetCells(_currentRot);
+                    for (int i = 0; i < cells.Count; i++)
+                        _ghost.Add(anchor + cells[i]);
+
+                    if (Mouse.current != null &&
+                        Mouse.current.leftButton.wasPressedThisFrame &&
+                        canPlace)
+                    {
+                        DoPlace(anchor);
+                    }
                 }
             }
-            }
+
             float ghostTileValue = _currentPiece?.TileValue ?? 0f;
             if (_currentPiece != null)
             {
@@ -191,16 +189,15 @@ namespace RogueBlockBlast.Game
                 _poolDirty = false;
             }
         }
+
         // ── Pool ─────────────────────────────────────────────────────────────
         private void SelectPool(int index)
-        {  
+        {
             if (index < 0 || index >= _piecePool.Count) return;
-
             _selectedPoolIndex = index;
             _currentPiece      = _piecePool[index];
             _currentRot        = Rotation.R0;
             _poolDirty         = true;
-           
         }
 
         // ── Placement ────────────────────────────────────────────────────────
@@ -209,30 +206,35 @@ namespace RogueBlockBlast.Game
             if (!PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot))
                 return;
 
+            // ── Card pre-checks (evaluated before board state changes) ────────
+            bool isGhostDrop = _cardState.HasGhostDrop &&
+                               _cardState.GhostDropUsesThisMilestone < _cardState.GhostDropMaxUses &&
+                               IsGhostDropPlacement(_board, _currentPiece, anchor, _currentRot);
+
+            bool isFirstPick = _cardState.HasFirstPicks &&
+                               _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount;
+
+            bool skipPoolConsume = isGhostDrop || isFirstPick;
+
+            // ── Place ─────────────────────────────────────────────────────────
             PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot);
             FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
-            // FX: yerleştirme punch
             BoardFX.PlayPlaceFX(BoardView, _currentPiece, anchor, _currentRot);
             AudioManager.Instance.PlaySFX(PlacePiece);
-            // Stats
             RunStatsTracker.Instance?.RecordPlacement();
 
-            // Line clear
+            // ── Line clear ────────────────────────────────────────────────────
             var (cleared, tileValueSum, clearedRows, clearedCols, snapshots) =
                 LineClearSystem.ClearLines(_board);
-       
+
             if (cleared > 0)
             {
                 FrameFeedbackController.Instance?.OnLineClear(cleared);
                 if (LineClearVFX != null)
                 {
                     LineClearVFX.Play(
-                        clearedRows,
-                        clearedCols,
-                        snapshots,
-                        BoardView,
-                        _board.Width,
-                        _board.Height,
+                        clearedRows, clearedCols, snapshots,
+                        BoardView, _board.Width, _board.Height,
                         onAllArrived: () => ScoreView?.PunchScore()
                     );
                 }
@@ -244,15 +246,27 @@ namespace RogueBlockBlast.Game
                 RunStatsTracker.Instance?.RecordClear(cleared, 0);
                 _comboSystem.OnLineClear(cleared);
                 AudioManager.Instance?.PlaySFX(LineClearSFX);
+
+                // Bounty Hunter: coin per line cleared
+                if (_cardState.HasBountyHunter && _cardState.BountyHunterCoinPerClear > 0)
+                {
+                    int bountyCoins = cleared * _cardState.BountyHunterCoinPerClear;
+                    CoinWallet.Instance?.Earn(bountyCoins);
+                    _coins += bountyCoins;
+                }
             }
-                
-            // Combo: placement bildirimi (clear yoksa charge düşer)
+
+            // ── Combo ─────────────────────────────────────────────────────────
             _comboSystem.OnPlacement(hadClear: cleared > 0);
-            
+
             if (_comboSystem.Multiplier > _maxComboReached)
                 _maxComboReached = _comboSystem.Multiplier;
-            
-            // Shape Card bonus hesapla
+
+            // ── Per-milestone counters: increment BEFORE milestone may reset them ──
+            if (isGhostDrop) _cardState.GhostDropUsesThisMilestone++;
+            if (isFirstPick) _cardState.FirstPicksUsedThisMilestone++;
+
+            // ── Shape Card bonus ──────────────────────────────────────────────
             float shapeBonus = 0f;
             var shapeCardReg = ShapeCardEffectRegistry.Instance;
             if (shapeCardReg != null && shapeCardReg.HasAnyEffect(_currentPiece.Id))
@@ -262,36 +276,71 @@ namespace RogueBlockBlast.Game
                     shapeBonus = bonusPerTile * _currentPiece.GetCells(_currentRot).Count;
             }
 
-// Normal skor — line clear yoksa tileValueSum=0, sorun yok
+            // ── Score modifiers ───────────────────────────────────────────────
+            float effectiveTileValueSum = tileValueSum;
+
+            if (cleared > 0)
+            {
+                // Tunnel Vision: only column clears score (takes priority over Line Master)
+                if (_cardState.HasTunnelVision)
+                {
+                    float colSum = 0f;
+                    foreach (var snap in snapshots)
+                        if (clearedCols[snap.X]) colSum += snap.Value;
+                    effectiveTileValueSum = colSum * _cardState.TunnelVisionMultiplier;
+                }
+                // Line Master: only row clears score
+                else if (_cardState.HasLineMaster)
+                {
+                    float rowSum = 0f;
+                    foreach (var snap in snapshots)
+                        if (clearedRows[snap.Y]) rowSum += snap.Value;
+                    effectiveTileValueSum = rowSum * _cardState.LineMasterMultiplier;
+                }
+
+                // Diet Plan: global tile score reduction
+                if (_cardState.HasDietPlan)
+                    effectiveTileValueSum *= _cardState.DietPlanScoreFactor;
+
+                // Slow Burn: early penalty / late bonus
+                if (_cardState.HasSlowBurn)
+                {
+                    int placed    = _milestoneSystem?.PiecesPlacedInWindow ?? 0;
+                    int piecesLeft = _milestoneSystem?.PiecesRemaining     ?? int.MaxValue;
+                    if (placed < _cardState.SlowBurnEarlyCount)
+                        effectiveTileValueSum *= _cardState.SlowBurnEarlyFactor;
+                    else if (piecesLeft <= _cardState.SlowBurnLateCount)
+                        effectiveTileValueSum *= _cardState.SlowBurnLateFactor;
+                }
+            }
+
+            // ── Score ─────────────────────────────────────────────────────────
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
-                tileValueSum,
+                effectiveTileValueSum,
                 _comboSystem.Multiplier,
                 _globalScoreMultiplier
             );
 
-// Shape bonus ayrı ekleniyor — tileValueSum=0 engelini aşar
-            if (shapeBonus > 0f)
+            if (shapeBonus > 0f && cleared > 0)
             {
                 gainedScore += Mathf.RoundToInt(
                     shapeBonus * _comboSystem.Multiplier * _globalScoreMultiplier);
             }
             _score += gainedScore;
 
-            // Milestone: score güncelle
+            // ── Milestone: score update (may trigger HandleMilestoneReached) ──
             _milestoneSystem?.OnScoreChanged(_score);
 
-            // Stats: combo
             RunStatsTracker.Instance?.RecordCombo(_comboSystem.Multiplier);
 
-            // Score UI
             if (gainedScore != 0)
                 ScoreView?.AddScoreGain(_score, gainedScore);
             else
                 ScoreView?.SetScore(_score);
 
-            // Pool güncelle
+            // ── Pool management ───────────────────────────────────────────────
             _piecePool.RemoveAt(_selectedPoolIndex);
-            
+
             if (_piecePool.Count == 0)
                 GenerateNewPool();
             else
@@ -300,29 +349,32 @@ namespace RogueBlockBlast.Game
                 SpawnNextFromPool();
             }
 
-            // Dead pool kontrolü
+            // ── Dead pool check ───────────────────────────────────────────────
             if (!HasAnyValidMoveInPool())
-            { 
-                HandleDeadPool(); 
+            {
+                HandleDeadPool();
                 return;
             }
+
             int remaining = _milestoneSystem?.PiecesRemaining ?? int.MaxValue;
             FrameFeedbackController.Instance?.OnCritical(remaining);
 
-            // Milestone: piece sayacı — pool işlemleri bittikten sonra
-            _milestoneSystem?.OnPiecePlaced();
+            // ── Milestone pool counter (skipped for Ghost Drop / First Picks) ─
+            if (!skipPoolConsume)
+                _milestoneSystem?.OnPiecePlaced();
 
             _poolDirty = true;
         }
 
         // ── Run ──────────────────────────────────────────────────────────────
         private void NewRun()
-        {   
+        {
+            _cardState.Reset();
             ShapeCardEffectRegistry.Instance?.Reset();
             if (Width  <= 0) Width  = 8;
             if (Height <= 0) Height = 8;
             Time.timeScale = 1f;
-            GameOverUI.Instance?.Hide(); 
+            GameOverUI.Instance?.Hide();
             Time.timeScale = 1f;
             _upgradeRevivesUsed = 0;
             _freeDeadPoolReroll = 0;
@@ -336,29 +388,25 @@ namespace RogueBlockBlast.Game
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
             GameStateController.Reset();
-            GameOverUI.Instance?.Hide();  
-            DOTween.SetTweensCapacity(200,125);   
+            GameOverUI.Instance?.Hide();
+            DOTween.SetTweensCapacity(200,125);
             var reg = UpgradeRegistry.Instance;
-            int baseMaxCharge  = 3; // ComboSystem default
+            int baseMaxCharge  = 3;
             int barExpansion   = Mathf.RoundToInt(
                 reg?.GetEffect(_upgradeLibrary?.Get("upgrade_combo_bar")) ?? 0f);
             _comboSystem.SetMaxCharge(baseMaxCharge + barExpansion);
- 
-            // StartingCombo: base multiplier 1.0 → 1.1 → 1.2 → 1.3
+
             float startingBonus = reg?.GetEffect(
                 _upgradeLibrary?.Get("upgrade_starting_combo")) ?? 0f;
             _comboSystem.SetBaseMultiplier(1f + startingBonus);
- 
-            // ComboGainBoost: BonusPerClear 0.1 → 0.13 → ...
-            // Reset çağrısı BonusPerClear'ı sıfırlamaz, SetBonusPerClear ile base set ediyoruz
+
             float comboGainBonus = reg?.GetEffect(
                 _upgradeLibrary?.Get("upgrade_combo_gain")) ?? 0f;
-            _comboSystem.SetBonusPerClear(0.1f + comboGainBonus); // 0.1 base + upgrade bonus
+            _comboSystem.SetBonusPerClear(0.1f + comboGainBonus);
 
             _comboSystem.Reset();
             if (_milestoneSystem != null)
             {
-                // Pool limit'i güncelle (upgrade değişmiş olabilir)
                 int poolBonus = Mathf.RoundToInt(
                     UpgradeRegistry.Instance?.GetEffect(
                         _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
@@ -380,7 +428,6 @@ namespace RogueBlockBlast.Game
                 UpgradeRegistry.Instance?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_card_reroll")) ?? 0f
             );
-            // Pool reroll butonu
             bool hasPoolReroll = _poolRerollsRemaining > 0;
             _poolRerollButton?.SetVisible(hasPoolReroll);
             _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
@@ -391,23 +438,27 @@ namespace RogueBlockBlast.Game
 
         private void SpawnNextFromPool()
         {
-            
             if (_piecePool.Count == 0) { GenerateNewPool(); return; }
             if (_selectedPoolIndex < 0 || _selectedPoolIndex >= _piecePool.Count) return;
-
             _currentPiece = _piecePool[_selectedPoolIndex];
             _currentRot   = Rotation.R0;
-            
         }
 
         private void GenerateNewPool(bool skipValidCheck = false)
         {
-           
             _piecePool.Clear();
+
+            // Diet Plan filters out large shapes
+            Func<ShapeSO, bool> spawnFilter = null;
+            if (_cardState.HasDietPlan)
+            {
+                int maxSize = _cardState.DietPlanMaxSize;
+                spawnFilter = shape => shape.Cells.Count < maxSize;
+            }
 
             for (int i = 0; i < 3; i++)
             {
-                var piece = ShapeSpawnService.GetRandomWeighted(ShapeLibrary);
+                var piece = ShapeSpawnService.GetRandomWeighted(ShapeLibrary, spawnFilter);
                 if (piece != null)
                     _piecePool.Add(piece);
             }
@@ -415,23 +466,21 @@ namespace RogueBlockBlast.Game
             _selectedPoolIndex = 0;
             _currentPiece      = _piecePool[0];
             _currentRot        = Rotation.R0;
-            if(!skipValidCheck && !HasAnyValidMoveInPool())
+            if (!skipValidCheck && !HasAnyValidMoveInPool())
                 OnGameOver();
-            
+
             _poolDirty = true;
         }
 
         // ── Game Over ────────────────────────────────────────────────────────
         private void OnGameOver(GameOverReason reason = GameOverReason.Default)
         {
-            
-            
             FrameFeedbackController.Instance?.OnGameOver();
             AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
-            
+
             float maxCombo = (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f;
             LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
-            
+
             if (GameOverAnnouncer.Instance != null)
             {
                 GameOverAnnouncer.Instance.Play(reason, () =>
@@ -441,35 +490,29 @@ namespace RogueBlockBlast.Game
             {
                 GameOverUI.Instance?.Show(_score);
             }
-           
         }
+
         private void OnPoolRerollClicked()
         {
-            
             if (_poolRerollsRemaining <= 0) return;
             if (!GameStateController.InputAllowed) return;
- 
             _poolRerollsRemaining--;
             _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
- 
-            // Mevcut pool'u temizle, yenisini üret
             _milestoneSystem?.EnsureMinimumRemaining(6);
             GenerateNewPool(skipValidCheck: false);
-            
             _poolDirty = true;
         }
+
         // ── Dead Pool ────────────────────────────────────────────────────────
         private void HandleDeadPool()
         {
-            // DeadPoolRevive upgrade kontrolü
             int reviveLevel = Mathf.RoundToInt(
                 UpgradeRegistry.Instance?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_dead_pool_revive")) ?? 0f);
- 
+
             if (reviveLevel > 0 && _upgradeRevivesUsed < reviveLevel)
             {
                 _upgradeRevivesUsed++;
-                Debug.Log($"[DeadPool] Upgrade revive kullanıldı ({_upgradeRevivesUsed}/{reviveLevel})");
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
@@ -477,7 +520,7 @@ namespace RogueBlockBlast.Game
                 _poolDirty = true;
                 return;
             }
-          
+
             if (_freeDeadPoolReroll > 0)
             {
                 _freeDeadPoolReroll--;
@@ -490,7 +533,7 @@ namespace RogueBlockBlast.Game
 
             if (_cardDeadPoolReroll > 0 && _score >= CardRerollCost)
             {
-                _cardDeadPoolReroll--;  
+                _cardDeadPoolReroll--;
                 _score -= CardRerollCost;
                 ScoreView?.AddScoreGain(_score, -CardRerollCost);
                 _milestoneSystem?.EnsureMinimumRemaining(6);
@@ -501,27 +544,57 @@ namespace RogueBlockBlast.Game
                 return;
             }
 
+            // Momentum Shield: prevent game over when combo is high enough
+            if (_cardState.HasMomentumShield &&
+                _comboSystem.Multiplier >= _cardState.MomentumShieldMinMultiplier)
+            {
+                _comboSystem.ForceResetToBase();
+                _milestoneSystem?.EnsureMinimumRemaining(6);
+                GenerateNewPool();
+                if (!HasAnyValidMoveInPool())
+                {
+                    OnGameOver(GameOverReason.NoMoves);
+                    return;
+                }
+                _poolDirty = true;
+                return;
+            }
+
             OnGameOver();
         }
 
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
-            // CoinGainBoost — %4 per level, level başına 0.04
+            // Reset per-milestone card counters for the new window
+            _cardState.OnMilestoneReached();
+
+            // Future Investment: apply pending discount to new current window
+            if (_cardState.HasFutureInvestment && _cardState.FutureInvestmentPendingDiscount > 0f)
+            {
+                _milestoneSystem?.ScaleCurrentWindow(1f - _cardState.FutureInvestmentPendingDiscount);
+                _cardState.FutureInvestmentPendingDiscount = 0f;
+            }
+
+            // Hoarder: bonus pool capacity if enough shapes remained
+            if (_cardState.HasHoarder &&
+                _milestoneSystem != null &&
+                _milestoneSystem.LastCompletedPiecesRemaining >= _cardState.HoarderMinRemaining)
+            {
+                _milestoneSystem.SetPoolLimit(_milestoneSystem.EffectivePoolLimit + _cardState.HoarderPoolBonus);
+            }
+
+            // ── Original coin reward logic ────────────────────────────────────
             float coinMultiplier = 1f + (UpgradeRegistry.Instance?.GetEffect(
                 _upgradeLibrary?.Get("upgrade_coin_gain")) ?? 0f);
- 
+
             int total = Mathf.RoundToInt((coinReward + _coinBonusPerMilestone) * coinMultiplier);
- 
             CoinWallet.Instance?.Earn(total);
             _coins += total;
- 
-            Debug.Log($"[Milestone] {data.Label} → +{total} coin (x{coinMultiplier:0.00})");
- 
+
             MilestoneView?.PlayMilestoneReachedFX();
             FrameFeedbackController.Instance?.OnMilestone();
- 
-            // İlk kez bu milestone'a ulaşıldı mı?
+
             CardSO newlyUnlockedCard = null;
             if (UnlockRegistry.Instance != null &&
                 UnlockRegistry.Instance.IsFirstMilestoneReach(data.Label))
@@ -529,7 +602,7 @@ namespace RogueBlockBlast.Game
                 var lockedCards = CardPool
                     .Where(c => c != null && c.LockedByDefault && !c.IsUnlocked)
                     .ToList();
- 
+
                 if (lockedCards.Count > 0)
                 {
                     int pick = UnityEngine.Random.Range(0, lockedCards.Count);
@@ -537,15 +610,18 @@ namespace RogueBlockBlast.Game
                     UnlockRegistry.Instance.UnlockCard(newlyUnlockedCard.Id);
                     MilestoneView?.ShowNewCardEarned(newlyUnlockedCard.CardName);
                 }
- 
-                // MaxMilestoneReached güncelle — buton lock kontrolü için
+
                 int current = PlayerPrefs.GetInt("MaxMilestoneReached", 0);
                 if (_milestoneSystem.CurrentMilestoneIndex > current)
                     PlayerPrefs.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
             }
- 
+
             if (CardPool != null && CardPool.Count > 0)
-                CardSelectionUI.Instance?.Show(CardPool, OnCardPicked, newlyUnlockedCard, _cardRerollsRemaining );
+            {
+                // Filter out cards that are excluded by active card effects (e.g. mutual exclusions)
+                var availableCards = CardPool.Where(c => c != null && !IsCardExcluded(c)).ToList();
+                CardSelectionUI.Instance?.Show(availableCards, OnCardPicked, newlyUnlockedCard, _cardRerollsRemaining);
+            }
         }
 
         private void HandlePoolLimitExhausted()
@@ -570,24 +646,71 @@ namespace RogueBlockBlast.Game
             return false;
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
-        private static Rotation NextRot(Rotation r) => (Rotation)(((int)r + 1) & 3);
-        private static Rotation PrevRot(Rotation r) => (Rotation)(((int)r + 3) & 3);
+        // ── Ghost Drop helper ────────────────────────────────────────────────
+        private bool IsGhostDropPlacement(BoardModel board, PieceDefinition piece, Vector2Int anchor, Rotation rot)
+        {
+            var cells = piece.GetCells(rot);
+            var pieceSet = new HashSet<Vector2Int>(cells.Count);
+            for (int i = 0; i < cells.Count; i++)
+                pieceSet.Add(anchor + cells[i]);
+
+            for (int i = 0; i < cells.Count; i++)
+            {
+                var pos = anchor + cells[i];
+                if (IsNeighborFilled(board, pos + Vector2Int.up,    pieceSet)) return false;
+                if (IsNeighborFilled(board, pos + Vector2Int.down,  pieceSet)) return false;
+                if (IsNeighborFilled(board, pos + Vector2Int.left,  pieceSet)) return false;
+                if (IsNeighborFilled(board, pos + Vector2Int.right, pieceSet)) return false;
+            }
+            return true;
+        }
+
+        private static bool IsNeighborFilled(BoardModel board, Vector2Int pos, HashSet<Vector2Int> pieceSet)
+        {
+            if (pieceSet.Contains(pos)) return false;
+            return board.IsFilled(pos.x, pos.y);
+        }
+
+        // ── Card exclusion ───────────────────────────────────────────────────
+        private bool IsCardExcluded(CardSO card)
+        {
+            foreach (var effect in card.Effects)
+            {
+                // Tunnel Vision and Line Master are mutually exclusive
+                if (effect.Type == CardEffectType.TunnelVisionMultiplier && _cardState.HasLineMaster)  return true;
+                if (effect.Type == CardEffectType.LineMasterMultiplier   && _cardState.HasTunnelVision) return true;
+            }
+            return false;
+        }
+
+        // ── Hyperfocus event handler ─────────────────────────────────────────
+        private void HandleHyperfocusPenalty()
+        {
+            if (!_cardState.HasHyperfocus || _cardState.HyperfocusPenaltyShapes <= 0) return;
+            _milestoneSystem?.DeductPieces(_cardState.HyperfocusPenaltyShapes);
+        }
+
+        // ── Card picked ──────────────────────────────────────────────────────
         private void OnCardPicked(CardSO card)
         {
             if (card == null) return;
-            
+
             CardEffectApplier.Apply(
                 card,
                 _comboSystem,
                 _milestoneSystem,
                 ref _cardDeadPoolReroll,
                 ref _globalScoreMultiplier,
-                ref _coinBonusPerMilestone
+                ref _coinBonusPerMilestone,
+                _cardState
             );
             CardInventoryUI.Instance?.AddCard(card);
-            Debug.Log($"[Card] Seçildi: {card.CardName}");
         }
+
+        // ── Helpers ──────────────────────────────────────────────────────────
+        private static Rotation NextRot(Rotation r) => (Rotation)(((int)r + 1) & 3);
+        private static Rotation PrevRot(Rotation r) => (Rotation)(((int)r + 3) & 3);
+
         private void OnValidate()
         {
             if (Width  <= 0) Width  = 8;

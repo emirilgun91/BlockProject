@@ -23,12 +23,17 @@ namespace RogueBlockBlast.Core
         private readonly MilestoneConfigSO _config;
         private int _poolLimitOverride; // 0 = config'den oku — mutable
 
-        // ── State ────────────────────────────────────────────────────────────
-        public int  CurrentMilestoneIndex { get; private set; } = 0;
-        public int  PiecesPlacedInWindow  { get; private set; } = 0;
-        public int  CurrentScore          { get; private set; } = 0;
+        // ── Threshold scaling ────────────────────────────────────────────────
+        private float _currentWindowScale = 1f;  // Future Investment — milestone başında sıfırlanır
+        private float _permanentScale     = 1f;  // Bounty Hunter — run boyunca kalıcı
 
-        private int EffectivePoolLimit =>
+        // ── State ────────────────────────────────────────────────────────────
+        public int  CurrentMilestoneIndex        { get; private set; } = 0;
+        public int  PiecesPlacedInWindow         { get; private set; } = 0;
+        public int  CurrentScore                 { get; private set; } = 0;
+        public int  LastCompletedPiecesRemaining { get; private set; } = 0;
+
+        public int EffectivePoolLimit =>
             _poolLimitOverride > 0 ? _poolLimitOverride : _config.PoolLimit;
 
         public int  PiecesRemaining       => Mathf.Max(0, EffectivePoolLimit - PiecesPlacedInWindow);
@@ -75,7 +80,7 @@ namespace RogueBlockBlast.Core
             var milestone = NextMilestone;
             if (!milestone.HasValue) return;
 
-            if (newScore >= milestone.Value.ScoreThreshold)
+            if (newScore >= milestone.Value.ScoreThreshold * _currentWindowScale * _permanentScale)
                 TriggerMilestone(milestone.Value);
             else
                 FireProgressChanged();
@@ -84,10 +89,28 @@ namespace RogueBlockBlast.Core
         /// <summary>Run başında sıfırlar — pool limit korunur.</summary>
         public void Reset()
         {
-            CurrentMilestoneIndex = 0;
-            PiecesPlacedInWindow  = 0;
-            CurrentScore          = 0;
+            CurrentMilestoneIndex        = 0;
+            PiecesPlacedInWindow         = 0;
+            CurrentScore                 = 0;
+            LastCompletedPiecesRemaining = 0;
+            _currentWindowScale          = 1f;
+            _permanentScale              = 1f;
             FireProgressChanged();
+        }
+
+        /// <summary>Future Investment: mevcut milestone eşiğini ölçekle.</summary>
+        public void ScaleCurrentWindow(float scale) => _currentWindowScale *= scale;
+
+        /// <summary>Bounty Hunter: tüm milestone eşiklerine kalıcı çarpan ekle.</summary>
+        public void ScalePermanent(float scale) => _permanentScale *= scale;
+
+        /// <summary>Hyperfocus cezası: pool counter'ı artır, gerekirse exhausted tetikle.</summary>
+        public void DeductPieces(int count)
+        {
+            PiecesPlacedInWindow = Mathf.Min(PiecesPlacedInWindow + count, EffectivePoolLimit);
+            FireProgressChanged();
+            if (PiecesRemaining <= 0)
+                OnPoolLimitExhausted?.Invoke();
         }
 
         /// <summary>Pool limit'i güncelle — upgrade değişince NewRun'da çağır.</summary>
@@ -106,18 +129,19 @@ namespace RogueBlockBlast.Core
         // ── Private ──────────────────────────────────────────────────────────
         private void TriggerMilestone(MilestoneData data)
         {
+            LastCompletedPiecesRemaining = PiecesRemaining; // Hoarder için kaydet
             CurrentMilestoneIndex++;
-            PiecesPlacedInWindow = 0; // pool limit sıfırla
+            PiecesPlacedInWindow = 0;
+            _currentWindowScale  = 1f; // sonraki pencere için sıfırla
 
             OnMilestoneReached?.Invoke(data.CoinReward, data);
             FireProgressChanged();
         }
+
         public void EnsureMinimumRemaining(int minimum = 6)
         {
-            int current = PiecesRemaining;
-            if (current < minimum)
-                PiecesPlacedInWindow = Mathf.Max(0, _config.PoolLimit - minimum);
-            // current >= minimum ise hiç dokunmuyoruz
+            if (PiecesRemaining < minimum)
+                PiecesPlacedInWindow = Mathf.Max(0, EffectivePoolLimit - minimum);
             FireProgressChanged();
         }
 
@@ -130,12 +154,17 @@ namespace RogueBlockBlast.Core
                 ? (_config.GetMilestone(CurrentMilestoneIndex - 1)?.ScoreThreshold ?? 0)
                 : 0;
 
+            // UI'ya etkili (ölçeklenmiş) eşiği gönder — progress bar doğru görünsün
+            int effectiveNext = next.HasValue
+                ? Mathf.RoundToInt(next.Value.ScoreThreshold * _currentWindowScale * _permanentScale)
+                : 0;
+
             OnProgressChanged?.Invoke(new MilestoneProgressState(
                 currentMilestone : CurrentMilestoneIndex,
                 totalMilestones  : _config.TotalMilestones,
                 piecesRemaining  : PiecesRemaining,
                 poolLimit        : EffectivePoolLimit,
-                nextThreshold    : next?.ScoreThreshold ?? 0,
+                nextThreshold    : effectiveNext,
                 nextLabel        : next?.Label ?? "MAX",
                 allCleared       : AllMilestonesCleared,
                 currentScore     : CurrentScore,

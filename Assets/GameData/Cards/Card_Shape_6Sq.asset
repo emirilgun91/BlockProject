@@ -21,7 +21,7 @@ MonoBehaviour:
   BaseWeight: 35
   IsUnique: 0
   LockedByDefault: 0
-  RequiredShapeId: 
+  RequiredShapeId: Shape_6Sq
   IsShapeCard: 1
   TargetShapeId: Shape_6Sq
   ShapeEffects:

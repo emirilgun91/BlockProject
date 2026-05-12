@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace RogueBlockBlast.UI
 {
+    public enum OverlayType { None, NeonCableA, NeonCableB, SafeZone, DecayingRift, PhantomCell }
+
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class TileView : MonoBehaviour
     {
@@ -29,6 +31,10 @@ namespace RogueBlockBlast.UI
         private Vector3        _baseScale;
         private Tweener        _colorTween;
         private Sequence       _fxSequence;
+
+        // ── Overlay ──────────────────────────────────────────────────────────
+        private OverlayType _overlayType  = OverlayType.None;
+        private string      _overlayLabel;
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
@@ -174,6 +180,42 @@ namespace RogueBlockBlast.UI
             if (transform.localScale != Vector3.zero)
                 _baseScale = transform.localScale;
         }
+        // ── Overlay API ──────────────────────────────────────────────────────
+
+        public void SetOverlay(OverlayType type, string label)
+        {
+            _overlayType  = type;
+            _overlayLabel = label;
+        }
+
+        public void ClearOverlay()
+        {
+            _overlayType  = OverlayType.None;
+            _overlayLabel = null;
+        }
+
+        /// <summary>
+        /// Called by BoardView.Render() AFTER color/value are set.
+        /// Blends overlay tint on top and writes overlay label into scoreText.
+        /// </summary>
+        public void ApplyOverlayVisual()
+        {
+            if (_overlayType == OverlayType.None) return;
+            _sr.color = Color.Lerp(_sr.color, GetOverlayTint(_overlayType), 0.55f);
+            if (_scoreText != null)
+                _scoreText.text = _overlayLabel ?? string.Empty;
+        }
+
+        private static Color GetOverlayTint(OverlayType type) => type switch
+        {
+            OverlayType.NeonCableA   => new Color(0f,    1f,   0.75f),
+            OverlayType.NeonCableB   => new Color(0f,   0.75f,  1f),
+            OverlayType.SafeZone     => new Color(0.2f,  1f,   0.2f),
+            OverlayType.DecayingRift => new Color(1f,   0.3f,   0f),
+            OverlayType.PhantomCell  => new Color(0.65f, 0f,    1f),
+            _                        => Color.white,
+        };
+
         /// <summary>Clear FX sonrası hücreyi boş renge döndürür.</summary>
         public void RestoreEmpty(Color emptyColor)
         {

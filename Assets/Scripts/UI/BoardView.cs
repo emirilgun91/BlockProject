@@ -23,12 +23,24 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _introTileDuration = 0.25f;
 
         private TileView[,] _tiles;
+        private readonly Dictionary<Vector2Int, (OverlayType type, string label)> _overlays = new();
+
+        // ── Overlay ──────────────────────────────────────────────────────────
+        public void SetOverlay(int x, int y, OverlayType type, string label = null)
+            => _overlays[new Vector2Int(x, y)] = (type, label);
+
+        public void ClearOverlay(int x, int y)
+            => _overlays.Remove(new Vector2Int(x, y));
+
+        public void ClearAllOverlays()
+            => _overlays.Clear();
 
         // ── Build ────────────────────────────────────────────────────────────
         public void Build(BoardModel board)
         {
             if (TilePrefab == null) { Debug.LogError("[BoardView] TilePrefab null"); return; }
 
+            _overlays.Clear();
             for (int i = transform.childCount - 1; i >= 0; i--)
                 Destroy(transform.GetChild(i).gameObject);
 
@@ -156,37 +168,48 @@ namespace RogueBlockBlast.UI
         {
             if (_tiles == null) return;
 
-            Color emptyCell = new Color32(0x1c, 0x21, 0x32, 0xff);
-            Color ghostOk   = BlockColorPalette.GhostValid;
-            Color ghostBad  = BlockColorPalette.GhostInvalid;
+            Color emptyCell   = new Color32(0x1c, 0x21, 0x32, 0xff);
+            Color deadZoneTint = new Color(0.28f, 0.05f, 0.05f, 1f);
+            Color ghostOk     = BlockColorPalette.GhostValid;
+            Color ghostBad    = BlockColorPalette.GhostInvalid;
 
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
             {
-                bool filled  = board.IsFilled(x, y);
-                bool isGhost = ghostCells != null && ghostCells.Contains(new Vector2Int(x, y));
+                bool filled   = board.IsFilled(x, y);
+                bool phantom  = board.IsPhantom(x, y);
+                bool deadZone = board.IsDeadZone(x, y);
+                bool isGhost  = ghostCells != null && ghostCells.Contains(new Vector2Int(x, y));
 
-                // ── Renk ────────────────────────────────────────
-                Color color = filled ? board.GetCellColor(x, y) : emptyCell;
-                if (isGhost) color = filled ? ghostBad : ghostOk;
+                Color color;
+                if (isGhost)
+                    color = filled ? ghostBad : ghostOk;
+                else if (deadZone)
+                    color = deadZoneTint;
+                else if (phantom)
+                    color = emptyCell; // overlay handles the visual tint
+                else
+                    color = filled ? board.GetCellColor(x, y) : emptyCell;
+
                 _tiles[x, y].SetColor(color);
 
-                // ── Değer (explicit, her durum için net karar) ──
-                if (filled && !isGhost)
-                {
-                    // Dolu tile — board'daki değeri göster
+                if (filled && !isGhost && !phantom && !deadZone)
                     _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
-                }
                 else if (!filled && isGhost && ghostTileValue > 0f)
-                {
-                    // Geçerli ghost — yerleşince kazanılacak değer
                     _tiles[x, y].SetTileValue(ghostTileValue);
-                }
                 else
-                {
-                    // Boş tile veya geçersiz ghost — değer gösterme
                     _tiles[x, y].ClearValue();
-                }
+
+                // ── Overlays applied on top each frame ───────────
+                _tiles[x, y].ClearOverlay();
+            }
+
+            foreach (var kv in _overlays)
+            {
+                int ox = kv.Key.x, oy = kv.Key.y;
+                if (ox < 0 || oy < 0 || ox >= board.Width || oy >= board.Height) continue;
+                _tiles[ox, oy].SetOverlay(kv.Value.type, kv.Value.label);
+                _tiles[ox, oy].ApplyOverlayVisual();
             }
         }
 

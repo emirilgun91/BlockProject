@@ -58,6 +58,9 @@ namespace RogueBlockBlast.UI
         // ── Display ──────────────────────────────────────────────────────────
         [Header("Display")]
         [SerializeField] private Toggle   _fullscreenToggle;
+        [SerializeField] private Image    _fullscreenIcon;
+        [SerializeField] private Sprite   _iconChecked;
+        [SerializeField] private Sprite   _iconUnchecked;
 
         // ── Footer ───────────────────────────────────────────────────────────
         [Header("Footer")]
@@ -76,6 +79,7 @@ namespace RogueBlockBlast.UI
         private float _prevMusic;
         private float _prevSfx;
         private bool  _prevFullscreen;
+        private bool  _desiredFullscreen;
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
@@ -159,7 +163,8 @@ namespace RogueBlockBlast.UI
             _prevMaster     = master;
             _prevMusic      = music;
             _prevSfx        = sfx;
-            _prevFullscreen = fs;
+            _prevFullscreen    = fs;
+            _desiredFullscreen = fs;
 
             // Slider'ları güncelle (event tetiklemeden)
             SetSliderSilent(_masterSlider, master);
@@ -171,9 +176,10 @@ namespace RogueBlockBlast.UI
             RefreshValueText(_musicValueText,  music);
             RefreshValueText(_sfxValueText,    sfx);
 
-            // Fullscreen toggle
+            // Fullscreen toggle — SetValueWithoutNotify prevents triggering Screen.fullScreen on panel open
             if (_fullscreenToggle != null)
-                _fullscreenToggle.isOn = fs;
+                _fullscreenToggle.SetIsOnWithoutNotify(fs);
+            RefreshFullscreenIcon(fs);
 
             // Dil etiketi — kendi lokalizasyon sisteminle güncelle
             // Örnek: if (_langLabel != null) _langLabel.text = LocalizationManager.CurrentLanguageName;
@@ -229,8 +235,14 @@ namespace RogueBlockBlast.UI
         // ── Fullscreen ───────────────────────────────────────────────────────
         private void OnFullscreenChanged(bool value)
         {
-            // Anlık uygula — Apply'a kadar beklemiyoruz (UX daha iyi)
-            Screen.fullScreen = value;
+            _desiredFullscreen = value;
+            RefreshFullscreenIcon(value);
+        }
+
+        private void RefreshFullscreenIcon(bool isOn)
+        {
+            if (_fullscreenIcon == null) return;
+            _fullscreenIcon.sprite = isOn ? _iconChecked : _iconUnchecked;
         }
 
         // ── Footer ───────────────────────────────────────────────────────────
@@ -242,13 +254,9 @@ namespace RogueBlockBlast.UI
         /// </summary>
         private void OnApply()
         {
-            // Fullscreen kaydet
-            PlayerPrefs.SetInt(FULLSCREEN_KEY, Screen.fullScreen ? 1 : 0);
+            Screen.fullScreen = _desiredFullscreen;
+            PlayerPrefs.SetInt(FULLSCREEN_KEY, _desiredFullscreen ? 1 : 0);
             PlayerPrefs.Save();
-
-            // Ses ayarları AudioManager'ın SetXxxVolume içinde zaten kaydediliyor
-
-            Debug.Log("[Settings] Ayarlar kaydedildi.");
 
             ClosePanel();
         }
@@ -263,14 +271,11 @@ namespace RogueBlockBlast.UI
             AudioManager.Instance?.SetMusicVolume(_prevMusic);
             AudioManager.Instance?.SetSFXVolume(_prevSfx);
 
-            // Fullscreen eski haline döndür
-            Screen.fullScreen = _prevFullscreen;
-
-            // PlayerPrefs'i de eski değerlerle yaz
-            PlayerPrefs.SetFloat(MASTER_KEY,     _prevMaster);
-            PlayerPrefs.SetFloat(MUSIC_KEY,      _prevMusic);
-            PlayerPrefs.SetFloat(SFX_KEY,        _prevSfx);
-            PlayerPrefs.SetInt(FULLSCREEN_KEY,   _prevFullscreen ? 1 : 0);
+            // Fullscreen: nothing was applied yet, just reset the saved pref
+            PlayerPrefs.SetFloat(MASTER_KEY,   _prevMaster);
+            PlayerPrefs.SetFloat(MUSIC_KEY,    _prevMusic);
+            PlayerPrefs.SetFloat(SFX_KEY,      _prevSfx);
+            PlayerPrefs.SetInt(FULLSCREEN_KEY, _prevFullscreen ? 1 : 0);
             PlayerPrefs.Save();
 
             ClosePanel();

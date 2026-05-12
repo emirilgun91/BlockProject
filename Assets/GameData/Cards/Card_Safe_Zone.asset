@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
+  m_Name: Card_Safe_Zone
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
+  Id: Card_Safe_Zone
+  CardName: Safe Zone
+  Description: Upon selecting this card, 1 visually distinct tile is randomly selected
+    on the 8x8 grid. When a shape is placed covering this tile, the combo multiplier's
+    drop floor becomes 2x (meaning it will not drop below 2x upon a reset) as long
+    as that shape is not destroyed by a line clear. If the combo is already below
+    2x, it remains as is. However, if that specific tile is cleared via a line clear,
+    the player is penalized and loses 8 shapes from their current pool.
+  Icon: {fileID: 0}
+  Rarity: 2
+  Effects:
+  - Type: 32
+    Value: 2
+    Description: 
+  - Type: 33
+    Value: 8
+    Description: 
+  BaseWeight: 35
+  IsUnique: 1
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

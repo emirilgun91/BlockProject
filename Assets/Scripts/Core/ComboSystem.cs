@@ -26,6 +26,9 @@ namespace RogueBlockBlast.Core
         private bool  _softLandingActive;
         private float _softLandingFactor = 0.5f;
 
+        // ── Combo Floor (Safe Zone card) ──────────────────────────────────────
+        private float _comboFloor = 0f;
+
         // ── State ────────────────────────────────────────────────────────────
         public int   Charges    { get; private set; } = 0;
         public float Multiplier { get; private set; } = 1f;
@@ -75,17 +78,42 @@ namespace RogueBlockBlast.Core
             if (hadClear) return; // clear varsa OnLineClear halletti
 
             if (Charges > 0)
+            {
                 Charges--;
 
-            if (Charges == 0)
-            {
-                // Soft Landing: reset yerine mevcut combo'nun yarısına düş
-                Multiplier = _softLandingActive
-                    ? Mathf.Max(BaseMultiplier, Multiplier * _softLandingFactor)
-                    : BaseMultiplier;
-                OnComboReset?.Invoke();
+                if (Charges == 0)
+                {
+                    float floor = Mathf.Max(BaseMultiplier, _comboFloor);
+                    Multiplier = _softLandingActive
+                        ? Mathf.Max(floor, Multiplier * _softLandingFactor)
+                        : floor;
+                    OnComboReset?.Invoke();
+                }
             }
 
+            FireStateChanged();
+        }
+
+        /// <summary>Safe Zone kartı: combo reset'te düşülecek minimum çarpanı ayarla. 0 = devre dışı.</summary>
+        public void SetComboFloor(float value)
+        {
+            _comboFloor = Mathf.Max(0f, value);
+        }
+
+        /// <summary>Perfect Clear kartı: çarpana doğrudan ekleme.</summary>
+        public void AddMultiplier(float delta)
+        {
+            if (delta <= 0f) return;
+            Multiplier += delta;
+            FireStateChanged();
+        }
+
+        /// <summary>Perfect Clear kartı: charge'ı zorla max'a çek.</summary>
+        public void ForceMaxCharge()
+        {
+            if (Charges >= MaxCharge) return;
+            Charges = MaxCharge;
+            OnMaxCharge?.Invoke();
             FireStateChanged();
         }
 
@@ -95,6 +123,7 @@ namespace RogueBlockBlast.Core
             Charges             = 0;
             Multiplier          = BaseMultiplier;
             _softLandingActive  = false;
+            _comboFloor         = 0f;
             FireStateChanged();
         }
 

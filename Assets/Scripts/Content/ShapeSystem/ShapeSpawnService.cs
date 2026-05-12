@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Game;
@@ -9,7 +8,7 @@ namespace RogueBlockBlast.Core
     public static class ShapeSpawnService
     {
         /// <param name="filter">Opsiyonel filtre — null ise tüm unlock'lu şekiller dahil edilir.</param>
-        public static PieceDefinition GetRandomWeighted(ShapeLibrarySO library, Func<ShapeSO, bool> filter = null)
+        public static PieceDefinition GetRandomWeighted(ShapeLibrarySO library, System.Func<ShapeSO, bool> filter = null)
         {
             if (library == null || library.Shapes == null || library.Shapes.Count == 0)
                 return null;

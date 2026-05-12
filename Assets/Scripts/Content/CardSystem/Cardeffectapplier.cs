@@ -171,6 +171,66 @@ namespace RogueBlockBlast.Game
                         cardState.HoarderPoolBonus  = Mathf.RoundToInt(effect.Value);
                         break;
 
+                    // ── Perfect Clear ────────────────────────────────────────
+                    case Content.CardEffectType.PerfectClearCoinReward:
+                        cardState.HasPerfectClear     = true;
+                        cardState.PerfectClearCoinReward = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    case Content.CardEffectType.PerfectClearComboBoost:
+                        cardState.HasPerfectClear     = true;
+                        cardState.PerfectClearComboBoost = effect.Value;
+                        break;
+
+                    // ── Selective Blindness ───────────────────────────────────
+                    case Content.CardEffectType.SelectiveBlindnessSingleFactor:
+                        cardState.HasSelectiveBlindness        = true;
+                        cardState.SelectiveBlindnessSingleFactor = effect.Value;
+                        break;
+
+                    case Content.CardEffectType.SelectiveBlindnessRemoveCount:
+                        cardState.HasSelectiveBlindness       = true;
+                        cardState.SelectiveBlindnessRemoveCount = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Neon Cable ────────────────────────────────────────────
+                    case Content.CardEffectType.NeonCableExplosionScore:
+                        cardState.HasNeonCable          = true;
+                        cardState.NeonCableExplosionScore = effect.Value;
+                        break;
+
+                    // ── Safe Zone ─────────────────────────────────────────────
+                    case Content.CardEffectType.SafeZoneComboFloor:
+                        cardState.HasSafeZone        = true;
+                        cardState.SafeZoneComboFloor  = effect.Value;
+                        break;
+
+                    case Content.CardEffectType.SafeZonePenalty:
+                        cardState.HasSafeZone    = true;
+                        cardState.SafeZonePenalty = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Decaying Rift ─────────────────────────────────────────
+                    case Content.CardEffectType.RiftSpawnInterval:
+                        cardState.HasDecayingRift   = true;
+                        cardState.RiftSpawnInterval  = Mathf.Max(1, Mathf.RoundToInt(effect.Value));
+                        break;
+
+                    case Content.CardEffectType.RiftCountdownStart:
+                        cardState.HasDecayingRift    = true;
+                        cardState.RiftCountdownStart  = Mathf.Max(1, Mathf.RoundToInt(effect.Value));
+                        break;
+
+                    case Content.CardEffectType.RiftBonusShapes:
+                        cardState.HasDecayingRift = true;
+                        cardState.RiftBonusShapes  = Mathf.RoundToInt(effect.Value);
+                        break;
+
+                    // ── Phantom Cell ──────────────────────────────────────────
+                    case Content.CardEffectType.PhantomCellEnabled:
+                        cardState.HasPhantomCell = true;
+                        break;
+
                     default:
                         Debug.LogWarning($"[Card] Bilinmeyen efekt tipi: {effect.Type}");
                         break;

@@ -99,10 +99,10 @@ namespace RogueBlockBlast.Core
         }
 
         /// <summary>Future Investment: mevcut milestone eşiğini ölçekle.</summary>
-        public void ScaleCurrentWindow(float scale) => _currentWindowScale *= scale;
+        public void ScaleCurrentWindow(float scale) { _currentWindowScale *= scale; FireProgressChanged(); }
 
         /// <summary>Bounty Hunter: tüm milestone eşiklerine kalıcı çarpan ekle.</summary>
-        public void ScalePermanent(float scale) => _permanentScale *= scale;
+        public void ScalePermanent(float scale) { _permanentScale *= scale; FireProgressChanged(); }
 
         /// <summary>Hyperfocus cezası: pool counter'ı artır, gerekirse exhausted tetikle.</summary>
         public void DeductPieces(int count)
@@ -115,6 +115,16 @@ namespace RogueBlockBlast.Core
 
         /// <summary>Pool limit'i güncelle — upgrade değişince NewRun'da çağır.</summary>
         public void SetPoolLimit(int limit) => _poolLimitOverride = limit;
+
+        /// <summary>Kart seçimi sonrası UI'ı zorla güncelle.</summary>
+        public void RefreshProgress() => FireProgressChanged();
+
+        /// <summary>Decaying Rift erken temizleme: pool counter'ı geri al (remaining artar).</summary>
+        public void AddPieces(int count)
+        {
+            PiecesPlacedInWindow = Mathf.Max(0, PiecesPlacedInWindow - count);
+            FireProgressChanged();
+        }
 
         /// <summary>
         /// Sadece piece counter'ı sıfırlar — milestone index değişmez.

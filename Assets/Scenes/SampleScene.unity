@@ -8193,9 +8193,16 @@ MonoBehaviour:
   MilestoneView: {fileID: 2111583961}
   _poolRerollButton: {fileID: 97554681}
   CardPool:
-  - {fileID: 11400000, guid: a759cb18b1acf8644b486023ffe51564, type: 2}
   - {fileID: 11400000, guid: 0ddeb60e2dd303a4b89fdbcf7f223c59, type: 2}
+  - {fileID: 11400000, guid: b5445491cfa39b64193ee61bdd7951a4, type: 2}
+  - {fileID: 11400000, guid: 1bd2e41990bcb714b9263e4b5a52059d, type: 2}
+  - {fileID: 11400000, guid: b4008a2e34964e6459492a49ad80fc78, type: 2}
+  - {fileID: 11400000, guid: d59cea62a95f393419fbda4b36eed795, type: 2}
   - {fileID: 11400000, guid: 718ea13c0b33cdd47b4ba19eb4938e5c, type: 2}
+  - {fileID: 11400000, guid: 30dbd08140b65e749908061db6190106, type: 2}
+  - {fileID: 11400000, guid: 1c1f1d016124bb54b946a42d4c2cb56f, type: 2}
+  - {fileID: 11400000, guid: 71b8be284aa9cfe4a98d639783e5abd7, type: 2}
+  - {fileID: 11400000, guid: 60eb9312905bdcb4392a5d1b7b4a8bc2, type: 2}
   - {fileID: 11400000, guid: a5940a6bfc85b6e4d94991bf28a57027, type: 2}
   - {fileID: 11400000, guid: 4a5dc673d0e49cf40b6c183c89e86f77, type: 2}
   - {fileID: 11400000, guid: 6c1a3c106f3231246bf26fc738694155, type: 2}
@@ -8210,6 +8217,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d070f72be1cd6bd47aa554dfa6c375c5, type: 2}
   - {fileID: 11400000, guid: edfe9e3b72ae2c74084955cc28cab8c7, type: 2}
   - {fileID: 11400000, guid: b58384cc083986b4d8f71ea83e44bec3, type: 2}
+  - {fileID: 11400000, guid: a759cb18b1acf8644b486023ffe51564, type: 2}
+  - {fileID: 11400000, guid: e6de1c2a354b31f49b5a777e5c2b0052, type: 2}
   _upgradeLibrary: {fileID: 11400000, guid: 0e28f486cc7339442b6b2661d79ef079, type: 2}
   mainLoopMusic: {fileID: 8300000, guid: d950f03ea7b58a34dad2371446f9384a, type: 3}
   MilestoneConfig: {fileID: 11400000, guid: 88c4c4ba54f8d1644874bc5ee0305cd3, type: 2}

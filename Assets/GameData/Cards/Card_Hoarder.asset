@@ -10,22 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_Shape_S
+  m_Name: Card_Hoarder
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_Shape_S
-  CardName: S Master
-  Description: S Tile Value +2, Spawn Rate -%5
+  Id: Card_Hoarder
+  CardName: Hoarder
+  Description: If you manage to complete a Milestone with 15 or more shapes remaining
+    in your pool, you will start the next Milestone with a +3 bonus to your maximum
+    pool capacity.
   Icon: {fileID: 0}
-  Rarity: 0
-  Effects: []
-  BaseWeight: 40
-  IsUnique: 0
+  Rarity: 3
+  Effects:
+  - Type: 25
+    Value: 15
+    Description: 
+  - Type: 26
+    Value: 3
+    Description: 
+  BaseWeight: 25
+  IsUnique: 1
   LockedByDefault: 0
   RequiredShapeId: 
-  IsShapeCard: 1
-  TargetShapeId: Shape_S
-  ShapeEffects:
-  - EffectType: 0
-    Value: 2
-  - EffectType: 1
-    Value: -5
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_Shape_T
+  m_Name: Card_First_Picks
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_Shape_T
-  CardName: T
-  Description: T Tile Value +3, Spawn Rate -%5
+  Id: Card_First_Picks
+  CardName: First Picks
+  Description: The first 5 shapes you place on the board during this Milestone will
+    not be deducted from the pool, but you cannot rotate these shapes.
   Icon: {fileID: 0}
   Rarity: 0
-  Effects: []
-  BaseWeight: 35
+  Effects:
+  - Type: 23
+    Value: 5
+    Description: 
+  BaseWeight: 50
   IsUnique: 0
   LockedByDefault: 0
-  RequiredShapeId: Shape_T
-  IsShapeCard: 1
-  TargetShapeId: Shape_T
-  ShapeEffects:
-  - EffectType: 0
-    Value: 3
-  - EffectType: 1
-    Value: -5
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

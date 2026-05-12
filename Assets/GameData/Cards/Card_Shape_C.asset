@@ -21,7 +21,7 @@ MonoBehaviour:
   BaseWeight: 100
   IsUnique: 0
   LockedByDefault: 0
-  RequiredShapeId: 
+  RequiredShapeId: Shape_C
   IsShapeCard: 1
   TargetShapeId: Shape_C
   ShapeEffects:

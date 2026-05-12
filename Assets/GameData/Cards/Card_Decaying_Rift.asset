@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
+  m_Name: Card_Decaying_Rift
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
+  Id: Card_Decaying_Rift
+  CardName: Decaying Rift
+  Description: For every 7 shapes placed on the board, a red neon tile with a "5"
+    counter on it appears. Each time the player places a shape, this counter decreases
+    by 1. If the counter reaches 0, that tile becomes a dead zone where no shapes
+    can be placed for the remainder of the current milestone. If a line clear includes
+    this tile before the counter reaches 0, the rift closes and +2 shapes are added
+    to the player's shape pool.
+  Icon: {fileID: 0}
+  Rarity: 1
+  Effects:
+  - Type: 34
+    Value: 7
+    Description: 
+  - Type: 35
+    Value: 5
+    Description: 
+  - Type: 36
+    Value: 2
+    Description: 
+  BaseWeight: 40
+  IsUnique: 0
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

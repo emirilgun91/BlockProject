@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_Shape_S
+  m_Name: Card_Soft_Landing
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_Shape_S
-  CardName: S Master
-  Description: S Tile Value +2, Spawn Rate -%5
-  Icon: {fileID: 0}
-  Rarity: 0
-  Effects: []
-  BaseWeight: 40
-  IsUnique: 0
+  Id: Card_Soft_Landing
+  CardName: Soft Landing
+  Description: When a combo reset occurs, the multiplier drops to exactly half of
+    its current value instead of dropping to the minimum value
+  Icon: {fileID: 8348444580040657917, guid: 96067a3ffa187814a9c862816d5d45aa, type: 3}
+  Rarity: 2
+  Effects:
+  - Type: 10
+    Value: 0.5
+    Description: 
+  BaseWeight: 30
+  IsUnique: 1
   LockedByDefault: 0
   RequiredShapeId: 
-  IsShapeCard: 1
-  TargetShapeId: Shape_S
-  ShapeEffects:
-  - EffectType: 0
-    Value: 2
-  - EffectType: 1
-    Value: -5
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

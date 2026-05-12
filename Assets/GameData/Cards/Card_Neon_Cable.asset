@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
+  m_Name: Card_Neon_Cable
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
+  Id: Card_Neon_Cable
+  CardName: Neon Cable
+  Description: '2 visually distinct, linked tiles are randomly generated on the 8x8
+    grid. If a line clear occurs on one of these tiles, the other linked tile and
+    its surrounding tiles (within a 1-tile radius) are also destroyed by the explosion,
+    granting score. The positions of these two linked tiles change every time a new
+    set of 3 shapes is drawn from the pool. '
+  Icon: {fileID: 0}
+  Rarity: 3
+  Effects:
+  - Type: 31
+    Value: 1
+    Description: 
+  BaseWeight: 25
+  IsUnique: 1
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

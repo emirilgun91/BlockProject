@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
+  m_Name: Card_Phantom_Cell
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
+  Id: Card_Phantom_Cell
+  CardName: Phantom Cell
+  Description: A tile with a neon "impassable" visual appears randomly on the 8x8
+    grid. This tile is always considered "filled" for the purpose of line clear logic.
+    (This means it counts towards completing a horizontal or vertical line even without
+    an actual shape block on it), but it is excluded from the score calculation.
+    When the row or column containing the Phantom Cell is cleared, the Phantom Cell
+    vanishes and relocates to another random empty tile on the board.
+  Icon: {fileID: 7740770645608920724, guid: 793217a0efea3cc428d432623f0b2632, type: 3}
+  Rarity: 1
+  Effects:
+  - Type: 37
+    Value: 1
+    Description: 
+  BaseWeight: 50
+  IsUnique: 0
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

@@ -67,6 +67,29 @@ namespace RogueBlockBlast.Content
         // ── Hoarder ───────────────────────────────────────────────────────────
         HoarderMinRemaining,    // Bonus için milestone bitiminde kalması gereken min şekil sayısı
         HoarderPoolBonus,       // Sonraki milestone için ek pool kapasitesi
+
+        // ── Perfect Clear ──────────────────────────────────────────────────────
+        PerfectClearCoinReward,   // Tüm tahta boşaldığında kazanılan coin
+        PerfectClearComboBoost,   // Tüm tahta boşaldığında combo çarpanına eklenen değer
+
+        // ── Selective Blindness ───────────────────────────────────────────────
+        SelectiveBlindnessSingleFactor,  // 1 satır/sütun temizlenince skor çarpanı (örn. 2.0)
+        SelectiveBlindnessRemoveCount,   // 1 satır/sütun temizlenince rastgele kaldırılan blok sayısı
+
+        // ── Neon Cable ────────────────────────────────────────────────────────
+        NeonCableExplosionScore,  // Patlama alanındaki tile değerleri bu çarpanla puanlanır
+
+        // ── Safe Zone ─────────────────────────────────────────────────────────
+        SafeZoneComboFloor,   // Şekil üzerine yerleşince aktifleşen minimum combo çarpanı
+        SafeZonePenalty,      // Tile temizlenince kaybedilen pool şekil sayısı
+
+        // ── Decaying Rift ─────────────────────────────────────────────────────
+        RiftSpawnInterval,    // Kaç yerleştirmede bir yeni geri sayım tile'ı çıkar
+        RiftCountdownStart,   // Geri sayımın başlangıç değeri
+        RiftBonusShapes,      // Erken temizlenince kazanılan pool şekil bonusu
+
+        // ── Phantom Cell ──────────────────────────────────────────────────────
+        PhantomCellEnabled,   // Sabit değer: 1 — aktifleştirme flag'i
     }
 
     /// <summary>

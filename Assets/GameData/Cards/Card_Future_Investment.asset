@@ -10,22 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
-  m_Name: Card_Shape_T
+  m_Name: Card_Future_Investment
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
-  Id: Card_Shape_T
-  CardName: T
-  Description: T Tile Value +3, Spawn Rate -%5
+  Id: Card_Future_Investment
+  CardName: Future Investment
+  Description: Increases the current Milestone's target score by 20%. If you succeed,
+    the target score for the next Milestone is reduced by 15%.
   Icon: {fileID: 0}
-  Rarity: 0
-  Effects: []
-  BaseWeight: 35
+  Rarity: 1
+  Effects:
+  - Type: 21
+    Value: 1.2
+    Description: 
+  - Type: 22
+    Value: 0.15
+    Description: 
+  BaseWeight: 40
   IsUnique: 0
   LockedByDefault: 0
-  RequiredShapeId: Shape_T
-  IsShapeCard: 1
-  TargetShapeId: Shape_T
-  ShapeEffects:
-  - EffectType: 0
-    Value: 3
-  - EffectType: 1
-    Value: -5
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

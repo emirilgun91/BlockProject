@@ -216,6 +216,10 @@ namespace RogueBlockBlast.Game
 
             bool skipPoolConsume = isGhostDrop || isFirstPick;
 
+            // ── Safe Zone: check coverage before board changes ────────────────
+            if (_cardState.HasSafeZone && _cardState.SafeZoneActive)
+                CheckSafeZoneCoverage(anchor);
+
             // ── Place ─────────────────────────────────────────────────────────
             PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot);
             FrameFeedbackController.Instance?.OnDrop(_currentPiece.BlockColor);
@@ -254,6 +258,22 @@ namespace RogueBlockBlast.Game
                     CoinWallet.Instance?.Earn(bountyCoins);
                     _coins += bountyCoins;
                 }
+
+                // Phantom Cell: relocate if its row/col was cleared
+                if (_cardState.HasPhantomCell && _cardState.PhantomCellActive)
+                    CheckPhantomRelocate(clearedRows, clearedCols);
+
+                // Safe Zone: destroy tile + penalty if cleared
+                if (_cardState.HasSafeZone && _cardState.SafeZoneActive)
+                    CheckSafeZoneCleared(clearedRows, clearedCols);
+
+                // Decaying Rift: early clear bonus
+                if (_cardState.HasDecayingRift && _cardState.RiftTileActive)
+                    CheckRiftCleared(clearedRows, clearedCols);
+
+                // Perfect Clear: all placed pieces gone?
+                if (_cardState.HasPerfectClear && _board.IsAllCellsCleared())
+                    HandlePerfectClear();
             }
 
             // ── Combo ─────────────────────────────────────────────────────────
@@ -312,6 +332,13 @@ namespace RogueBlockBlast.Game
                     else if (piecesLeft <= _cardState.SlowBurnLateCount)
                         effectiveTileValueSum *= _cardState.SlowBurnLateFactor;
                 }
+
+                // Selective Blindness: 2+ lines → 0 score; 1 line → ×factor
+                if (_cardState.HasSelectiveBlindness)
+                {
+                    if (cleared >= 2) effectiveTileValueSum = 0f;
+                    else effectiveTileValueSum *= _cardState.SelectiveBlindnessSingleFactor;
+                }
             }
 
             // ── Score ─────────────────────────────────────────────────────────
@@ -326,6 +353,15 @@ namespace RogueBlockBlast.Game
                 gainedScore += Mathf.RoundToInt(
                     shapeBonus * _comboSystem.Multiplier * _globalScoreMultiplier);
             }
+
+            // Neon Cable: explosion score (may be 0 if no cable was hit)
+            if (_cardState.HasNeonCable && cleared > 0)
+                gainedScore += HandleNeonCable(clearedRows, clearedCols);
+
+            // Selective Blindness: remove random blocks after 1-line score
+            if (_cardState.HasSelectiveBlindness && cleared == 1)
+                RemoveRandomFilledBlocks(_cardState.SelectiveBlindnessRemoveCount);
+
             _score += gainedScore;
 
             // ── Milestone: score update (may trigger HandleMilestoneReached) ──
@@ -359,10 +395,15 @@ namespace RogueBlockBlast.Game
             int remaining = _milestoneSystem?.PiecesRemaining ?? int.MaxValue;
             FrameFeedbackController.Instance?.OnCritical(remaining);
 
+            // ── Decaying Rift: update countdown + maybe spawn ─────────────────
+            if (_cardState.HasDecayingRift)
+                UpdateDecayingRift();
+
             // ── Milestone pool counter (skipped for Ghost Drop / First Picks) ─
             if (!skipPoolConsume)
                 _milestoneSystem?.OnPiecePlaced();
 
+            UpdateBoardOverlays();
             _poolDirty = true;
         }
 
@@ -466,9 +507,15 @@ namespace RogueBlockBlast.Game
             _selectedPoolIndex = 0;
             _currentPiece      = _piecePool[0];
             _currentRot        = Rotation.R0;
+
+            // Neon Cable: assign new positions on each new pool
+            if (_cardState.HasNeonCable)
+                ResetNeonCablePositions();
+
             if (!skipValidCheck && !HasAnyValidMoveInPool())
                 OnGameOver();
 
+            UpdateBoardOverlays();
             _poolDirty = true;
         }
 
@@ -695,6 +742,10 @@ namespace RogueBlockBlast.Game
         {
             if (card == null) return;
 
+            bool hadNeonCable    = _cardState.HasNeonCable;
+            bool hadSafeZone     = _cardState.HasSafeZone;
+            bool hadPhantomCell  = _cardState.HasPhantomCell;
+
             CardEffectApplier.Apply(
                 card,
                 _comboSystem,
@@ -704,7 +755,244 @@ namespace RogueBlockBlast.Game
                 ref _coinBonusPerMilestone,
                 _cardState
             );
+
+            // Assign board positions for newly activated overlay cards
+            if (_cardState.HasNeonCable && !hadNeonCable)
+                ResetNeonCablePositions();
+            if (_cardState.HasSafeZone && !hadSafeZone)
+                AssignSafeZonePosition();
+            if (_cardState.HasPhantomCell && !hadPhantomCell)
+                AssignPhantomCellPosition();
+
+            _milestoneSystem?.RefreshProgress();
+            UpdateBoardOverlays();
             CardInventoryUI.Instance?.AddCard(card);
+        }
+
+        // ── Overlay helpers ──────────────────────────────────────────────────
+        private void UpdateBoardOverlays()
+        {
+            BoardView.ClearAllOverlays();
+            if (_cardState.HasNeonCable)
+            {
+                if (_cardState.NeonCableAValid)
+                    BoardView.SetOverlay(_cardState.NeonCablePositionA.x, _cardState.NeonCablePositionA.y, RogueBlockBlast.UI.OverlayType.NeonCableA, "C");
+                if (_cardState.NeonCableBValid)
+                    BoardView.SetOverlay(_cardState.NeonCablePositionB.x, _cardState.NeonCablePositionB.y, RogueBlockBlast.UI.OverlayType.NeonCableB, "C");
+            }
+            if (_cardState.HasSafeZone && _cardState.SafeZoneActive)
+                BoardView.SetOverlay(_cardState.SafeZonePosition.x, _cardState.SafeZonePosition.y, RogueBlockBlast.UI.OverlayType.SafeZone, "S");
+            if (_cardState.HasDecayingRift && _cardState.RiftTileActive)
+                BoardView.SetOverlay(_cardState.RiftTilePosition.x, _cardState.RiftTilePosition.y, RogueBlockBlast.UI.OverlayType.DecayingRift, _cardState.RiftCurrentCount.ToString());
+            if (_cardState.HasPhantomCell && _cardState.PhantomCellActive)
+                BoardView.SetOverlay(_cardState.PhantomCellPosition.x, _cardState.PhantomCellPosition.y, RogueBlockBlast.UI.OverlayType.PhantomCell, "P");
+        }
+
+        private Vector2Int PickRandomEmptyCell(HashSet<Vector2Int> exclude = null)
+        {
+            var empties = _board.GetEmptyCells(exclude);
+            if (empties.Count == 0) return new Vector2Int(-1, -1);
+            return empties[UnityEngine.Random.Range(0, empties.Count)];
+        }
+
+        private HashSet<Vector2Int> GetReservedOverlayPositions()
+        {
+            var r = new HashSet<Vector2Int>();
+            if (_cardState.NeonCableAValid)    r.Add(_cardState.NeonCablePositionA);
+            if (_cardState.NeonCableBValid)    r.Add(_cardState.NeonCablePositionB);
+            if (_cardState.SafeZoneActive)     r.Add(_cardState.SafeZonePosition);
+            if (_cardState.PhantomCellActive)  r.Add(_cardState.PhantomCellPosition);
+            if (_cardState.RiftTileActive)     r.Add(_cardState.RiftTilePosition);
+            return r;
+        }
+
+        // ── Card: Neon Cable ─────────────────────────────────────────────────
+        private void ResetNeonCablePositions()
+        {
+            var reserved = GetReservedOverlayPositions();
+            reserved.Remove(_cardState.NeonCablePositionA);
+            reserved.Remove(_cardState.NeonCablePositionB);
+
+            var empties = _board.GetEmptyCells(reserved);
+            if (empties.Count < 2)
+            {
+                _cardState.NeonCablePositionA = new Vector2Int(-1, -1);
+                _cardState.NeonCablePositionB = new Vector2Int(-1, -1);
+                return;
+            }
+            int iA = UnityEngine.Random.Range(0, empties.Count);
+            _cardState.NeonCablePositionA = empties[iA];
+            empties.RemoveAt(iA);
+            _cardState.NeonCablePositionB = empties[UnityEngine.Random.Range(0, empties.Count)];
+        }
+
+        private int HandleNeonCable(bool[] clearedRows, bool[] clearedCols)
+        {
+            if (!_cardState.NeonCableAValid || !_cardState.NeonCableBValid) return 0;
+            var pA = _cardState.NeonCablePositionA;
+            var pB = _cardState.NeonCablePositionB;
+
+            bool aHit = clearedRows[pA.y] || clearedCols[pA.x];
+            bool bHit = clearedRows[pB.y] || clearedCols[pB.x];
+
+            if (!aHit && !bHit) return 0;
+
+            int bonus = 0;
+            if (aHit && !bHit) bonus = ExplodeNeonArea(pB);
+            else if (bHit && !aHit) bonus = ExplodeNeonArea(pA);
+            // both hit simultaneously: no explosion, just reset
+
+            ResetNeonCablePositions();
+            return bonus;
+        }
+
+        private int ExplodeNeonArea(Vector2Int center)
+        {
+            float sum = 0f;
+            for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                int ex = center.x + dx, ey = center.y + dy;
+                if (!_board.IsInside(ex, ey)) continue;
+                if (_board.IsDeadZone(ex, ey)) continue;
+                sum += _board.GetTileValue(ex, ey);
+                _board.SetFilled(ex, ey, false);
+                BoardView.GetTile(ex, ey)?.PlayClearFX(0f);
+            }
+            return Mathf.RoundToInt(sum * _cardState.NeonCableExplosionScore
+                                       * _comboSystem.Multiplier
+                                       * _globalScoreMultiplier);
+        }
+
+        // ── Card: Safe Zone ──────────────────────────────────────────────────
+        private void AssignSafeZonePosition()
+        {
+            var pos = PickRandomEmptyCell(GetReservedOverlayPositions());
+            _cardState.SafeZonePosition = pos;
+        }
+
+        private void CheckSafeZoneCoverage(Vector2Int anchor)
+        {
+            var cells = _currentPiece.GetCells(_currentRot);
+            foreach (var c in cells)
+            {
+                if (anchor + c == _cardState.SafeZonePosition)
+                {
+                    _comboSystem.SetComboFloor(_cardState.SafeZoneComboFloor);
+                    break;
+                }
+            }
+        }
+
+        private void CheckSafeZoneCleared(bool[] clearedRows, bool[] clearedCols)
+        {
+            var sp = _cardState.SafeZonePosition;
+            if (clearedRows[sp.y] || clearedCols[sp.x])
+            {
+                _cardState.SafeZonePosition = new Vector2Int(-1, -1);
+                _comboSystem.SetComboFloor(0f);
+                _milestoneSystem?.DeductPieces(_cardState.SafeZonePenalty);
+            }
+        }
+
+        // ── Card: Decaying Rift ──────────────────────────────────────────────
+        private void CheckRiftCleared(bool[] clearedRows, bool[] clearedCols)
+        {
+            var rp = _cardState.RiftTilePosition;
+            if (clearedRows[rp.y] || clearedCols[rp.x])
+            {
+                _cardState.RiftTilePosition = new Vector2Int(-1, -1);
+                _cardState.RiftCurrentCount = 0;
+                _milestoneSystem?.AddPieces(_cardState.RiftBonusShapes);
+            }
+        }
+
+        private void UpdateDecayingRift()
+        {
+            // Decrement active countdown tile
+            if (_cardState.RiftTileActive)
+            {
+                _cardState.RiftCurrentCount--;
+                if (_cardState.RiftCurrentCount <= 0)
+                {
+                    // Countdown reached 0 — create dead zone
+                    var rp = _cardState.RiftTilePosition;
+                    _board.AddDeadZone(rp.x, rp.y);
+                    _cardState.RiftTilePosition = new Vector2Int(-1, -1);
+                    _cardState.RiftCurrentCount = 0;
+                }
+            }
+
+            // Increment placement counter and maybe spawn new countdown tile
+            _cardState.RiftPlacementCounter++;
+            if (_cardState.RiftPlacementCounter >= _cardState.RiftSpawnInterval && !_cardState.RiftTileActive)
+            {
+                _cardState.RiftPlacementCounter = 0;
+                var reserved = GetReservedOverlayPositions();
+                var pos = PickRandomEmptyCell(reserved);
+                if (pos.x >= 0)
+                {
+                    _cardState.RiftTilePosition = pos;
+                    _cardState.RiftCurrentCount = _cardState.RiftCountdownStart;
+                }
+            }
+        }
+
+        // ── Card: Phantom Cell ───────────────────────────────────────────────
+        private void AssignPhantomCellPosition()
+        {
+            var reserved = GetReservedOverlayPositions();
+            var pos = PickRandomEmptyCell(reserved);
+            if (pos.x < 0) return;
+            _cardState.PhantomCellPosition = pos;
+            _board.AddPhantom(pos.x, pos.y);
+        }
+
+        private void CheckPhantomRelocate(bool[] clearedRows, bool[] clearedCols)
+        {
+            var pp = _cardState.PhantomCellPosition;
+            if (!clearedRows[pp.y] && !clearedCols[pp.x]) return;
+
+            _board.RemovePhantom(pp.x, pp.y);
+            var reserved = GetReservedOverlayPositions();
+            reserved.Remove(pp);
+            var pos = PickRandomEmptyCell(reserved);
+            if (pos.x >= 0)
+            {
+                _cardState.PhantomCellPosition = pos;
+                _board.AddPhantom(pos.x, pos.y);
+            }
+            else
+            {
+                _cardState.PhantomCellPosition = new Vector2Int(-1, -1);
+            }
+        }
+
+        // ── Card: Perfect Clear ──────────────────────────────────────────────
+        private void HandlePerfectClear()
+        {
+            if (_cardState.PerfectClearCoinReward > 0)
+            {
+                CoinWallet.Instance?.Earn(_cardState.PerfectClearCoinReward);
+                _coins += _cardState.PerfectClearCoinReward;
+            }
+            _comboSystem.ForceMaxCharge();
+            if (_cardState.PerfectClearComboBoost > 0f)
+                _comboSystem.AddMultiplier(_cardState.PerfectClearComboBoost);
+        }
+
+        // ── Card: Selective Blindness ────────────────────────────────────────
+        private void RemoveRandomFilledBlocks(int count)
+        {
+            var filled = _board.GetFilledCells();
+            for (int i = 0; i < count && filled.Count > 0; i++)
+            {
+                int idx = UnityEngine.Random.Range(0, filled.Count);
+                var cell = filled[idx];
+                filled.RemoveAt(idx);
+                _board.SetFilled(cell.x, cell.y, false);
+                BoardView.GetTile(cell.x, cell.y)?.PlayClearFX(0f);
+            }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

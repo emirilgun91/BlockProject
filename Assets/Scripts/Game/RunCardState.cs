@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace RogueBlockBlast.Game
 {
     public sealed class RunCardState
@@ -53,6 +55,46 @@ namespace RogueBlockBlast.Game
         public int  HoarderMinRemaining;
         public int  HoarderPoolBonus;
 
+        // ── Perfect Clear ─────────────────────────────────────────────────────
+        public bool  HasPerfectClear;
+        public int   PerfectClearCoinReward;
+        public float PerfectClearComboBoost;
+
+        // ── Selective Blindness ───────────────────────────────────────────────
+        public bool  HasSelectiveBlindness;
+        public float SelectiveBlindnessSingleFactor = 2f;
+        public int   SelectiveBlindnessRemoveCount  = 2;
+
+        // ── Neon Cable ────────────────────────────────────────────────────────
+        public bool        HasNeonCable;
+        public float       NeonCableExplosionScore = 1f;
+        public Vector2Int  NeonCablePositionA      = new Vector2Int(-1, -1);
+        public Vector2Int  NeonCablePositionB      = new Vector2Int(-1, -1);
+        public bool NeonCableAValid => NeonCablePositionA.x >= 0;
+        public bool NeonCableBValid => NeonCablePositionB.x >= 0;
+
+        // ── Safe Zone ─────────────────────────────────────────────────────────
+        public bool       HasSafeZone;
+        public float      SafeZoneComboFloor = 2f;
+        public int        SafeZonePenalty    = 8;
+        public Vector2Int SafeZonePosition   = new Vector2Int(-1, -1);
+        public bool SafeZoneActive => SafeZonePosition.x >= 0;
+
+        // ── Decaying Rift ─────────────────────────────────────────────────────
+        public bool       HasDecayingRift;
+        public int        RiftSpawnInterval  = 7;
+        public int        RiftCountdownStart = 5;
+        public int        RiftBonusShapes    = 2;
+        public int        RiftPlacementCounter;           // counts toward next spawn
+        public Vector2Int RiftTilePosition = new Vector2Int(-1, -1);
+        public int        RiftCurrentCount;               // current countdown value
+        public bool RiftTileActive => RiftTilePosition.x >= 0;
+
+        // ── Phantom Cell ──────────────────────────────────────────────────────
+        public bool       HasPhantomCell;
+        public Vector2Int PhantomCellPosition = new Vector2Int(-1, -1);
+        public bool PhantomCellActive => PhantomCellPosition.x >= 0;
+
         public void Reset()
         {
             HasDietPlan      = false; DietPlanMaxSize = 4;         DietPlanScoreFactor = 1f;
@@ -67,6 +109,18 @@ namespace RogueBlockBlast.Game
             HasFirstPicks    = false; FirstPicksFreeCount = 0;     FirstPicksUsedThisMilestone = 0;
             HasMomentumShield = false; MomentumShieldMinMultiplier = 3f;
             HasHoarder       = false; HoarderMinRemaining = 0;     HoarderPoolBonus = 0;
+
+            HasPerfectClear        = false; PerfectClearCoinReward = 0;   PerfectClearComboBoost = 0f;
+            HasSelectiveBlindness  = false; SelectiveBlindnessSingleFactor = 2f; SelectiveBlindnessRemoveCount = 2;
+            HasNeonCable           = false; NeonCableExplosionScore = 1f;
+                                            NeonCablePositionA = new Vector2Int(-1,-1);
+                                            NeonCablePositionB = new Vector2Int(-1,-1);
+            HasSafeZone            = false; SafeZoneComboFloor = 2f;  SafeZonePenalty = 8;
+                                            SafeZonePosition   = new Vector2Int(-1,-1);
+            HasDecayingRift        = false; RiftSpawnInterval = 7;    RiftCountdownStart = 5;
+                                            RiftBonusShapes = 2;      RiftPlacementCounter = 0;
+                                            RiftTilePosition = new Vector2Int(-1,-1); RiftCurrentCount = 0;
+            HasPhantomCell         = false; PhantomCellPosition = new Vector2Int(-1,-1);
         }
 
         // Resets per-milestone counters; called from RunController.HandleMilestoneReached.

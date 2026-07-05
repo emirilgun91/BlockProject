@@ -19,7 +19,7 @@ namespace RogueBlockBlast.UI
     ///        └── SelectButton   (Button)  ← _selectButton
     /// </summary>
     public sealed class CardView : MonoBehaviour,
-        IPointerEnterHandler, IPointerExitHandler
+        IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         // ── Inspector ────────────────────────────────────────────────────────
         [Header("References")]
@@ -75,8 +75,9 @@ namespace RogueBlockBlast.UI
         }
 
         // ── Hover ────────────────────────────────────────────────────────────
-        public void OnPointerEnter(PointerEventData _) => _hoverOffsetY =  _hoverLift;
-        public void OnPointerExit(PointerEventData _)  => _hoverOffsetY =  0f;
+        public void OnPointerEnter(PointerEventData _)  => _hoverOffsetY = _hoverLift;
+        public void OnPointerExit(PointerEventData _)   => _hoverOffsetY = 0f;
+        public void OnPointerClick(PointerEventData _)  => OnSelectClicked();
 
         // ── Private ──────────────────────────────────────────────────────────
         private void Render()

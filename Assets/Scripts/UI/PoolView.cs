@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Core;
 using UnityEngine;
@@ -8,6 +9,8 @@ namespace RogueBlockBlast.UI
     public class PoolView : MonoBehaviour
     {
         [SerializeField] private List<PoolSlotView> _slots;
+
+        public Action<int> OnSlotClicked;
 
         [Header("Pool Entrance Animation")]
         [SerializeField] private bool  _animateOnBind = true;
@@ -27,6 +30,8 @@ namespace RogueBlockBlast.UI
                 {
                     _slots[i].gameObject.SetActive(true);
                     _slots[i].Render(pool[i], i == selectedIndex);
+                    int captured = i;
+                    _slots[i].OnClicked = () => OnSlotClicked?.Invoke(captured);
 
                     // Yeni pool gelince entrance animasyonu — seçim değişiminde değil
                     if (_animateOnBind && isNewPool)

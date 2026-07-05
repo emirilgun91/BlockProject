@@ -1,13 +1,16 @@
+using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using RogueBlockBlast.Core;
 using RogueBlockBlast.Content;
 
 namespace RogueBlockBlast.UI
 {
-    public class PoolSlotView : MonoBehaviour
+    public class PoolSlotView : MonoBehaviour, IPointerClickHandler
     {
+        public Action OnClicked;
         [SerializeField] private RectTransform _container;
         [SerializeField] private GameObject    _cellPrefab;
         [SerializeField] private GameObject    _selectionFrame;
@@ -52,6 +55,8 @@ namespace RogueBlockBlast.UI
                 .Append(cg.DOFade(1f, _entranceDuration * 0.6f).SetEase(Ease.OutQuad))
                 .SetAutoKill(true);
         }
+
+        public void OnPointerClick(PointerEventData _) => OnClicked?.Invoke();
 
         // ── Render ───────────────────────────────────────────────────────────
         public void Render(PieceDefinition piece, bool selected)

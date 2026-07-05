@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Card_Perfect_Clear
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Perfect_Clear
-  CardName: 
-  Description: 
+  CardName: Perfect Clear
+  Description: When perfect clear happened. Its giving lots of score and combo point.
   Icon: {fileID: 0}
   Rarity: 2
   Effects:

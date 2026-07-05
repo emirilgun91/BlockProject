@@ -83,6 +83,7 @@ namespace RogueBlockBlast.Game
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {
+            if (PoolView != null) PoolView.OnSlotClicked = SelectPool;
             UpgradeRegistry.Instance?.Init(_upgradeLibrary);
             ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
             int poolBonus = Mathf.RoundToInt(
@@ -137,12 +138,11 @@ namespace RogueBlockBlast.Game
         {
             if (_board == null || _currentPiece == null) return;
             if (!GameStateController.InputAllowed) return;
+            bool canRotate = !(_cardState.HasFirstPicks &&
+                               _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
+
             if (Keyboard.current != null)
             {
-                // First Picks blocks rotation while free placements remain
-                bool canRotate = !(_cardState.HasFirstPicks &&
-                                   _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
-
                 if (Keyboard.current.qKey.wasPressedThisFrame && canRotate) _currentRot = PrevRot(_currentRot);
                 if (Keyboard.current.eKey.wasPressedThisFrame && canRotate) _currentRot = NextRot(_currentRot);
                 if (Keyboard.current.rKey.wasPressedThisFrame) NewRun();
@@ -150,6 +150,13 @@ namespace RogueBlockBlast.Game
                 if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectPool(0);
                 if (Keyboard.current.digit2Key.wasPressedThisFrame) SelectPool(1);
                 if (Keyboard.current.digit3Key.wasPressedThisFrame) SelectPool(2);
+            }
+
+            if (Mouse.current != null && canRotate)
+            {
+                float scroll = Mouse.current.scroll.ReadValue().y;
+                if (scroll > 0f) _currentRot = NextRot(_currentRot);
+                else if (scroll < 0f) _currentRot = PrevRot(_currentRot);
             }
 
             _ghost.Clear();

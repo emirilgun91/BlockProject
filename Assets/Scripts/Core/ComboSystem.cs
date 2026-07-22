@@ -29,6 +29,21 @@ namespace RogueBlockBlast.Core
         // ── Combo Floor (Safe Zone card) ──────────────────────────────────────
         private float _comboFloor = 0f;
 
+        // ── Combo Shield (run başına bir kez reset'i engeller) ────────────────
+        public  bool HasComboShield;
+        private bool _shieldUsedThisRun;
+
+        // ── Chain Master (ardışık clear'larda BonusPerClear artar) ────────────
+        public  bool  HasChainMaster;
+        public  float ChainMasterBonus;      // kart başına artış (stack'lenir)
+        private int   _consecutiveClears;
+
+        /// <summary>Chain Master'ın bu run'da BonusPerClear'a eklediği toplam — UI için.</summary>
+        public float ChainMasterAccumulated { get; private set; }
+
+        /// <summary>Mevcut ardışık clear zinciri — UI için.</summary>
+        public int ConsecutiveClears => _consecutiveClears;
+
         // ── State ────────────────────────────────────────────────────────────
         public int   Charges    { get; private set; } = 0;
         public float Multiplier { get; private set; } = 1f;
@@ -63,6 +78,14 @@ namespace RogueBlockBlast.Core
                 Multiplier += bonus;
             }
 
+            // Chain Master: ardışık clear sayacı — bonus bir sonraki clear'dan itibaren geçerli
+            _consecutiveClears++;
+            if (HasChainMaster && ChainMasterBonus > 0f)
+            {
+                BonusPerClear          += ChainMasterBonus;
+                ChainMasterAccumulated += ChainMasterBonus;
+            }
+
             if (IsMaxCharge)
                 OnMaxCharge?.Invoke();
 
@@ -77,8 +100,19 @@ namespace RogueBlockBlast.Core
         {
             if (hadClear) return; // clear varsa OnLineClear halletti
 
+            _consecutiveClears = 0; // Chain Master: zincir kırıldı
+
             if (Charges > 0)
             {
+                // Combo Shield: reset'e giden son charge'ı run başına bir kez soğurur.
+                // Charge ve multiplier korunur, OnComboReset tetiklenmez.
+                if (Charges == 1 && HasComboShield && !_shieldUsedThisRun)
+                {
+                    _shieldUsedThisRun = true;
+                    FireStateChanged();
+                    return;
+                }
+
                 Charges--;
 
                 if (Charges == 0)
@@ -124,6 +158,12 @@ namespace RogueBlockBlast.Core
             Multiplier          = BaseMultiplier;
             _softLandingActive  = false;
             _comboFloor         = 0f;
+            HasComboShield      = false;
+            _shieldUsedThisRun  = false;
+            HasChainMaster         = false;
+            ChainMasterBonus       = 0f;
+            ChainMasterAccumulated = 0f;
+            _consecutiveClears     = 0;
             FireStateChanged();
         }
 

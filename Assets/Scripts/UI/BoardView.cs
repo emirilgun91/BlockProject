@@ -160,11 +160,23 @@ namespace RogueBlockBlast.UI
 
         // ── Render ───────────────────────────────────────────────────────────
 
+        /// <summary>Pozisyon bonuslu ghost hücrelerinin puan yazısı bu renkte gösterilir.</summary>
+        [Header("Positional Bonus")]
+        [SerializeField] private Color _bonusValueColor = new Color(1f, 0.85f, 0.25f, 1f);
+
         /// <summary>
         /// ghostTileValue: ghost hücrelerde gösterilecek puan değeri.
         /// RunController'dan _currentPiece.TileValue + shape bonus geçilir.
+        ///
+        /// ghostPositionBonus: hücre bazlı pozisyon bonusu (Corner Stone / Center Base).
+        /// RunController skorlamada kullandığı aynı fonksiyondan doldurur — gösterilen
+        /// sayı ile kazanılan puan asla ayrışmaz.
         /// </summary>
-        public void Render(BoardModel board, ISet<Vector2Int> ghostCells, float ghostTileValue = 0f)
+        public void Render(
+            BoardModel board,
+            ISet<Vector2Int> ghostCells,
+            float ghostTileValue = 0f,
+            IReadOnlyDictionary<Vector2Int, float> ghostPositionBonus = null)
         {
             if (_tiles == null) return;
 
@@ -194,11 +206,27 @@ namespace RogueBlockBlast.UI
                 _tiles[x, y].SetColor(color);
 
                 if (filled && !isGhost && !phantom && !deadZone)
+                {
                     _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
-                else if (!filled && isGhost && ghostTileValue > 0f)
-                    _tiles[x, y].SetTileValue(ghostTileValue);
+                }
+                else if (!filled && isGhost)
+                {
+                    // Pozisyon bonusu varsa taban değere eklenir ve vurgulu renkte yazılır
+                    float posBonus = 0f;
+                    ghostPositionBonus?.TryGetValue(new Vector2Int(x, y), out posBonus);
+
+                    float shown = ghostTileValue + posBonus;
+                    if (shown > 0f)
+                        _tiles[x, y].SetTileValue(
+                            shown,
+                            posBonus > 0f ? _bonusValueColor : (Color?)null);
+                    else
+                        _tiles[x, y].ClearValue();
+                }
                 else
+                {
                     _tiles[x, y].ClearValue();
+                }
 
                 // ── Overlays applied on top each frame ───────────
                 _tiles[x, y].ClearOverlay();

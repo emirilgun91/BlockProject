@@ -36,6 +36,9 @@ namespace RogueBlockBlast.Core
         public int EffectivePoolLimit =>
             _poolLimitOverride > 0 ? _poolLimitOverride : _config.PoolLimit;
 
+        /// <summary>Wide Pool / Heavy Load kartları: mevcut limiti okuyup üstüne ekleyebilmek için.</summary>
+        public int CurrentPoolLimit => EffectivePoolLimit;
+
         public int  PiecesRemaining       => Mathf.Max(0, EffectivePoolLimit - PiecesPlacedInWindow);
         public bool AllMilestonesCleared  => CurrentMilestoneIndex >= _config.TotalMilestones;
 

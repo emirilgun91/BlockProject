@@ -68,6 +68,8 @@ namespace RogueBlockBlast.Game
         private Rotation              _currentRot        = Rotation.R0;
         private int _upgradeRevivesUsed = 0;
         private readonly HashSet<Vector2Int> _ghost = new();
+        // Ghost hücrelerinin pozisyon bonusu — her frame yeniden doldurulur (alokasyon yok)
+        private readonly Dictionary<Vector2Int, float> _ghostPositionBonus = new();
         private bool _poolDirty = true;
 
         private int       _freeDeadPoolReroll = 1;
@@ -145,7 +147,6 @@ namespace RogueBlockBlast.Game
             {
                 if (Keyboard.current.qKey.wasPressedThisFrame && canRotate) _currentRot = PrevRot(_currentRot);
                 if (Keyboard.current.eKey.wasPressedThisFrame && canRotate) _currentRot = NextRot(_currentRot);
-                if (Keyboard.current.rKey.wasPressedThisFrame) NewRun();
 
                 if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectPool(0);
                 if (Keyboard.current.digit2Key.wasPressedThisFrame) SelectPool(1);
@@ -160,6 +161,7 @@ namespace RogueBlockBlast.Game
             }
 
             _ghost.Clear();
+            _ghostPositionBonus.Clear();
             if (BoardView.IsMouseOverBoard(MainCamera))
             {
                 var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
@@ -171,7 +173,17 @@ namespace RogueBlockBlast.Game
 
                     var cells = _currentPiece.GetCells(_currentRot);
                     for (int i = 0; i < cells.Count; i++)
-                        _ghost.Add(anchor + cells[i]);
+                    {
+                        var p = anchor + cells[i];
+                        _ghost.Add(p);
+
+                        // Skorlamayla aynı fonksiyon — ghost hareket ettikçe canlı güncellenir
+                        if (HasAnyPositionBonus)
+                        {
+                            float b = GetPositionBonusForCell(p);
+                            if (b > 0f) _ghostPositionBonus[p] = b;
+                        }
+                    }
 
                     if (Mouse.current != null &&
                         Mouse.current.leftButton.wasPressedThisFrame &&
@@ -188,7 +200,7 @@ namespace RogueBlockBlast.Game
                 float bonus = ShapeCardEffectRegistry.Instance?.GetScoreBonus(_currentPiece.Id) ?? 0f;
                 ghostTileValue += bonus;
             }
-            BoardView.Render(_board, _ghost, ghostTileValue);
+            BoardView.Render(_board, _ghost, ghostTileValue, _ghostPositionBonus);
 
             if (_poolDirty && PoolView != null)
             {
@@ -286,6 +298,11 @@ namespace RogueBlockBlast.Game
             // ── Combo ─────────────────────────────────────────────────────────
             _comboSystem.OnPlacement(hadClear: cleared > 0);
 
+            // Chain Master: zincir ilerledi ya da kırıldı → slot değerini tazele.
+            // Event tabanlı — Update() içinde polling yok.
+            if (_comboSystem.HasChainMaster)
+                RefreshCardLiveValues();
+
             if (_comboSystem.Multiplier > _maxComboReached)
                 _maxComboReached = _comboSystem.Multiplier;
 
@@ -301,6 +318,18 @@ namespace RogueBlockBlast.Game
                 float bonusPerTile = shapeCardReg.GetScoreBonus(_currentPiece.Id);
                 if (bonusPerTile > 0f)
                     shapeBonus = bonusPerTile * _currentPiece.GetCells(_currentRot).Count;
+            }
+
+            // ── Position bonus (Corner Stone / Center Base) ────────────────────
+            // shapeBonus ile aynı desen, ancak clear olmasa da uygulanır.
+            float positionBonus = ComputePositionBonus(anchor);
+
+            // ── Card Collector: envanter büyüklüğü global çarpana eklenir ──────
+            float effectiveGlobalMultiplier = _globalScoreMultiplier;
+            if (_cardState.HasCardCollector)
+            {
+                int cardCount = CardInventoryUI.Instance?.GetSelectedCardIds().Count() ?? 0;
+                effectiveGlobalMultiplier += cardCount * _cardState.CardCollectorPerCard;
             }
 
             // ── Score modifiers ───────────────────────────────────────────────
@@ -352,13 +381,20 @@ namespace RogueBlockBlast.Game
             int gainedScore = _scoreSystem.ResolveAfterPlacement(
                 effectiveTileValueSum,
                 _comboSystem.Multiplier,
-                _globalScoreMultiplier
+                effectiveGlobalMultiplier
             );
 
             if (shapeBonus > 0f && cleared > 0)
             {
                 gainedScore += Mathf.RoundToInt(
-                    shapeBonus * _comboSystem.Multiplier * _globalScoreMultiplier);
+                    shapeBonus * _comboSystem.Multiplier * effectiveGlobalMultiplier);
+            }
+
+            // Corner Stone / Center Base — clear olmasa da skor verir
+            if (positionBonus > 0f)
+            {
+                gainedScore += Mathf.RoundToInt(
+                    positionBonus * _comboSystem.Multiplier * effectiveGlobalMultiplier);
             }
 
             // Neon Cable: explosion score (may be 0 if no cable was hit)
@@ -368,6 +404,48 @@ namespace RogueBlockBlast.Game
             // Selective Blindness: remove random blocks after 1-line score
             if (_cardState.HasSelectiveBlindness && cleared == 1)
                 RemoveRandomFilledBlocks(_cardState.SelectiveBlindnessRemoveCount);
+
+            // ── Son çarpanlar — gainedScore kesinleştikten sonra uygulanır ─────
+
+            // Double Strike: aynı anda 2+ line temizlenince
+            if (_cardState.HasDoubleStrike && cleared >= _cardState.DoubleStrikeMinLines)
+            {
+                gainedScore = Mathf.RoundToInt(gainedScore * _cardState.DoubleStrikeFactor);
+                ShowTriggerPopup(anchor,
+                    $"DOUBLE STRIKE ×{_cardState.DoubleStrikeFactor:0.##}",
+                    new Color(1f, 0.55f, 0.15f));
+            }
+
+            // Gambler: %20 ihtimalle ×2 veya ×0.5
+            if (_cardState.HasGambler && UnityEngine.Random.value < _cardState.GamblerChance)
+            {
+                bool won = UnityEngine.Random.value < 0.5f;
+                gainedScore = Mathf.RoundToInt(
+                    gainedScore * (won ? _cardState.GamblerWinFactor : _cardState.GamblerLoseFactor));
+
+                ShowTriggerPopup(anchor,
+                    won ? $"GAMBLE WON ×{_cardState.GamblerWinFactor:0.##}"
+                        : $"GAMBLE LOST ×{_cardState.GamblerLoseFactor:0.##}",
+                    won ? new Color(0.3f, 1f, 0.45f) : new Color(1f, 0.3f, 0.35f));
+            }
+
+            // Patient: clear'sız bekleyiş sonrası gelen clear ödüllendirilir
+            if (cleared == 0)
+            {
+                _cardState.PlacementsWithoutClear++;
+            }
+            else
+            {
+                if (_cardState.HasPatient &&
+                    _cardState.PlacementsWithoutClear >= _cardState.PatientMinPlacements)
+                {
+                    gainedScore = Mathf.RoundToInt(gainedScore * _cardState.PatientFactor);
+                    ShowTriggerPopup(anchor,
+                        $"PATIENCE ×{_cardState.PatientFactor:0.##}",
+                        new Color(0.55f, 0.8f, 1f));
+                }
+                _cardState.PlacementsWithoutClear = 0;
+            }
 
             _score += gainedScore;
 
@@ -431,7 +509,9 @@ namespace RogueBlockBlast.Game
             _coins              = 0;
             _globalScoreMultiplier = 1f;
             _coinBonusPerMilestone = 0;
-            CardInventoryUI.Instance?.Clear();
+            CardInventoryUI.Instance?.Clear();   // slotlar yok edilir → canlı değer satırları da gider
+            _ghost.Clear();
+            _ghostPositionBonus.Clear();
             _board       = new BoardModel(Width, Height);
             _run         = new RunModel();
             _scoreSystem = new ScoreSystem();
@@ -774,6 +854,9 @@ namespace RogueBlockBlast.Game
             _milestoneSystem?.RefreshProgress();
             UpdateBoardOverlays();
             CardInventoryUI.Instance?.AddCard(card);
+
+            // Envanter değişti → tüm slotlar yenilenir (Card Collector sayısı arttı)
+            RefreshCardLiveValues();
         }
 
         // ── Overlay helpers ──────────────────────────────────────────────────
@@ -986,6 +1069,130 @@ namespace RogueBlockBlast.Game
             _comboSystem.ForceMaxCharge();
             if (_cardState.PerfectClearComboBoost > 0f)
                 _comboSystem.AddMultiplier(_cardState.PerfectClearComboBoost);
+        }
+
+        // ── Card live values (in-run kart slotları) ──────────────────────────
+
+        /// <summary>Tetikleme popup'ını yerleştirilen şeklin üzerinde gösterir.</summary>
+        private void ShowTriggerPopup(Vector2Int anchor, string text, Color color)
+        {
+            if (LineClearVFX == null || _currentPiece == null) return;
+
+            // Şeklin merkezini bul — popup oraya çıksın
+            var cells = _currentPiece.GetCells(_currentRot);
+            if (cells.Count == 0) return;
+
+            Vector3 sum = Vector3.zero;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                var p = anchor + cells[i];
+                sum += BoardView.GetTileWorldPosition(p.x, p.y);
+            }
+
+            LineClearVFX.PlayTriggerPopup(sum / cells.Count, text, color);
+        }
+
+        /// <summary>Tüm kart slotlarının canlı değer satırını yeniler.</summary>
+        private void RefreshCardLiveValues()
+            => CardInventoryUI.Instance?.RefreshLiveValues(FormatCardLiveValue);
+
+        /// <summary>
+        /// Kartın anlık katkısı. Değerler efektin kendi kaynağından okunur
+        /// (_cardState / _comboSystem / _milestoneSystem) — ayrı sabit yok.
+        /// </summary>
+        private string FormatCardLiveValue(CardSO card, int stackCount)
+        {
+            if (card == null || card.Effects == null || card.Effects.Count == 0) return null;
+
+            foreach (var effect in card.Effects)
+            {
+                switch (effect.Type)
+                {
+                    // Envanter büyüdükçe değişir
+                    case CardEffectType.CardCollector:
+                    {
+                        int count = CardInventoryUI.Instance?.GetSelectedCardIds().Count() ?? 0;
+                        float pct = _cardState.CardCollectorPerCard * count * 100f;
+                        return $"+{pct:0.#}% ({count} cards)";
+                    }
+
+                    // Zincir ilerledikçe değişir
+                    case CardEffectType.ChainMaster:
+                        return $"+{_comboSystem.ChainMasterAccumulated:0.00} combo " +
+                               $"(chain {_comboSystem.ConsecutiveClears})";
+
+                    // Seçimden sonra sabit — yine de stack görünsün
+                    case CardEffectType.ScoreMultiplierBonus:
+                    case CardEffectType.LineScoreBonus:
+                        return $"+{_cardState.GetAccumulated(effect.Type) * 100f:0.#}% score";
+
+                    case CardEffectType.ComboBonusPerClear:
+                        return $"+{_cardState.GetAccumulated(effect.Type):0.00} combo/clear";
+
+                    case CardEffectType.PoolLimitBonus:
+                        return $"+{_cardState.GetAccumulated(effect.Type):0} pool " +
+                               $"(now {_milestoneSystem?.CurrentPoolLimit ?? 0})";
+
+                    case CardEffectType.HeavyLoad:
+                        return $"+{_cardState.GetAccumulated(effect.Type):0} pool / " +
+                               $"-{stackCount * 10:0}% score";
+
+                    // Pozisyon kartları — tile başına stack'li değer
+                    case CardEffectType.CornerStoneBonus:
+                        return $"+{_cardState.CornerStoneBonus:0.#}/corner tile";
+
+                    case CardEffectType.CenterBaseBonus:
+                        return $"+{_cardState.CenterBaseBonus:0.#}/center tile";
+                }
+            }
+            return null;
+        }
+
+        // ── Card: Corner Stone / Center Base ─────────────────────────────────
+        /// <summary>
+        /// Yerleştirilen şeklin köşe / merkez hücrelere denk gelen tile'ları için
+        /// ham bonus puanı. Combo ve global çarpan çağıran tarafta uygulanır.
+        /// </summary>
+        private float ComputePositionBonus(Vector2Int anchor)
+        {
+            if (!HasAnyPositionBonus) return 0f;
+
+            float bonus = 0f;
+            var cells = _currentPiece.GetCells(_currentRot);
+            for (int i = 0; i < cells.Count; i++)
+                bonus += GetPositionBonusForCell(anchor + cells[i]);
+            return bonus;
+        }
+
+        /// <summary>
+        /// Tek bir hücrenin pozisyon bonusu. Hem skorlama (ComputePositionBonus)
+        /// hem de ghost gösterimi (Update) bu fonksiyonu kullanır — gösterilen
+        /// sayı ile kazanılan puanın ayrışması mümkün değil.
+        /// </summary>
+        private float GetPositionBonusForCell(Vector2Int p)
+        {
+            float bonus = 0f;
+            if (_cardState.HasCornerStone && IsCornerCell(p)) bonus += _cardState.CornerStoneBonus;
+            if (_cardState.HasCenterBase  && IsCenterCell(p)) bonus += _cardState.CenterBaseBonus;
+            return bonus;
+        }
+
+        private bool HasAnyPositionBonus => _cardState.HasCornerStone || _cardState.HasCenterBase;
+
+        /// <summary>Tahtanın 4 köşesi: (0,0), (0,H-1), (W-1,0), (W-1,H-1).</summary>
+        private bool IsCornerCell(Vector2Int p)
+        {
+            return (p.x == 0 || p.x == _board.Width  - 1) &&
+                   (p.y == 0 || p.y == _board.Height - 1);
+        }
+
+        /// <summary>Merkezdeki 2x2 alan — 8x8 tahtada (3,3), (3,4), (4,3), (4,4).</summary>
+        private bool IsCenterCell(Vector2Int p)
+        {
+            int cx = _board.Width  / 2;
+            int cy = _board.Height / 2;
+            return (p.x == cx || p.x == cx - 1) &&
+                   (p.y == cy || p.y == cy - 1);
         }
 
         // ── Card: Selective Blindness ────────────────────────────────────────

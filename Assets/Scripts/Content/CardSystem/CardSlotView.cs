@@ -26,6 +26,9 @@ namespace RogueBlockBlast.UI
         [SerializeField] private GameObject _stackBadge;
         [SerializeField] private TMP_Text   _stackText;
 
+        [Tooltip("Kartın anlık katkısını gösteren satır. Boş bırakılırsa runtime'da oluşturulur.")]
+        [SerializeField] private TMP_Text   _liveValueText;
+
         // Rarity renkleri — palette ile uyumlu
         private static readonly Color RarityCommon   = HexColor("2E6DA4");
         private static readonly Color RarityUncommon = HexColor("148F77");
@@ -64,6 +67,53 @@ namespace RogueBlockBlast.UI
                     _stackText.text = $"x{stackCount}";
             }
         }
+
+        /// <summary>Bu slotun bağlı olduğu kart — envanterin canlı değer yenilemesi için.</summary>
+        public CardSO Card => _card;
+
+        /// <summary>
+        /// Kartın anlık katkısını yazar (örn. "+8% (4 cards)").
+        /// null/boş → satır gizlenir. Değer daima efektin okuduğu
+        /// flag/registry'den gelir, burada hesap yapılmaz.
+        /// </summary>
+        public void SetLiveValue(string text)
+        {
+            EnsureLiveValueText();
+            if (_liveValueText == null) return;
+
+            bool show = !string.IsNullOrEmpty(text);
+            _liveValueText.gameObject.SetActive(show);
+            if (show) _liveValueText.text = text;
+        }
+
+        /// <summary>Prefab'da referans yoksa slot altında küçük bir TMP satırı üretir.</summary>
+        private void EnsureLiveValueText()
+        {
+            if (_liveValueText != null || _liveValueCreated) return;
+            _liveValueCreated = true;
+
+            var go = new GameObject("LiveValueText", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot     = new Vector2(0.5f, 0f);
+            rect.offsetMin = new Vector2(0f, -2f);
+            rect.offsetMax = new Vector2(0f, 12f);
+
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.fontSize      = 9f;
+            tmp.alignment     = TextAlignmentOptions.Center;
+            tmp.color         = new Color(1f, 0.9f, 0.4f);
+            tmp.raycastTarget = false;
+            tmp.enableWordWrapping = false;
+            tmp.overflowMode  = TextOverflowModes.Overflow;
+
+            _liveValueText = tmp;
+        }
+
+        private bool _liveValueCreated;
 
         // ── Hover ────────────────────────────────────────────────────────────
         public void OnPointerEnter(PointerEventData e)

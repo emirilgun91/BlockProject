@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51aae9bd81014be1b791702338413462, type: 3}
+  m_Name: Card_Chain_Master
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
+  Id: Card_Chain_Master
+  CardName: Chain Master
+  Description: Each consecutive line clear permanently adds +0.02 to your combo gain per clear.
+  Icon: {fileID: 0}
+  Rarity: 2
+  Effects:
+  - Type: 44
+    Value: 0.02
+    Description: Combo gain +0.02 per chained clear
+  BaseWeight: 30
+  IsUnique: 0
+  LockedByDefault: 0
+  RequiredShapeId: 
+  IsShapeCard: 0
+  TargetShapeId: 
+  ShapeEffects: []

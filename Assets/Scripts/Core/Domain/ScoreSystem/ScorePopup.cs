@@ -40,6 +40,55 @@ namespace RogueBlockBlast.UI
             _routine = StartCoroutine(Animate(worldPos, targetRect, cam, value, color, delay, onArrive));
         }
 
+        /// <summary>
+        /// Tetikleme popup'ı (Double Strike / Gambler / Patient) — serbest metin,
+        /// skorboard'a uçmaz, sadece yükselip solar. Aynı pool'u kullanır.
+        /// </summary>
+        public void LaunchFloatingText(
+            Vector3 worldPos,
+            Camera  cam,
+            string  text,
+            Color   color,
+            float   duration = 0.9f)
+        {
+            if (_routine != null) StopCoroutine(_routine);
+            _routine = StartCoroutine(AnimateFloatingText(worldPos, cam, text, color, duration));
+        }
+
+        private IEnumerator AnimateFloatingText(
+            Vector3 worldPos, Camera cam, string text, Color color, float duration)
+        {
+            gameObject.SetActive(true);
+            _text.text  = text;
+            _text.color = new Color(color.r, color.g, color.b, 0f);
+
+            Vector2 start = ToCanvasPos(cam.WorldToScreenPoint(worldPos));
+            Vector2 end   = start + new Vector2(0f, _riseHeight * 2.2f);
+            _rect.anchoredPosition = start;
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                float ease = 1f - (1f - t) * (1f - t);
+                _rect.anchoredPosition = Vector2.Lerp(start, end, ease);
+
+                // hızlı pop, yavaş fade
+                _rect.localScale = Vector3.one * Mathf.Lerp(0.6f, 1.15f, Mathf.Min(1f, t * 4f));
+
+                var c = _text.color;
+                c.a = t < 0.2f ? t * 5f : 1f - (t - 0.2f) / 0.8f;
+                _text.color = c;
+
+                yield return null;
+            }
+
+            _rect.localScale = Vector3.one;
+            ScorePopupPool.Instance?.Return(this);
+        }
+
         public void Cancel()
         {
             if (_routine != null) StopCoroutine(_routine);

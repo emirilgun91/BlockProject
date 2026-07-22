@@ -90,6 +90,31 @@ namespace RogueBlockBlast.Content
 
         // ── Phantom Cell ──────────────────────────────────────────────────────
         PhantomCellEnabled,   // Sabit değer: 1 — aktifleştirme flag'i
+
+        // ── Corner Stone / Center Base ────────────────────────────────────────
+        CornerStoneBonus,     // Tahtanın 4 köşesine denk gelen her tile için +Value puan
+        CenterBaseBonus,      // Tahtanın orta 2x2 alanına denk gelen her tile için +Value puan
+
+        // ── Double Strike ─────────────────────────────────────────────────────
+        DoubleStrikeBonus,    // 2+ satır/sütun aynı anda temizlenince skor ×1.5 (Value yoksayılır)
+
+        // ── Gambler ───────────────────────────────────────────────────────────
+        GamblerRoll,          // %20 ihtimalle skor ×2 veya ×0.5 (Value yoksayılır)
+
+        // ── Patient ───────────────────────────────────────────────────────────
+        PatientBonus,         // 3+ clear'sız yerleştirme sonrası gelen clear ×2 (Value yoksayılır)
+
+        // ── Combo Shield ──────────────────────────────────────────────────────
+        ComboShield,          // Run başına bir kez combo reset'ini engeller (Value yoksayılır)
+
+        // ── Chain Master ──────────────────────────────────────────────────────
+        ChainMaster,          // Ardışık her clear BonusPerClear'a +Value ekler
+
+        // ── Card Collector ────────────────────────────────────────────────────
+        CardCollector,        // Envanterdeki her kart global çarpana +Value ekler
+
+        // ── Heavy Load ────────────────────────────────────────────────────────
+        HeavyLoad,            // Pool limit +Value, karşılığında global çarpan -0.10
     }
 
     /// <summary>

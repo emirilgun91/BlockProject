@@ -125,6 +125,20 @@ namespace RogueBlockBlast.UI
             }
         }
 
+        /// <summary>
+        /// Kart tetikleme popup'ı — Double Strike / Gambler / Patient gibi anlık
+        /// efektler için. Mevcut ScorePopup pool'unu kullanır, yeni sistem yok.
+        /// Tetiklenme başına tek popup, bloklamaz, kendiliğinden solar.
+        /// </summary>
+        public void PlayTriggerPopup(Vector3 worldPos, string text, Color color)
+        {
+            if (ScorePopupPool.Instance == null || _cam == null) return;
+            if (string.IsNullOrEmpty(text)) return;
+
+            var popup = ScorePopupPool.Instance.Get();
+            popup.LaunchFloatingText(worldPos, _cam, text, color);
+        }
+
         // ── Private ──────────────────────────────────────────────────────────
         private void SpawnBurst(Vector3 worldPos, Color color, float delay)
         {

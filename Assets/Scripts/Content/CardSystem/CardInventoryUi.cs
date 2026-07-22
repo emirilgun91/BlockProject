@@ -111,6 +111,26 @@ namespace RogueBlockBlast.UI
             CardTooltip.Instance?.Hide();
         }
 
+        /// <summary>
+        /// Tüm slotların canlı değer satırını yeniler.
+        /// format(card, stackCount) → gösterilecek metin; null dönerse satır gizlenir.
+        /// Formatlama RunController'da yapılır — değerler skorlamanın okuduğu
+        /// flag/registry'den gelir, burada ikinci bir hesap yok.
+        ///
+        /// Çağrı noktaları: kart seçimi, envanter değişimi, line clear (Chain Master).
+        /// Update() içinde polling YOK.
+        /// </summary>
+        public void RefreshLiveValues(System.Func<CardSO, int, string> format)
+        {
+            if (format == null) return;
+
+            foreach (var entry in _inventory.Values)
+            {
+                if (entry.slot == null || entry.card == null) continue;
+                entry.slot.SetLiveValue(format(entry.card, entry.count));
+            }
+        }
+
         /// <summary>Aktif kart sayısını döndürür (stack dahil).</summary>
         public int TotalCardCount()
         {

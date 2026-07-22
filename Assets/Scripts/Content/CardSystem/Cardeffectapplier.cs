@@ -6,6 +6,10 @@ namespace RogueBlockBlast.Game
 {
     public static class CardEffectApplier
     {
+        /// <summary>Heavy Load: ek pool kapasitesinin karşılığı olan global çarpan cezası.</summary>
+        private const float HeavyLoadMultiplierPenalty = 0.10f;
+
+
         public static void Apply(
             Content.CardSO  card,
             ComboSystem     comboSystem,
@@ -25,6 +29,11 @@ namespace RogueBlockBlast.Game
 
             foreach (var effect in card.Effects)
             {
+                // Stack takibi — kart slotlarındaki canlı değer satırı buradan okur.
+                // Skorlamanın kullandığı değerlerle aynı kaynaktan beslenir.
+                cardState?.Accumulate(effect.Type, effect.Value);
+                cardState?.CountPick(effect.Type);
+
                 switch (effect.Type)
                 {
                     // ── Combo ────────────────────────────────────────────────
@@ -48,7 +57,20 @@ namespace RogueBlockBlast.Game
                         break;
 
                     case Content.CardEffectType.PoolLimitBonus:
-                        Debug.Log($"[Card] PoolLimitBonus +{effect.Value}");
+                        if (milestoneSystem != null)
+                            milestoneSystem.SetPoolLimit(
+                                milestoneSystem.CurrentPoolLimit + Mathf.RoundToInt(effect.Value));
+                        Debug.Log($"[Card] Wide Pool: pool limit +{effect.Value} → {milestoneSystem?.CurrentPoolLimit}");
+                        break;
+
+                    // ── Heavy Load (pool +Value, karşılığında global çarpan -0.10) ──
+                    case Content.CardEffectType.HeavyLoad:
+                        if (milestoneSystem != null)
+                            milestoneSystem.SetPoolLimit(
+                                milestoneSystem.CurrentPoolLimit + Mathf.RoundToInt(effect.Value));
+                        globalScoreMultiplier -= HeavyLoadMultiplierPenalty;
+                        Debug.Log($"[Card] Heavy Load: pool limit +{effect.Value} → {milestoneSystem?.CurrentPoolLimit}, " +
+                                  $"global çarpan -{HeavyLoadMultiplierPenalty} → {globalScoreMultiplier}");
                         break;
 
                     // ── Coin ─────────────────────────────────────────────────
@@ -229,6 +251,64 @@ namespace RogueBlockBlast.Game
                     // ── Phantom Cell ──────────────────────────────────────────
                     case Content.CardEffectType.PhantomCellEnabled:
                         cardState.HasPhantomCell = true;
+                        break;
+
+                    // ── Corner Stone ──────────────────────────────────────────
+                    case Content.CardEffectType.CornerStoneBonus:
+                        cardState.HasCornerStone   = true;
+                        cardState.CornerStoneBonus += effect.Value;   // stack'lenir
+                        Debug.Log($"[Card] Corner Stone — köşe tile başına toplam +{cardState.CornerStoneBonus}");
+                        break;
+
+                    // ── Center Base ───────────────────────────────────────────
+                    case Content.CardEffectType.CenterBaseBonus:
+                        cardState.HasCenterBase   = true;
+                        cardState.CenterBaseBonus += effect.Value;    // stack'lenir
+                        Debug.Log($"[Card] Center Base — merkez tile başına toplam +{cardState.CenterBaseBonus}");
+                        break;
+
+                    // ── Double Strike ─────────────────────────────────────────
+                    case Content.CardEffectType.DoubleStrikeBonus:
+                        cardState.HasDoubleStrike = true;
+                        Debug.Log($"[Card] Double Strike aktif — {cardState.DoubleStrikeMinLines}+ line clear'da " +
+                                  $"skor ×{cardState.DoubleStrikeFactor}");
+                        break;
+
+                    // ── Gambler ───────────────────────────────────────────────
+                    case Content.CardEffectType.GamblerRoll:
+                        cardState.HasGambler = true;
+                        Debug.Log($"[Card] Gambler aktif — %{cardState.GamblerChance * 100f} ihtimalle " +
+                                  $"×{cardState.GamblerWinFactor} / ×{cardState.GamblerLoseFactor}");
+                        break;
+
+                    // ── Patient ───────────────────────────────────────────────
+                    case Content.CardEffectType.PatientBonus:
+                        cardState.HasPatient = true;
+                        Debug.Log($"[Card] Patient aktif — {cardState.PatientMinPlacements}+ clear'sız " +
+                                  $"yerleştirme sonrası skor ×{cardState.PatientFactor}");
+                        break;
+
+                    // ── Card Collector ────────────────────────────────────────
+                    case Content.CardEffectType.CardCollector:
+                        cardState.HasCardCollector     = true;
+                        cardState.CardCollectorPerCard += effect.Value;   // stack'lenir
+                        Debug.Log($"[Card] Card Collector — kart başına global çarpan toplam +{cardState.CardCollectorPerCard}");
+                        break;
+
+                    // ── Combo Shield ──────────────────────────────────────────
+                    case Content.CardEffectType.ComboShield:
+                        if (comboSystem != null) comboSystem.HasComboShield = true;
+                        Debug.Log("[Card] Combo Shield aktif — run başına bir combo reset engellenecek");
+                        break;
+
+                    // ── Chain Master ──────────────────────────────────────────
+                    case Content.CardEffectType.ChainMaster:
+                        if (comboSystem != null)
+                        {
+                            comboSystem.HasChainMaster    = true;
+                            comboSystem.ChainMasterBonus += effect.Value;   // stack'lenir
+                        }
+                        Debug.Log($"[Card] Chain Master — ardışık her clear BonusPerClear'a +{comboSystem?.ChainMasterBonus}");
                         break;
 
                     default:

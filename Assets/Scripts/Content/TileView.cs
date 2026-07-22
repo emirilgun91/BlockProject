@@ -28,6 +28,7 @@ namespace RogueBlockBlast.UI
 
         // ── Private ──────────────────────────────────────────────────────────
         private SpriteRenderer _sr;
+        private Color          _scoreTextBaseColor = Color.white;
         private Vector3        _baseScale;
         private Tweener        _colorTween;
         private Sequence       _fxSequence;
@@ -40,6 +41,7 @@ namespace RogueBlockBlast.UI
         private void Awake()
         {
             _sr = GetComponent<SpriteRenderer>();
+            if (_scoreText != null) _scoreTextBaseColor = _scoreText.color;
         }
 
         private void Start()
@@ -88,7 +90,19 @@ namespace RogueBlockBlast.UI
         public void SetTileValue(float value)
         {
             if (_scoreText == null) return;
-            _scoreText.text = value > 0f ? value.ToString("0") : string.Empty;
+            _scoreText.color = _scoreTextBaseColor;
+            _scoreText.text  = value > 0f ? value.ToString("0") : string.Empty;
+        }
+
+        /// <summary>
+        /// Pozisyon bonuslu ghost hücreler için — değeri vurgulu renkte gösterir.
+        /// highlight null ise normal renge döner.
+        /// </summary>
+        public void SetTileValue(float value, Color? highlight)
+        {
+            if (_scoreText == null) return;
+            _scoreText.color = highlight ?? _scoreTextBaseColor;
+            _scoreText.text  = value > 0f ? value.ToString("0") : string.Empty;
         }
 
         /// <summary>

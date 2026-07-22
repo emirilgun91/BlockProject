@@ -1,9 +1,36 @@
+using System.Collections.Generic;
+using RogueBlockBlast.Content;
 using UnityEngine;
 
 namespace RogueBlockBlast.Game
 {
     public sealed class RunCardState
     {
+        // ── Stack totals ──────────────────────────────────────────────────────
+        // Her kart seçiminde efekt tipine göre birikir. UI (kart slotlarındaki
+        // canlı değer satırı) buradan okur — skorlama ile aynı kaynak.
+        private readonly Dictionary<CardEffectType, float> _accumulated = new();
+
+        public void Accumulate(CardEffectType type, float value)
+        {
+            _accumulated.TryGetValue(type, out float current);
+            _accumulated[type] = current + value;
+        }
+
+        public float GetAccumulated(CardEffectType type)
+            => _accumulated.TryGetValue(type, out float v) ? v : 0f;
+
+        public int GetPickCount(CardEffectType type)
+            => _pickCounts.TryGetValue(type, out int c) ? c : 0;
+
+        private readonly Dictionary<CardEffectType, int> _pickCounts = new();
+
+        public void CountPick(CardEffectType type)
+        {
+            _pickCounts.TryGetValue(type, out int c);
+            _pickCounts[type] = c + 1;
+        }
+
         // ── Diet Plan ─────────────────────────────────────────────────────────
         public bool  HasDietPlan;
         public int   DietPlanMaxSize     = 4;
@@ -95,8 +122,51 @@ namespace RogueBlockBlast.Game
         public Vector2Int PhantomCellPosition = new Vector2Int(-1, -1);
         public bool PhantomCellActive => PhantomCellPosition.x >= 0;
 
+        // ── Corner Stone ──────────────────────────────────────────────────────
+        // Stack'lenir: iki kart seçilirse tile başına +6. Default 0 — değer
+        // yalnızca kart seçildiğinde applier tarafından eklenir.
+        public bool  HasCornerStone;
+        public float CornerStoneBonus;
+
+        // ── Center Base ───────────────────────────────────────────────────────
+        public bool  HasCenterBase;
+        public float CenterBaseBonus;
+
+        // ── Double Strike ─────────────────────────────────────────────────────
+        public bool  HasDoubleStrike;
+        public int   DoubleStrikeMinLines = 2;
+        public float DoubleStrikeFactor   = 1.5f;
+
+        // ── Gambler ───────────────────────────────────────────────────────────
+        public bool  HasGambler;
+        public float GamblerChance    = 0.2f;
+        public float GamblerWinFactor = 2f;
+        public float GamblerLoseFactor = 0.5f;
+
+        // ── Patient ───────────────────────────────────────────────────────────
+        public bool  HasPatient;
+        public int   PatientMinPlacements = 3;
+        public float PatientFactor        = 2f;
+        public int   PlacementsWithoutClear;
+
+        // ── Card Collector ────────────────────────────────────────────────────
+        public bool  HasCardCollector;
+        public float CardCollectorPerCard;   // stack'lenir
+
         public void Reset()
         {
+            _accumulated.Clear();
+            _pickCounts.Clear();
+
+            HasCornerStone   = false; CornerStoneBonus = 0f;
+            HasCenterBase    = false; CenterBaseBonus  = 0f;
+            HasDoubleStrike  = false; DoubleStrikeMinLines = 2;  DoubleStrikeFactor = 1.5f;
+            HasGambler       = false; GamblerChance = 0.2f;
+                                      GamblerWinFactor = 2f;     GamblerLoseFactor = 0.5f;
+            HasPatient       = false; PatientMinPlacements = 3;  PatientFactor = 2f;
+                                      PlacementsWithoutClear = 0;
+            HasCardCollector = false; CardCollectorPerCard = 0f;
+
             HasDietPlan      = false; DietPlanMaxSize = 4;         DietPlanScoreFactor = 1f;
             HasGhostDrop     = false; GhostDropMaxUses = 0;        GhostDropUsesThisMilestone = 0;
             HasSlowBurn      = false; SlowBurnEarlyCount = 0;      SlowBurnEarlyFactor = 1f;

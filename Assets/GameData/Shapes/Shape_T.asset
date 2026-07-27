@@ -24,7 +24,7 @@ MonoBehaviour:
   BaseTileValue: 5
   LockedByDefault: 1
   UnlockCost: 300
-  ScoreUpgradeBaseCost: 10
-  ScoreUpgradeCostPerLevel: 5
-  WeightIncreaseCost: 60
-  WeightDecreaseCost: 40
+  ScoreUpgradeBaseCost: 100
+  ScoreUpgradeCostPerLevel: 50
+  WeightIncreaseCost: 600
+  WeightDecreaseCost: 400

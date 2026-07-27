@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_card_reroll
   NameKey: Card Reroll
   DescriptionKey: More chance to get new cards
-  Icon: {fileID: 0}
+  Icon: {fileID: 375184529311429373, guid: cfd285c1cdeafe34fb3855ea7e0c7c75, type: 3}
   UnlockStageIndex: 5
   MaxLevel: 4
-  CostPerLevel: 6400000020030000d007000094110000
+  CostPerLevel: e8030000a00f0000204e0000c8af0000
   EffectType: 2
   EffectValuePerLevel: 1

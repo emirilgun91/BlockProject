@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_combo_bar
   NameKey: New Combo Bar
   DescriptionKey: You have more combo bar
-  Icon: {fileID: 0}
+  Icon: {fileID: -5575301628297563232, guid: c3f5570b3bdd869429b2b7beb6c12129, type: 3}
   UnlockStageIndex: 7
   MaxLevel: 2
-  CostPerLevel: f4010000b80b0000
+  CostPerLevel: 983a000030750000
   EffectType: 5
   EffectValuePerLevel: 1

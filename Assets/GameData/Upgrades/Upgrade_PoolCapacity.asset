@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_pool_capacity
   NameKey: Pool Capacity
   DescriptionKey: Pool capacity increase
-  Icon: {fileID: 0}
+  Icon: {fileID: 8132873455764344801, guid: 02380ab2cb1ca6e4b8bec0f7b8842438, type: 3}
   UnlockStageIndex: 3
   MaxLevel: 5
-  CostPerLevel: 64000000f4010000ac0d0000581b000010270000
+  CostPerLevel: e803000088130000b888000070110100a0860100
   EffectType: 0
   EffectValuePerLevel: 2

@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_pool_reroll
   NameKey: Pool Reroll
   DescriptionKey: Reroll Poll
-  Icon: {fileID: 0}
+  Icon: {fileID: -6897235604829859371, guid: e3f58f7ebd470b54395d94c068870182, type: 3}
   UnlockStageIndex: 4
   MaxLevel: 3
-  CostPerLevel: 96000000dc050000ac0d0000
+  CostPerLevel: dc0500004c1d0000b8880000
   EffectType: 1
   EffectValuePerLevel: 1

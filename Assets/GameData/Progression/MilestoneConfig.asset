@@ -14,30 +14,81 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.MilestoneConfigSO
   PoolLimit: 28
   Milestones:
-  - ScoreThreshold: 100
-    CoinReward: 5000
-    Label: Stage 1
-  - ScoreThreshold: 300
-    CoinReward: 8
-    Label: Stage 2
   - ScoreThreshold: 500
-    CoinReward: 12
+    CoinReward: 150
+    Label: Stage 1
+  - ScoreThreshold: 1500
+    CoinReward: 300
+    Label: Stage 2
+  - ScoreThreshold: 3500
+    CoinReward: 500
     Label: Stage 3
-  - ScoreThreshold: 1000
-    CoinReward: 20
+  - ScoreThreshold: 7000
+    CoinReward: 900
     Label: Stage 4
-  - ScoreThreshold: 8000
-    CoinReward: 25
+  - ScoreThreshold: 13000
+    CoinReward: 1500
     Label: Stage 5
-  - ScoreThreshold: 12500
-    CoinReward: 35
-    Label: Stage 6
   - ScoreThreshold: 20000
-    CoinReward: 40
+    CoinReward: 2400
+    Label: Stage 6
+  - ScoreThreshold: 30000
+    CoinReward: 3800
     Label: Stage 7
-  - ScoreThreshold: 35000
-    CoinReward: 40
+  - ScoreThreshold: 45000
+    CoinReward: 5000
     Label: Stage 8
-  - ScoreThreshold: 50000
-    CoinReward: 50
-    Label: Stage 9
+  - ScoreThreshold: 65000
+    CoinReward: 6000
+    Label: Stage 10
+  - ScoreThreshold: 95000
+    CoinReward: 7500
+    Label: Stage 11
+  - ScoreThreshold: 145000
+    CoinReward: 10000
+    Label: Stage 12
+  - ScoreThreshold: 215000
+    CoinReward: 14000
+    Label: Stage 13
+  - ScoreThreshold: 310000
+    CoinReward: 16000
+    Label: Stage 14
+  - ScoreThreshold: 440000
+    CoinReward: 24000
+    Label: Stage 15
+  - ScoreThreshold: 620000
+    CoinReward: 32000
+    Label: Stage 16
+  - ScoreThreshold: 850000
+    CoinReward: 40000
+    Label: Stage 17
+  - ScoreThreshold: 1150000
+    CoinReward: 50000
+    Label: Stage 18
+  - ScoreThreshold: 1500000
+    CoinReward: 70000
+    Label: Stage 19
+  - ScoreThreshold: 1950000
+    CoinReward: 90000
+    Label: Stage 20
+  - ScoreThreshold: 25000000
+    CoinReward: 100000
+    Label: Stage 21
+  - ScoreThreshold: 3200000
+    CoinReward: 110000
+    Label: Stage 22
+  - ScoreThreshold: 4000000
+    CoinReward: 120000
+    Label: Stage 23
+  - ScoreThreshold: 5000000
+    CoinReward: 135000
+    Label: Stage 24
+  - ScoreThreshold: 6200000
+    CoinReward: 150000
+    Label: Stage 25
+  - ScoreThreshold: 7500000
+    CoinReward: 150000
+    Label: Stage 26
+  - ScoreThreshold: 10000000
+    CoinReward: 150000
+    Label: Stage 27

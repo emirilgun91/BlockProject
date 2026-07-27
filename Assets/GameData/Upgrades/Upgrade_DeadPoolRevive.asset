@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_dead_pool_revive
   NameKey: Not Game Over
   DescriptionKey: Game over no Pool reroll yes
-  Icon: {fileID: 0}
+  Icon: {fileID: -5205943352263177221, guid: 82526d4268f89bf41abc9a06ece42e41, type: 3}
   UnlockStageIndex: 7
   MaxLevel: 2
-  CostPerLevel: 8813000010270000
+  CostPerLevel: 50c30000a0860100
   EffectType: 4
   EffectValuePerLevel: 1

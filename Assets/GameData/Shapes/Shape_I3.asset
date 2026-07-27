@@ -21,3 +21,9 @@ MonoBehaviour:
   BaseWeight: 35
   ColorPreset: 0
   BaseTileValue: 8
+  LockedByDefault: 0
+  UnlockCost: 300
+  ScoreUpgradeBaseCost: 100
+  ScoreUpgradeCostPerLevel: 50
+  WeightIncreaseCost: 600
+  WeightDecreaseCost: 400

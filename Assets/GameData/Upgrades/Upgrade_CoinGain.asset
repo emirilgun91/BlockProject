@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_coin_gain
   NameKey: Coin Gain
   DescriptionKey: more coin more upgrade
-  Icon: {fileID: 0}
+  Icon: {fileID: 6492771307100284923, guid: 5133c82743cf31f4d839e953b725cc5a, type: 3}
   UnlockStageIndex: 3
   MaxLevel: 5
-  CostPerLevel: 96000000f4010000ee020000ac0d000088130000
+  CostPerLevel: dc050000881300004c1d0000b888000050c30000
   EffectType: 6
   EffectValuePerLevel: 0.04

@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_starting_combo
   NameKey: Combo Power
   DescriptionKey: Increase Combo Power
-  Icon: {fileID: 0}
+  Icon: {fileID: 1570096078051873769, guid: c89fec23fe86e7148babed110b3d8bb0, type: 3}
   UnlockStageIndex: 5
   MaxLevel: 3
-  CostPerLevel: 58020000c40900004c1d0000
+  CostPerLevel: 70170000a8610000f8240100
   EffectType: 7
   EffectValuePerLevel: 0.1

@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: upgrade_combo_gain
   NameKey: Combo Gain Boost
   DescriptionKey: More combo more score
-  Icon: {fileID: 0}
+  Icon: {fileID: -5177169228622864428, guid: 61de91709fd681c4798ff93436ab12a2, type: 3}
   UnlockStageIndex: 6
   MaxLevel: 5
-  CostPerLevel: c8000000e8030000b80b000088130000401f0000
+  CostPerLevel: d0070000102700003075000050c3000080380100
   EffectType: 6
   EffectValuePerLevel: 0.03

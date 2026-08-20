@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Shape_I3
   CardName: I3
-  Description: I3 Tile Value +2, Spawn Rate -%5
-  Icon: {fileID: 0}
+  Description: I3 tiles score +2, but I3 appears 5% less often.
+  Icon: {fileID: 21300000, guid: 7c01ceb05e1eade44832333b69006824, type: 3}
   Rarity: 0
   Effects: []
   BaseWeight: 30

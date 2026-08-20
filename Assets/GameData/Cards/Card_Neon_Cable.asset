@@ -14,12 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Neon_Cable
   CardName: Neon Cable
-  Description: '2 visually distinct, linked tiles are randomly generated on the 8x8
-    grid. If a line clear occurs on one of these tiles, the other linked tile and
-    its surrounding tiles (within a 1-tile radius) are also destroyed by the explosion,
-    granting score. The positions of these two linked tiles change every time a new
-    set of 3 shapes is drawn from the pool. '
-  Icon: {fileID: 0}
+  Description: Two linked tiles appear on the board. Clearing one detonates the other
+    and its neighbours for score. They move with every new draw.
+  Icon: {fileID: 1841310296168647808, guid: 71d0f1ac6dfbeda45ac947bb425cb5c1, type: 3}
   Rarity: 3
   Effects:
   - Type: 31

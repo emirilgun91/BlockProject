@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Soft_Landing
   CardName: Soft Landing
-  Description: When a combo reset occurs, the multiplier drops to exactly half of
-    its current value instead of dropping to the minimum value
-  Icon: {fileID: 8348444580040657917, guid: 96067a3ffa187814a9c862816d5d45aa, type: 3}
+  Description: On a combo reset, the multiplier halves instead of dropping to minimum.
+  Icon: {fileID: 21300000, guid: 6aaad84b21dd5434a95b529d3f9a8d1f, type: 3}
   Rarity: 2
   Effects:
   - Type: 10

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Bounty_Hunter
   CardName: Bounty Hunter
-  Description: Every line clear instantly grants +1 Blockcoin, but the target scores
-    for all subsequent Milestones are permanently increased by 20%.
-  Icon: {fileID: 0}
+  Description: Every line clear grants +1 Blockcoin, but all future Milestone targets
+    rise by 20%.
+  Icon: {fileID: 2777172269198072886, guid: cd3c01d68836fa8468525b21d173a194, type: 3}
   Rarity: 1
   Effects:
   - Type: 19

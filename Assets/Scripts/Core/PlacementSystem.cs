@@ -22,12 +22,23 @@ namespace RogueBlockBlast.Core
             return true;
         }
 
+        /// <summary>
+        /// Parçayı tahtaya yazar.
+        ///
+        /// tileValueOverride: hücrelere yazılacak puan. null ise parçanın kendi
+        /// TileValue'su kullanılır. Shape kartı bonusu gibi çalışma zamanında
+        /// eklenen değerler buradan geçirilir — böylece tahtadaki hücre, ghost
+        /// önizlemesinde gösterilen değerin AYNISINI saklar ve line clear'da
+        /// ekrana uçan sayı ile kazanılan puan ayrışmaz.
+        /// </summary>
         public static void Place(
             BoardModel      board,
             PieceDefinition piece,
             Vector2Int      anchor,
-            Rotation        rot)
+            Rotation        rot,
+            float?          tileValueOverride = null)
         {
+            float value = tileValueOverride ?? piece.TileValue;
             var cells = piece.GetCells(rot);
             foreach (var c in cells)
             {
@@ -35,7 +46,7 @@ namespace RogueBlockBlast.Core
                 int y = anchor.y + c.y;
 
                 // Renk + tile değeri birlikte yazılır
-                board.SetFilled(x, y, true, piece.BlockColor, piece.TileValue);
+                board.SetFilled(x, y, true, piece.BlockColor, value);
             }
         }
     }

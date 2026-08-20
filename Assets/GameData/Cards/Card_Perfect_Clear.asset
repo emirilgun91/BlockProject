@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Perfect_Clear
   CardName: Perfect Clear
-  Description: When perfect clear happened. Its giving lots of score and combo point.
-  Icon: {fileID: 0}
+  Description: Emptying the entire board grants +100 Blockcoins and +2 combo.
+  Icon: {fileID: 7489025131750043648, guid: a189ed52d96faf74cbd3873cedd71da0, type: 3}
   Rarity: 2
   Effects:
   - Type: 27

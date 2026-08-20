@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Corner_Stone
   CardName: Corner Stone
-  Description: Each tile you place on one of the four board corners grants +3 points.
-  Icon: {fileID: 0}
+  Description: Each tile placed on one of the four corners grants +3 points.
+  Icon: {fileID: 2594486455720591018, guid: 7b52b909cf19aa147a8d631c7d536fb4, type: 3}
   Rarity: 0
   Effects:
   - Type: 38

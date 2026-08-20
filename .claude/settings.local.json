@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "PowerShell($p=\"C:\\\\Users\\\\faint\\\\OneDrive\\\\Belgeler\\\\GitHub\\\\MafiaIdle\\\\Pickgameproject\"; if\\(Test-Path $p\\){ Get-ChildItem $p | Select-Object Name,Mode } else { \"YOK: $p\" })",
+      "PowerShell(unity-mcp-cli run-system-tool ping --input '{\\\\\"message\\\\\":\\\\\"probe\\\\\"}')",
+      "PowerShell($p=@\\(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"C:\\\\Program Files\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"C:\\\\Program Files \\(x86\\)\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\"\\); foreach\\($x in $p\\){ if\\(Test-Path $x\\){ $x } })",
+      "mcp__unity__script-execute",
+      "mcp__unity__console-get-logs",
+      "mcp__unity__console-clear-logs",
+      "Bash(godot.exe --path . --headless --editor --quit-after 4)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(godot.exe --path . --headless --quit-after 1 res://game.tscn)",
+      "Bash(godot.exe --path . --fixed-fps 60 tools/trailer/trailer_mecha_assault.tscn)",
+      "mcp__unity__assets-refresh",
+      "Bash(python -)",
+      "Bash(where uvx *)",
+      "mcp__thrixel__thrixel_account_status"
     ]
   }
 }

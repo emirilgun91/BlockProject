@@ -32,7 +32,16 @@ namespace RogueBlockBlast.Content
         [Tooltip("Unlock maliyeti (coin).")]
         public int UnlockCost = 300;
 
-        [Header("Upgrade Costs")]
+        [Header("Score Upgrade Curves")]
+        [Tooltip("Her seviyede tile değerine eklenen puan. Örn: 3,5,7,9\n" +
+                 "Boş bırakılırsa registry'deki sabit ValuePerUpgradeLevel kullanılır.")]
+        public UpgradeCurve ScoreGain;
+
+        [Tooltip("Her seviyenin coin maliyeti. Örn: 100,200,400,600,800\n" +
+                 "Boş bırakılırsa aşağıdaki eski BaseCost + Level×PerLevel formülü kullanılır.")]
+        public UpgradeCurve ScoreCost;
+
+        [Header("Upgrade Costs (eski — curve boşsa kullanılır)")]
         [Tooltip("Her score upgrade seviyesinin baz maliyeti.")]
         public int ScoreUpgradeBaseCost = 10;
         [Tooltip("Her seviyede maliyet ne kadar artar.")]

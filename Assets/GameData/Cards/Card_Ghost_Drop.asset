@@ -14,10 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Ghost_Drop
   CardName: Ghost Drop
-  Description: If the shape you place on the board does not touch any other block
-    (placed in a completely empty space), it does not consume a shape from the pool.
-    This effect triggers a maximum of 3 times per milestone.
-  Icon: {fileID: 7740770645608920724, guid: 793217a0efea3cc428d432623f0b2632, type: 3}
+  Description: A shape placed touching nothing is free. Works 3 times per Milestone.
+  Icon: {fileID: 6114468674503224496, guid: 2846ab81480ce3f4e871d44a89aee626, type: 3}
   Rarity: 1
   Effects:
   - Type: 9

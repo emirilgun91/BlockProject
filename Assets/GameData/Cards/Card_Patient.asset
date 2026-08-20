@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Patient
   CardName: Patient
-  Description: After 3 or more placements without a clear, your next clear scores double.
-  Icon: {fileID: 0}
+  Description: After 3 placements without a clear, your next clear scores double.
+  Icon: {fileID: 21300000, guid: 643b5a24d9a66d849b3e2650268d3ff0, type: 3}
   Rarity: 2
   Effects:
   - Type: 42

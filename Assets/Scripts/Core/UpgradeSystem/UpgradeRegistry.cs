@@ -50,6 +50,13 @@ namespace RogueBlockBlast.Core
             }
         }
 
+        /// <summary>
+        /// Runtime cache'i boşaltır — PlayerPrefs dışarıdan silindiğinde
+        /// (ör. ilerleme sıfırlama) çağrılır. Diskten okumaz; sonrasında
+        /// <see cref="Init"/> ile yeniden yüklenmeli.
+        /// </summary>
+        public void ClearRuntimeCache() => _levels.Clear();
+
         // ── Public API ───────────────────────────────────────────────────────
 
         /// <summary>Mevcut seviyeyi döndürür (0 = sahip değil).</summary>
@@ -71,13 +78,34 @@ namespace RogueBlockBlast.Core
         /// <summary>Bir sonraki seviyeye yükseltebilir mi?</summary>
         public bool CanUpgrade(UpgradeSO upgrade)
         {
+            if (!CanUpgradeIgnoringCoins(upgrade)) return false;
+            return CoinWallet.Instance?.CanAfford(GetNextCost(upgrade)) ?? false;
+        }
+
+        /// <summary>
+        /// Coin durumuna BAKMADAN yükseltilebilir mi (kilit açık + maks seviyede değil).
+        ///
+        /// UI butonları bunu kullanmalı: buton açık kalır, tıklayınca "yetersiz coin"
+        /// uyarısı gösterilir. Butonu tamamen kapatınca oyuncu neden tıklayamadığını
+        /// anlamıyordu.
+        /// </summary>
+        public bool CanUpgradeIgnoringCoins(UpgradeSO upgrade)
+        {
             if (upgrade == null) return false;
             if (!IsUnlocked(upgrade)) return false;
-            int current = GetLevel(upgrade.Id);
-            if (current >= upgrade.MaxLevel) return false;
-            int cost = upgrade.GetCostForLevel(current + 1);
-            return CoinWallet.Instance?.CanAfford(cost) ?? false;
+            return GetLevel(upgrade.Id) < upgrade.MaxLevel;
         }
+
+        /// <summary>Bir sonraki seviyenin maliyeti.</summary>
+        public int GetNextCost(UpgradeSO upgrade)
+        {
+            if (upgrade == null) return 0;
+            return upgrade.GetCostForLevel(GetLevel(upgrade.Id) + 1);
+        }
+
+        /// <summary>Oyuncunun bir sonraki seviyeye parası yetiyor mu?</summary>
+        public bool CanAffordUpgrade(UpgradeSO upgrade)
+            => CoinWallet.Instance?.CanAfford(GetNextCost(upgrade)) ?? false;
 
         /// <summary>Son seviyeyi satabilir mi?</summary>
         public bool CanSell(UpgradeSO upgrade)

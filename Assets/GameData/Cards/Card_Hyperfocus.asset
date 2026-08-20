@@ -14,10 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Hyperfocus
   CardName: Hyper Focus
-  Description: The combo multiplier increases twice as fast with every line clear.
-    However, the moment the combo resets, 2 extra shapes are immediately deducted
-    from the pool.
-  Icon: {fileID: 0}
+  Description: Combo multiplier grows twice as fast, but every combo reset costs
+    2 shapes.
+  Icon: {fileID: -123460601247273257, guid: 91867045849246b48a6f5de9760aa27e, type: 3}
   Rarity: 1
   Effects:
   - Type: 15

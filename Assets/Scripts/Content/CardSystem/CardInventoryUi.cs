@@ -29,9 +29,14 @@ namespace RogueBlockBlast.UI
         [SerializeField] private RectTransform _content;     // GridLayoutGroup'un olduğu Content
 
         [Header("Grid")]
-        [SerializeField] private int   _columns    = 2;
-        [SerializeField] private float _slotSize   = 40f;
-        [SerializeField] private float _slotSpacing = 6f;
+        [Tooltip("KAPALI (varsayılan): Inspector'daki GridLayoutGroup ayarların olduğu gibi kalır — " +
+                 "hücre boyutu, padding, sütun sayısı elle ayarlanır ve script hiçbirine dokunmaz.\n" +
+                 "AÇIK: aşağıdaki değerler her açılışta grid'e yazılır (elle yaptığın ayarlar ezilir).")]
+        [SerializeField] private bool  _applyGridFromScript = false;
+
+        [SerializeField] private int   _columns     = 3;
+        [SerializeField] private float _slotSize    = 68f;
+        [SerializeField] private float _slotSpacing = 8f;
 
         // ── State ────────────────────────────────────────────────────────────
         // CardSO.Id → (CardSO, count, SlotView)
@@ -47,25 +52,35 @@ namespace RogueBlockBlast.UI
             SetupGrid();
         }
 
+        /// <summary>
+        /// Grid ayarlarını uygular — YALNIZCA _applyGridFromScript açıksa.
+        ///
+        /// Varsayılan olarak kapalı: Inspector'da elle girdiğin cell size / padding /
+        /// sütun sayısı korunur. (Eskiden bu metot her Awake'te üzerine yazıyordu.)
+        /// ContentSizeFitter her durumda garanti edilir; o olmadan liste büyüdükçe
+        /// kaydırma çalışmaz.
+        /// </summary>
         private void SetupGrid()
         {
             if (_content == null) return;
-
-            var grid = _content.GetComponent<GridLayoutGroup>();
-            if (grid == null) grid = _content.gameObject.AddComponent<GridLayoutGroup>();
-
-            grid.cellSize        = new Vector2(_slotSize, _slotSize);
-            grid.spacing         = new Vector2(_slotSpacing, _slotSpacing);
-            grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = _columns;
-            grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
-            grid.startAxis       = GridLayoutGroup.Axis.Horizontal;
-            grid.childAlignment  = TextAnchor.UpperLeft;
 
             var csf = _content.GetComponent<ContentSizeFitter>();
             if (csf == null) csf = _content.gameObject.AddComponent<ContentSizeFitter>();
             csf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
             csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            if (!_applyGridFromScript) return;
+
+            var grid = _content.GetComponent<GridLayoutGroup>();
+            if (grid == null) grid = _content.gameObject.AddComponent<GridLayoutGroup>();
+
+            grid.cellSize        = new Vector2(_slotSize, _slotSize + CardSlotView.LiveValueBandHeight);
+            grid.spacing         = new Vector2(_slotSpacing, _slotSpacing);
+            grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = _columns;
+            grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis       = GridLayoutGroup.Axis.Horizontal;
+            grid.childAlignment  = TextAnchor.UpperCenter;
         }
 
         // ── Public API ───────────────────────────────────────────────────────

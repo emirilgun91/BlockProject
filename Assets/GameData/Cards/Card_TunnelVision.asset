@@ -14,10 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Cart_Tunnel_Vision
   CardName: Tunnel Vision
-  Description: Only vertical line clears grant score, multiplying the earned points
-    by 2.5x. Horizontal clears grant 0 points (but they still maintain the combo
-    bar).
-  Icon: {fileID: 0}
+  Description: Vertical clears score 2.5x. Horizontal clears score nothing but still
+    hold the combo.
+  Icon: {fileID: -3887828225202134285, guid: 7c5689674ab319d4cb0e290933b56258, type: 3}
   Rarity: 2
   Effects:
   - Type: 17

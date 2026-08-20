@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Heavy_Load
   CardName: Heavy Load
-  Description: Your pool capacity grows by 6 shapes, but your global score multiplier drops by 0.10.
-  Icon: {fileID: 0}
+  Description: Pool capacity +6 shapes, but global score multiplier -0.10.
+  Icon: {fileID: 2403685106979460844, guid: 626bc9ec58818c4448fc57ae3bd2036d, type: 3}
   Rarity: 2
   Effects:
   - Type: 46

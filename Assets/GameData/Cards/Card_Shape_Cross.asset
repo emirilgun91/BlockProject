@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Shape_Cross
   CardName: Cross
-  Description: Cross Tile Value +2, Spawn Rate -%3
-  Icon: {fileID: 0}
+  Description: Cross tiles score +2, but Cross appears 3% less often.
+  Icon: {fileID: 21300000, guid: 601fdc0a02b751042bbd703119827df0, type: 3}
   Rarity: 0
   Effects: []
   BaseWeight: 40

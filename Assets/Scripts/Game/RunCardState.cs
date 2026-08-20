@@ -197,7 +197,20 @@ namespace RogueBlockBlast.Game
         public void OnMilestoneReached()
         {
             GhostDropUsesThisMilestone  = 0;
+
+            // "During this Milestone" diyen kartlar burada sona erer.
+            // Kart seçimi bu çağrıdan SONRA yapıldığı için, burada kapatmak kartın tam olarak
+            // bir milestone yaşamasını sağlar; tekrar seçilirse yeniden açılır.
+
+            // First Picks — ücretsiz yerleştirmeler + döndürme kilidi
+            HasFirstPicks               = false;
+            FirstPicksFreeCount         = 0;
             FirstPicksUsedThisMilestone = 0;
+
+            // Diet Plan — şekil boyutu kısıtı + puan cezası
+            HasDietPlan         = false;
+            DietPlanMaxSize     = 4;
+            DietPlanScoreFactor = 1f;
         }
     }
 }

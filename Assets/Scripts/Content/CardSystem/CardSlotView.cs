@@ -86,7 +86,11 @@ namespace RogueBlockBlast.UI
             if (show) _liveValueText.text = text;
         }
 
-        /// <summary>Prefab'da referans yoksa slot altında küçük bir TMP satırı üretir.</summary>
+        /// <summary>
+        /// Prefab'da referans yoksa slotun ALT ŞERİDİNDE okunur bir TMP satırı üretir.
+        /// Hücre yüksekliği ikon + bu şerit olacak şekilde ayarlanır (CardInventoryUI),
+        /// böylece yazı ikonun üstüne binmez.
+        /// </summary>
         private void EnsureLiveValueText()
         {
             if (_liveValueText != null || _liveValueCreated) return;
@@ -99,19 +103,26 @@ namespace RogueBlockBlast.UI
             rect.anchorMin = new Vector2(0f, 0f);
             rect.anchorMax = new Vector2(1f, 0f);
             rect.pivot     = new Vector2(0.5f, 0f);
-            rect.offsetMin = new Vector2(0f, -2f);
-            rect.offsetMax = new Vector2(0f, 12f);
+            rect.offsetMin = new Vector2(2f, 2f);
+            rect.offsetMax = new Vector2(-2f, LiveValueBandHeight);
 
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize      = 9f;
+            tmp.fontSize      = 15f;
+            tmp.fontStyle     = FontStyles.Bold;
             tmp.alignment     = TextAlignmentOptions.Center;
-            tmp.color         = new Color(1f, 0.9f, 0.4f);
+            tmp.color         = new Color(1f, 0.86f, 0.35f);
             tmp.raycastTarget = false;
-            tmp.enableWordWrapping = false;
-            tmp.overflowMode  = TextOverflowModes.Overflow;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+            tmp.overflowMode  = TextOverflowModes.Ellipsis;
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 9f;
+            tmp.fontSizeMax = 15f;
 
             _liveValueText = tmp;
         }
+
+        /// <summary>Hücrenin altında canlı değer yazısına ayrılan yükseklik (px).</summary>
+        public const float LiveValueBandHeight = 22f;
 
         private bool _liveValueCreated;
 

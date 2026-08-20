@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Gambler
   CardName: Gambler
-  Description: Every placement has a 20% chance to double the score gained - or halve it.
-  Icon: {fileID: 0}
+  Description: Each placement has a 20% chance to double its score - or halve it.
+  Icon: {fileID: -7975792479327943879, guid: 8e9ab8600d0bbbd4ca55bb740ca95026, type: 3}
   Rarity: 2
   Effects:
   - Type: 41
     Value: 0
-    Description: 20% chance: score x2 or x0.5
+    Description: 
   BaseWeight: 30
   IsUnique: 1
   LockedByDefault: 0

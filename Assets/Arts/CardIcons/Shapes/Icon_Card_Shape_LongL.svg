@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f691e9"/>
+      <stop offset="55%" stop-color="#f04edb"/>
+      <stop offset="100%" stop-color="#a83799"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f47ae4" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#f04edb" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="4.23" result="bl"/>
+      <feMerge><feMergeNode in="bl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4.7" result="bl"/>
+      <feColorMatrix in="bl" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.40 0" result="gl"/>
+      <feMerge><feMergeNode in="gl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g opacity="0.75">
+    <rect x="191.45" y="194.74" width="14.1" height="56.4" rx="7.05" fill="url(#trail)"/>
+  </g>
+  <g filter="url(#bloom)">
+    <g>
+      <rect x="36.82" y="60.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="43.44" y="65.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="42.61" y="91.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="83.82" y="60.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="90.44" y="65.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="89.61" y="91.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="130.82" y="60.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="137.44" y="65.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="136.61" y="91.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="177.82" y="60.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="184.44" y="65.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="183.61" y="91.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="177.82" y="107.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="184.44" y="112.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="183.61" y="138.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="177.82" y="154.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#f9b5f0" stroke-width="2.35"/>
+      <rect x="184.44" y="159.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="183.61" y="185.34" width="29.78" height="4.14" rx="2.07" fill="#732569" opacity="0.5"/>
+    </g>
+  </g>
+  <g opacity="0.95">
+    <path d="M 198.5 40.38 L 201.78 53.7 L 213.36 56.98 L 201.78 60.26 L 198.5 72.66 L 195.22 60.26 L 183.64 56.98 L 195.22 53.7 Z" fill="#fff3c9" filter="url(#glow)"/>
+  </g>
+</svg>

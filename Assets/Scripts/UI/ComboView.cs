@@ -97,20 +97,23 @@ namespace RogueBlockBlast.UI
 
         private void HandleReset()
         {
+            // Erişilebilirlik: "Hareketi Azalt" açıkken bu 0 döner ve sarsıntı atlanır.
+            float shake = RogueBlockBlast.Core.Settings.GameSettings.ScreenShake;
+
             // 1. Panel shake
-            if (_comboPanel != null)
+            if (_comboPanel != null && shake > 0f)
             {
                 _comboPanel.DOKill();
-                _comboPanel.DOShakeAnchorPos(0.3f, strength: new Vector2(5f, 2f), vibrato: 8, randomness: 45f)
+                _comboPanel.DOShakeAnchorPos(0.3f, strength: new Vector2(5f, 2f) * shake, vibrato: 8, randomness: 45f)
                            .SetEase(Ease.OutQuad);
             }
 
             // 2. Multiplier text shake
-            if (_multiplierText != null)
+            if (_multiplierText != null && shake > 0f)
             {
                 _multiplierText.transform.DOKill();
                 _multiplierText.transform
-                    .DOShakeScale(0.25f, 0.18f, 5, 45f)
+                    .DOShakeScale(0.25f, 0.18f * shake, 5, 45f)
                     .OnComplete(() => _multiplierText.transform.localScale = _multiplierBaseScale);
             }
 

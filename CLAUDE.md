@@ -35,7 +35,7 @@ This is a Unity project — all build/run actions go through the Unity Editor. T
 These systems hold no Unity lifecycle and can be `new`'d freely:
 
 - **`BoardModel`** — 8×8 grid storing `bool[,]` (filled), `Color[,]`, and `float[,]` (tile value per cell). Source of truth for board state.
-- **`PlacementSystem`** (static) — `CanPlace` / `Place` against a `BoardModel`. Writes color + tile value from `PieceDefinition`.
+- **`PlacementSystem`** (static) — `CanPlace` / `Place` against a `BoardModel`. Writes color + tile value from `PieceDefinition`, or from the optional `tileValueOverride` argument when runtime bonuses apply (see **Scoring rule**).
 - **`LineClearSystem`** (static) — Finds full rows/cols, collects `TileSnapshot[]` *before* clearing (for VFX), then clears. Returns `(totalCleared, tileValueSum, clearedRows[], clearedCols[], snapshots)`.
 - **`ScoreSystem`** — `tileValueSum × comboMultiplier × globalMultiplier`, rounded to int.
 - **`ComboSystem`** — Charge bar (default max 3). Line clear → charge up + multiplier increase; no-clear placement → charge down; charge hits 0 → multiplier resets to `BaseMultiplier`. Fires `OnStateChanged(ComboState)`, `OnComboReset`, `OnMaxCharge`. UI subscribes to `OnStateChanged`.
@@ -119,10 +119,53 @@ UI components are bound to systems, not polled. `ComboView.Bind(comboSystem)` su
 
 `BoardView.Render(board, ghostCells, ghostTileValue)` is called every frame from `RunController.Update()`.
 
+## Settings, Localization & Meta Systems
+
+### Settings (`RogueBlockBlast.Core.Settings`)
+
+- **`GameSettings`** (static) — single source of truth for all settings, PlayerPrefs-backed, with `OnChanged` / `OnAudioChanged` / `OnDisplayChanged` / `OnAccessibilityChanged` events. Covers audio, display (fullscreen/resolution/vsync/fps), gameplay toggles, and accessibility. `ReduceMotion` overrides `ScreenShake` (returns 0) and caps `VfxIntensity`; the raw values stay readable via `ScreenShakeRaw` / `VfxIntensityRaw` so sliders keep their position.
+- **`SettingsBootstrap`** — `[RuntimeInitializeOnLoadMethod]`, self-instantiating. Applies display settings before the first scene, applies audio once `AudioManager` exists, and ducks audio on focus loss.
+- **`SaveDataService.ResetProgress()`** — wipes PlayerPrefs then re-persists settings (PlayerPrefs has no key enumeration, so "delete all, write settings back" is the only complete reset). Also clears the runtime caches of `CoinWallet` / `UpgradeRegistry` / `UnlockRegistry` / `ShapeUpgradeRegistry`.
+- **`SettingsController`** — every serialized field is optional; unbound controls are silently skipped. Takes a snapshot on open so Cancel can restore.
+
+### Localization
+
+The game uses the **SimpleLocalization** asset at `Assets/SimpleLocalization/` (not a custom system, and not Unity Localization). CSVs live at `Assets/SimpleLocalization/Resources/Localization/{Game,MainMenu,Settings}.csv`.
+
+- **`Loc`** — the facade over SimpleLocalization: language persistence (`GameSettings.Language`), system-language detection, next/previous cycling, `Get` / `GetOr` that return the key instead of throwing on a miss, and culture-correct `ToUpper` (Turkish `i → İ`).
+- **`ContentLocalization`** — translations for ScriptableObject content via `Card.<id>.Name` / `Card.<id>.Desc`, `Upgrade.<id>.*`, `Shape.<id>.Name`. Falls back to the asset's own text when a key is missing, so content can be translated incrementally.
+- **`LocFiller`** (editor) — bulk-writes CSV cells; preserves existing rows and never overwrites a filled cell unless `overwrite: true`.
+
+**Rule: every new player-facing string ships translated in all 16 supported languages.** Arabic is deliberately left empty until RTL layout support exists; empty cells fall back to English automatically. Key naming is `Section.Element` PascalCase.
+
+### Meta / Debug
+
+- **`PauseMenuController`** (game scene) — ESC opens it: Resume / Settings / Main Menu / Quit. Sets `timeScale = 0` and locks input. **The controller must live on a GameObject that stays active** and toggle a child container — putting it on the object it disables kills its own `Update()`.
+- **`DebugPanel`** — F1, IMGUI, `#if UNITY_EDITOR || DEVELOPMENT_BUILD` only, self-instantiating. Injects any card through the real `OnCardPicked` path, plus board/pool/score/coin actions and a live card-state readout.
+- **`ExternalLinkButton`** — opens http/https links only; disables itself when the URL is empty or invalid.
+- **`UpgradeCurve`** — per-level value curve (`Steps` + `Multiplier`/`Increment` + `MaxValue`/`MaxLevel`) used by `ShapeSO.ScoreGain` / `ScoreCost`. Score gain is **cumulative**: level 3 with steps `3,5,7` adds +15, not +7. Empty curve → the old flat formula.
+- **Editor tools** live under `Tools ▸ RogueBlockBlast ▸` (save data, localization validation, shape upgrade curves, settings panel builder, pause menu builder, card inventory layout). The panel/layout builders regenerate UI from code, so hand edits to those objects are lost on the next run.
+
+## Scoring rule
+
+**Points are only awarded when lines clear.** Every bonus that scales with tiles is therefore written into the tile's own value at placement time, never added to `gainedScore` separately:
+
+- Shape-card bonus → `effectiveTileValue = piece.TileValue + GetScoreBonus(pieceId)`, passed to `PlacementSystem.Place`.
+- Corner Stone / Center Base → `ApplyPositionBonusToPlacedCells` rewrites the affected cells after placement (the bonus is per-cell, not per-piece).
+
+This keeps four displays in sync from one source: the empty-cell `+N` hint, the ghost preview, the value stored on the board, and the number that flies to the scoreboard on a clear. Adding a bonus to `gainedScore` as well would double-count it.
+
+## Soft-lock protection
+
+`RunController.CheckForSoftLock()` runs every 0.4 s while input is allowed and calls `HandleDeadPool()` if no valid move exists. It exists because anything that mutates the board outside `DoPlace` (Decaying Rift closing a cell, future cards) can strand the player with no legal move and no game over. `HasAnyValidMoveInPool()` tries only rotation R0 while `IsRotationLocked` (First Picks), since the player cannot rotate then. `OnGameOver` is guarded by `_gameOverFired` so it can only fire once per run.
+
 ## Key Invariants
 
 - `ShapeCardEffectRegistry.Reset()` must be called at `RunController.NewRun()` — effects don't persist across runs.
 - `ComboSystem.Reset()` must be called after setting `BaseMultiplier` and `MaxCharge` (upgrade values), since `Reset()` sets `Multiplier = BaseMultiplier`.
 - `LineClearSystem` takes `TileSnapshot`s *before* clearing — VFX reads pre-clear colors/values.
-- Scores are only awarded when lines clear (`tileValueSum > 0`); shape card score bonus also only applies when `cleared > 0`.
+- Scores are only awarded when lines clear. Tile-scaled bonuses (shape card, Corner Stone, Center Base) are written into the tile value at placement and must NOT also be added to `gainedScore` — see **Scoring rule**.
 - All upgrade effects are read once per `NewRun` from `UpgradeRegistry` and stored as local fields in `RunController` — they don't change mid-run.
+- Cards whose text says "During this Milestone" (First Picks, Diet Plan) must be turned **off** in `RunCardState.OnMilestoneReached()`, not merely reset. That method runs *before* card selection, so a card picked now survives exactly one milestone. Decaying Rift's dead zones are cleared at the same point.
+- `PauseMenuController` must not sit on the GameObject it hides — its `Update()` would stop and ESC would die.
+- Every new player-facing string goes through `Loc` / `ContentLocalization` and ships translated in all 16 languages (Arabic deferred).

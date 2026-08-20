@@ -14,10 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Hoarder
   CardName: Hoarder
-  Description: If you manage to complete a Milestone with 15 or more shapes remaining
-    in your pool, you will start the next Milestone with a +3 bonus to your maximum
-    pool capacity.
-  Icon: {fileID: 0}
+  Description: Finish a Milestone with 15 or more shapes left to start the next one
+    with +3 pool capacity.
+  Icon: {fileID: -2646291499819999732, guid: 85fe9adb646cbcc4d854f9ad711344a2, type: 3}
   Rarity: 3
   Effects:
   - Type: 25

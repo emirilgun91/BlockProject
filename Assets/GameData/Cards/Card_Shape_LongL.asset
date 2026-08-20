@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Shape_LongL
   CardName: Long L
-  Description: Long L Tile Value +3, Spawn Rate -%12
-  Icon: {fileID: 0}
+  Description: Long L tiles score +3, but Long L appears 12% less often.
+  Icon: {fileID: 21300000, guid: 1009fea4dacdcb048b4fbc9675445e80, type: 3}
   Rarity: 0
   Effects: []
   BaseWeight: 40

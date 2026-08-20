@@ -163,6 +163,8 @@ namespace RogueBlockBlast.UI
         /// <summary>Pozisyon bonuslu ghost hücrelerinin puan yazısı bu renkte gösterilir.</summary>
         [Header("Positional Bonus")]
         [SerializeField] private Color _bonusValueColor = new Color(1f, 0.85f, 0.25f, 1f);
+        [Tooltip("Boş hücrede duran kalıcı kart bonusu rengi (Corner Stone / Center Base).")]
+        [SerializeField] private Color _staticBonusColor = new Color(1f, 0.72f, 0.20f, 0.75f);
 
         /// <summary>
         /// ghostTileValue: ghost hücrelerde gösterilecek puan değeri.
@@ -176,7 +178,8 @@ namespace RogueBlockBlast.UI
             BoardModel board,
             ISet<Vector2Int> ghostCells,
             float ghostTileValue = 0f,
-            IReadOnlyDictionary<Vector2Int, float> ghostPositionBonus = null)
+            IReadOnlyDictionary<Vector2Int, float> ghostPositionBonus = null,
+            IReadOnlyDictionary<Vector2Int, float> staticPositionBonus = null)
         {
             if (_tiles == null) return;
 
@@ -208,6 +211,7 @@ namespace RogueBlockBlast.UI
                 if (filled && !isGhost && !phantom && !deadZone)
                 {
                     _tiles[x, y].SetTileValue(board.GetTileValue(x, y));
+                    _tiles[x, y].HideBonusHint();
                 }
                 else if (!filled && isGhost)
                 {
@@ -222,10 +226,22 @@ namespace RogueBlockBlast.UI
                             posBonus > 0f ? _bonusValueColor : (Color?)null);
                     else
                         _tiles[x, y].ClearValue();
+
+                    // Ghost hücrede kalıcı ipucu gizlenir — yerleşim önizlemesi öne çıksın
+                    _tiles[x, y].HideBonusHint();
+                }
+                else if (!filled && staticPositionBonus != null &&
+                         staticPositionBonus.TryGetValue(new Vector2Int(x, y), out float staticBonus) &&
+                         staticBonus > 0f)
+                {
+                    // Kart kaynaklı kalıcı hücre bonusu — şekil sürüklenmeden de görünür
+                    _tiles[x, y].ClearValue();
+                    _tiles[x, y].SetBonusHint(staticBonus, _staticBonusColor);
                 }
                 else
                 {
                     _tiles[x, y].ClearValue();
+                    _tiles[x, y].HideBonusHint();
                 }
 
                 // ── Overlays applied on top each frame ───────────
@@ -237,7 +253,7 @@ namespace RogueBlockBlast.UI
                 int ox = kv.Key.x, oy = kv.Key.y;
                 if (ox < 0 || oy < 0 || ox >= board.Width || oy >= board.Height) continue;
                 _tiles[ox, oy].SetOverlay(kv.Value.type, kv.Value.label);
-                _tiles[ox, oy].ApplyOverlayVisual();
+                _tiles[ox, oy].ApplyOverlayVisual(board.IsFilled(ox, oy));
             }
         }
 

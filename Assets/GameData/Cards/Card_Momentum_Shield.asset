@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Momentum_Shield
   CardName: Momentum Shield
-  Description: If your combo multiplier is 3x or higher and you draw a shape that
-    cannot be placed on the grid (no valid moves), you do not get a Game Over. The
-    shape simply vanishes, your combo multiplier instantly drops to its minimum value,
-    and the game continues.
-  Icon: {fileID: 0}
+  Description: At 3x combo or higher, an unplaceable shape vanishes instead of ending
+    the run. Your combo drops to minimum.
+  Icon: {fileID: 5321918686695122287, guid: 7ec4b62934b4f8b4e92fbb50f806f2c5, type: 3}
   Rarity: 2
   Effects:
   - Type: 24

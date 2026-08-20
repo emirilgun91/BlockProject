@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Momentum
   CardName: Momentum
-  Description: Every line you clear grants an additional +0.05 to your combo multiplier gain.
-  Icon: {fileID: 0}
+  Description: Every line you clear adds +0.05 to your combo multiplier gain.
+  Icon: {fileID: 917325765115324467, guid: 0916cf7fddb3ff64982f35d6b06bc2cb, type: 3}
   Rarity: 0
   Effects:
   - Type: 3

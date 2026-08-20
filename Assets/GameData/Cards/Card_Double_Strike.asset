@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Double_Strike
   CardName: Double Strike
-  Description: Clearing 2 or more lines at once multiplies the score gained by 1.5.
-  Icon: {fileID: 0}
+  Description: Clearing 2 or more lines at once multiplies the score by 1.5.
+  Icon: {fileID: 7534135488341292421, guid: c60ff0ded086d9144a426075d17a25b3, type: 3}
   Rarity: 2
   Effects:
   - Type: 40

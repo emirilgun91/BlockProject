@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Core;
 using TMPro;
 using UnityEngine;
@@ -110,7 +111,7 @@ namespace RogueBlockBlast.UI
             {
                 _isLocked = true;
                 if (_lockOverlay != null) _lockOverlay.SetActive(true);
-                if (_lockText    != null) _lockText.text = "COMING SOON";
+                if (_lockText    != null) _lockText.text = Loc.Get("Common.ComingSoon");
                 return;
             }
 

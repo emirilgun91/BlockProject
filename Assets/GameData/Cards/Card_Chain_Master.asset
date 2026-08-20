@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Chain_Master
   CardName: Chain Master
-  Description: Each consecutive line clear permanently adds +0.02 to your combo gain per clear.
-  Icon: {fileID: 0}
+  Description: Each consecutive clear permanently adds +0.02 to your combo gain.
+  Icon: {fileID: 7366354586617425540, guid: 27a923f6ea4aea3459e563c779f2b2e9, type: 3}
   Rarity: 2
   Effects:
   - Type: 44

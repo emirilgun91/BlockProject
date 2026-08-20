@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs><filter id="g" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="7" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <g filter="url(#g)">
+    <circle cx="128" cy="128" r="84" fill="none" stroke="#00FFC0" stroke-width="16"/>
+    <circle cx="128" cy="128" r="38" fill="#00FFC0"/>
+  </g>
+</svg>

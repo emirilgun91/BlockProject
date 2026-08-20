@@ -37,6 +37,18 @@ namespace RogueBlockBlast.Core
             LoadAll();
         }
 
+        /// <summary>
+        /// Runtime cache'i boşaltır — PlayerPrefs dışarıdan silindiğinde
+        /// (ör. ilerleme sıfırlama) çağrılır. Sonrasında Init ile yeniden yüklenmeli.
+        /// </summary>
+        public void ClearRuntimeCache()
+        {
+            _unlockedCards.Clear();
+            _unlockedShapes.Clear();
+            _reachedMilestones.Clear();
+            _lockedShapes.Clear();
+        }
+
         // ── Card ─────────────────────────────────────────────────────────────
 
         public bool IsCardUnlocked(string cardId)

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Slow_Burn
   CardName: Slow Burn
-  Description: The tile scores of the first 5 shapes placed are halved, but the tile
-    scores of the last 10 shapes in the pool are multiplied by 3x.
-  Icon: {fileID: -7109979918689030526, guid: 5fd4b1b7d0995994c8e78d45c086681d, type: 3}
+  Description: The first 5 shapes score half, but the last 10 shapes in the pool
+    score triple.
+  Icon: {fileID: 21300000, guid: 8112b2bf6a64e6340a83a7e143f5b013, type: 3}
   Rarity: 2
   Effects:
   - Type: 11

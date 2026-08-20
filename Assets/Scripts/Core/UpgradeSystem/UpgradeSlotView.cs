@@ -1,7 +1,11 @@
-﻿using RogueBlockBlast.Content;
+﻿using DG.Tweening;
+using RogueBlockBlast.Core.Localization;
+using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.UI.FX;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RogueBlockBlast.UI
@@ -22,7 +26,8 @@ namespace RogueBlockBlast.UI
     ///        └── LockCostBadge
     ///             └── LockCostText (TMP)
     /// </summary>
-    public sealed class UpgradeSlotView : MonoBehaviour
+    public sealed class UpgradeSlotView : MonoBehaviour,
+        IPointerEnterHandler, IPointerExitHandler
     {
         [Header("References")]
         [SerializeField] private Button     _button;
@@ -47,7 +52,19 @@ namespace RogueBlockBlast.UI
         private UpgradeSO _upgrade;
         public UpgradeSO  Upgrade => _upgrade;
 
+        private UpgradeSlotFX _fx;
+        private int           _lastLevel = -1;   // dot dolum animasyonunu tetiklemek için
+
         public System.Action<UpgradeSlotView> OnSelected;
+
+        // ── Unity ────────────────────────────────────────────────────────────
+
+        private void Awake()
+        {
+            // FX katmanları runtime'da enjekte edilir — prefab kurulumu gerekmez.
+            _fx = GetComponent<UpgradeSlotFX>() ?? gameObject.AddComponent<UpgradeSlotFX>();
+            _fx.Initialize(_iconImage != null ? (RectTransform)_iconImage.transform : null);
+        }
 
         // ── Public API ───────────────────────────────────────────────────────
 
@@ -57,6 +74,19 @@ namespace RogueBlockBlast.UI
             _button?.onClick.AddListener(() => OnSelected?.Invoke(this));
             Refresh(isSelected: false);
         }
+
+        /// <summary>Satın alma sonrası altın flaş + radyal glow.</summary>
+        public void PlayPurchaseFeedback() => _fx?.PlayPurchaseFeedback();
+
+        // ── Pointer ──────────────────────────────────────────────────────────
+
+        public void OnPointerEnter(PointerEventData e)
+        {
+            if (_button != null && !_button.interactable) return;
+            _fx?.OnHoverEnter();
+        }
+
+        public void OnPointerExit(PointerEventData e) => _fx?.OnHoverExit();
 
         public void Refresh(bool isSelected)
         {
@@ -81,7 +111,7 @@ namespace RogueBlockBlast.UI
 
             // Lock cost text
             if (_lockCostText != null)
-                _lockCostText.text = $"Stage {_upgrade.UnlockStageIndex}";
+                _lockCostText.text = Loc.Get("Upgrades.LockedStage", _upgrade.UnlockStageIndex);
 
             // BG rengi
             if (_bgImage != null)
@@ -101,6 +131,11 @@ namespace RogueBlockBlast.UI
         {
             if (_dots == null) return;
 
+            // İlk kurulumda animasyon yok; sonrasında yalnızca değişen dot'lar yumuşak geçer.
+            bool animate   = _lastLevel >= 0 && _lastLevel != level;
+            int  prevLevel = _lastLevel < 0 ? level : _lastLevel;
+            _lastLevel = level;
+
             for (int i = 0; i < _dots.Length; i++)
             {
                 if (_dots[i] == null) continue;
@@ -112,9 +147,33 @@ namespace RogueBlockBlast.UI
                 if (!inRange) continue;
 
                 bool filled = i < level;
-                _dots[i].color = filled
+                var  target = filled
                     ? (isOwned ? _dotOwnedColor : _dotOnColor)
                     : _dotOffColor;
+
+                var dot = _dots[i];
+                dot.DOKill();
+
+                // Bu geçişte yeni dolan dot — kısa bir gecikmeyle sırayla dolsun.
+                bool justFilled = animate && filled && i >= prevLevel;
+
+                if (!animate)
+                {
+                    dot.color = target;
+                    continue;
+                }
+
+                float delay = justFilled ? (i - prevLevel) * 0.06f : 0f;
+                dot.DOColor(target, 0.28f).SetDelay(delay).SetEase(Ease.OutCubic).SetUpdate(true);
+
+                if (justFilled)
+                {
+                    var rect = (RectTransform)dot.transform;
+                    rect.DOKill();
+                    rect.localScale = Vector3.one;
+                    rect.DOPunchScale(Vector3.one * 0.22f, 0.32f, 6, 0.6f)
+                        .SetDelay(delay).SetUpdate(true);
+                }
             }
         }
     }

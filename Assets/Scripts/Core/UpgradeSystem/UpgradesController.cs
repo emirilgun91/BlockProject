@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.UI.FX;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +34,12 @@ namespace RogueBlockBlast.UI
         [Header("Data")]
         [SerializeField] private UpgradeLibrarySO _library;
         [SerializeField] private TMP_Text _coinText;
+        [Header("Affordability Colors")]
+        [Tooltip("Fiyat yazısının normal rengi.")]
+        [SerializeField] private Color _affordableColor   = new Color(1f, 0.84f, 0.35f);
+        [Tooltip("Para yetmediğinde fiyat yazısının rengi — buton yine tıklanabilir kalır.")]
+        [SerializeField] private Color _unaffordableColor = new Color(0.95f, 0.35f, 0.32f);
+
 
         [Header("Grid")]
         [SerializeField] private RectTransform   _gridContent;
@@ -54,6 +62,7 @@ namespace RogueBlockBlast.UI
         // Runtime
         private readonly List<UpgradeSlotView> _slots = new();
         private UpgradeSlotView _selectedSlot;
+        private CoinCounterFX   _coinFX;
 
         // ── Unity ────────────────────────────────────────────────────────────
 
@@ -62,7 +71,12 @@ namespace RogueBlockBlast.UI
             // Her panel açılışında registry'yi yükle
             UpgradeRegistry.Instance?.Init(_library);
 
+            // FX bileşenlerini bağla — prefab'da kurulum gerektirmez.
+            _coinFX = CoinCounterFX.Attach(_coinText);
+            PremiumButtonFX.Attach(_buyButton);
+
             BuildSlots();
+            _coinFX?.SetImmediate(CoinWallet.Instance?.Balance ?? 0);
             UpdateCoinText(CoinWallet.Instance?.Balance ?? 0);
             ShowEmptyDetail();
 
@@ -128,32 +142,41 @@ namespace RogueBlockBlast.UI
                 _detailIcon.sprite = upgrade.Icon;
 
             // Lokalizasyon: bu iki satırı kendi sisteminle değiştir
-            if (_detailName != null) _detailName.text = upgrade.NameKey;
-            if (_detailDesc != null) _detailDesc.text = upgrade.DescriptionKey;
+            // Anahtar değil, çevirisi gösterilmeli
+            if (_detailName != null) _detailName.text = ContentLocalization.Name(upgrade);
+            // Anahtar değil, çevirisi gösterilmeli
+            if (_detailDesc != null) _detailDesc.text = ContentLocalization.Description(upgrade);
 
             // Buy price — bir sonraki seviyenin maliyeti
             int buyCost  = maxed ? 0 : upgrade.GetCostForLevel(level + 1);
             int sellCost = level > 0 ? upgrade.GetCostForLevel(level) / 2 : 0;
 
             if (_buyPriceText  != null)
-                _buyPriceText.text  = maxed ? "MAX" : buyCost.ToString("N0");
+                _buyPriceText.text  = maxed ? Loc.Get("Shop.MaxLevel") : buyCost.ToString("N0");
 
             if (_sellPriceText != null)
                 _sellPriceText.text = level > 0 ? sellCost.ToString("N0") : "—";
 
             // Butonlar
-            bool canBuy  = registry?.CanUpgrade(upgrade) ?? false;
-            bool canSell = registry?.CanSell(upgrade) ?? false;
+            // Buton, PARA YETMESE DE açık kalır: tıklayınca "yetersiz coin" uyarısı çıkar.
+            // Kapalı buton oyuncuya neden tıklayamadığını anlatmıyordu.
+            bool canBuyEver = registry?.CanUpgradeIgnoringCoins(upgrade) ?? false;
+            bool canAfford  = registry?.CanAffordUpgrade(upgrade) ?? false;
+            bool canSell    = registry?.CanSell(upgrade) ?? false;
 
-            if (_buyButton  != null) _buyButton.interactable  = canBuy;
+            if (_buyButton  != null) _buyButton.interactable  = canBuyEver;
             if (_sellButton != null) _sellButton.interactable = canSell;
+
+            // Fiyat yazısı parayı yetmiyorsa kırmızıya döner — tıklamadan önce belli olsun
+            if (_buyPriceText != null && canBuyEver)
+                _buyPriceText.color = canAfford ? _affordableColor : _unaffordableColor;
         }
 
         private void ShowEmptyDetail()
         {
             if (_detailIcon  != null) _detailIcon.sprite = _emptyIconSprite;
-            if (_detailName  != null) _detailName.text   = _emptyNameText;
-            if (_detailDesc  != null) _detailDesc.text   = _emptyDescText;
+            if (_detailName  != null) _detailName.text   = Loc.GetOr("Upgrades.Empty.Title", _emptyNameText);
+            if (_detailDesc  != null) _detailDesc.text   = Loc.GetOr("Upgrades.Empty.Desc", _emptyDescText);
             if (_buyPriceText  != null) _buyPriceText.text  = "—";
             if (_sellPriceText != null) _sellPriceText.text = "—";
             if (_buyButton   != null) _buyButton.interactable  = false;
@@ -171,13 +194,16 @@ namespace RogueBlockBlast.UI
 
             if (!success)
             {
-                ShapeShopToast.Instance?.Show("Yetersiz coin!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
                 return;
             }
 
             // Lokalizasyon: upgrade.NameKey yerine lokalize isim kullan
-            ShapeShopToast.Instance?.Show($"{upgrade.NameKey} yükseltildi!", ToastType.Success);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.UpgradeBought", ContentLocalization.Name(upgrade)), ToastType.Success);
             RefreshAll();
+
+            // Satın alınan kartta kısa altın flaş + radyal glow (dot'lar Refresh'te dolar).
+            _selectedSlot.PlayPurchaseFeedback();
         }
 
         public void OnSellClicked()
@@ -189,11 +215,11 @@ namespace RogueBlockBlast.UI
 
             if (!success)
             {
-                ShapeShopToast.Instance?.Show("İade edilemedi!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.SellFailed"), ToastType.Error);
                 return;
             }
 
-            ShapeShopToast.Instance?.Show($"{upgrade.NameKey} iade edildi.", ToastType.Default);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.UpgradeSold", ContentLocalization.Name(upgrade)), ToastType.Default);
             RefreshAll();
         }
 
@@ -212,6 +238,9 @@ namespace RogueBlockBlast.UI
 
         private void UpdateCoinText(int balance)
         {
+            // Sayı anında değil, yumuşak count-up ile ilerler; artışta altın shine oynar.
+            if (_coinFX != null) { _coinFX.SetValue(balance); return; }
+
             if (_coinText != null)
                 _coinText.text = balance.ToString("N0");
         }

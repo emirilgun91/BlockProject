@@ -1,53 +1,46 @@
-﻿using UnityEngine;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RogueBlockBlast.Core.Settings;
+using RogueBlockBlast.Core.Localization;
 
 namespace RogueBlockBlast.UI
 {
     /// <summary>
-    /// Ana menü Settings paneli.
+    /// Ayarlar paneli. Tüm durum <see cref="GameSettings"/> içinde tutulur —
+    /// bu sınıf sadece görünüm ve bağlama yapar.
     ///
-    /// Hierarchy:
+    /// Alanların HEPSİ opsiyoneldir. Sadece prefab'da bağladıkların çalışır;
+    /// bağlamadıkların sessizce atlanır. Yani yeni kontrolleri istediğin sırada
+    /// ekleyebilirsin, panel arada bozulmaz.
+    ///
+    /// Hierarchy örneği:
     ///  SettingsPanel (CanvasGroup)
     ///   └── Window
-    ///        ├── Header
-    ///        │    └── CloseButton (Button)
+    ///        ├── Header    → CloseButton
     ///        ├── Content
-    ///        │    ├── Row_Master
-    ///        │    │    └── MasterSlider (Slider)
-    ///        │    │    └── MasterValueText (TMP)
-    ///        │    ├── Row_Music
-    ///        │    │    └── MusicSlider (Slider)
-    ///        │    │    └── MusicValueText (TMP)
-    ///        │    ├── Row_SFX
-    ///        │    │    └── SFXSlider (Slider)
-    ///        │    │    └── SFXValueText (TMP)
-    ///        │    ├── Row_Language  ← Lokalizasyon sisteminle bağla
-    ///        │    │    ├── LangPrevButton (Button)
-    ///        │    │    ├── LangLabel (TMP)
-    ///        │    │    └── LangNextButton (Button)
-    ///        │    └── Row_Fullscreen
-    ///        │         └── FullscreenToggle (Toggle)
-    ///        └── Footer
-    ///             ├── ApplyButton (Button)
-    ///             └── CancelButton (Button) [opsiyonel]
-    ///
-    /// Kullanım:
-    ///   PanelManager.OpenPanel("Settings") veya
-    ///   SettingsController'ı PanelManager'a bağla.
+    ///        │    ├── Audio        → Master / Music / SFX slider + Mute toggle
+    ///        │    ├── Display      → Fullscreen / Resolution / VSync / FPS
+    ///        │    ├── Gameplay     → Ghost / Highlight / Grid / Haptics
+    ///        │    ├── Accessibility→ ReduceMotion / Shake / VFX / Colorblind / UIScale
+    ///        │    ├── Language     → Prev / Label / Next
+    ///        │    └── Data         → ResetSettings / ResetProgress
+    ///        └── Footer    → Apply / Cancel
     /// </summary>
     public sealed class SettingsController : MonoBehaviour
     {
         // ── Audio ────────────────────────────────────────────────────────────
-        [Header("Audio Sliders")]
+        [Header("Audio")]
         [SerializeField] private Slider   _masterSlider;
         [SerializeField] private TMP_Text _masterValueText;
-
         [SerializeField] private Slider   _musicSlider;
         [SerializeField] private TMP_Text _musicValueText;
-
         [SerializeField] private Slider   _sfxSlider;
         [SerializeField] private TMP_Text _sfxValueText;
+        [SerializeField] private Toggle   _muteToggle;
+        [SerializeField] private Toggle   _muteUnfocusedToggle;
 
         // ── Language ─────────────────────────────────────────────────────────
         [Header("Language")]
@@ -62,181 +55,405 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Sprite   _iconChecked;
         [SerializeField] private Sprite   _iconUnchecked;
 
+        [SerializeField] private Button   _resPrevButton;
+        [SerializeField] private Button   _resNextButton;
+        [SerializeField] private TMP_Text _resLabel;
+
+        [SerializeField] private Button   _vsyncButton;
+        [SerializeField] private TMP_Text _vsyncLabel;
+
+        [SerializeField] private Button   _fpsButton;
+        [SerializeField] private TMP_Text _fpsLabel;
+
+        [SerializeField] private Toggle   _showFpsToggle;
+
+        // ── Gameplay ─────────────────────────────────────────────────────────
+        [Header("Gameplay")]
+        [SerializeField] private Toggle   _ghostToggle;
+        [SerializeField] private Toggle   _highlightToggle;
+        [SerializeField] private Toggle   _gridToggle;
+        [SerializeField] private Toggle   _confirmQuitToggle;
+        [SerializeField] private Toggle   _hapticsToggle;
+        [SerializeField] private Slider   _dragOffsetSlider;
+
+        // ── Accessibility ────────────────────────────────────────────────────
+        [Header("Accessibility")]
+        [SerializeField] private Toggle   _reduceMotionToggle;
+        [SerializeField] private Toggle   _reduceFlashingToggle;
+        [SerializeField] private Slider   _screenShakeSlider;
+        [SerializeField] private TMP_Text _screenShakeValueText;
+        [SerializeField] private Slider   _vfxSlider;
+        [SerializeField] private TMP_Text _vfxValueText;
+        [SerializeField] private Button   _colorblindButton;
+        [SerializeField] private TMP_Text _colorblindLabel;
+        [SerializeField] private Slider   _uiScaleSlider;
+        [SerializeField] private TMP_Text _uiScaleValueText;
+        [SerializeField] private Toggle   _largeTextToggle;
+
+        // ── Data ─────────────────────────────────────────────────────────────
+        [Header("Data")]
+        [SerializeField] private Button   _resetSettingsButton;
+        [SerializeField] private Button   _resetProgressButton;
+        [Tooltip("İlerleme sıfırlama onay kutusu. İlk tıklamada açılır.")]
+        [SerializeField] private GameObject _resetProgressConfirm;
+        [SerializeField] private Button   _resetProgressConfirmYes;
+        [SerializeField] private Button   _resetProgressConfirmNo;
+
         // ── Footer ───────────────────────────────────────────────────────────
         [Header("Footer")]
         [SerializeField] private Button   _applyButton;
         [SerializeField] private Button   _cancelButton;
         [SerializeField] private Button   _closeButton;
 
-        // ── PlayerPrefs keys (AudioManager ile eşleşmeli) ────────────────────
-        private const string MASTER_KEY = "MasterVolume";
-        private const string MUSIC_KEY  = "MusicVolume";
-        private const string SFX_KEY    = "SFXVolume";
-        private const string FULLSCREEN_KEY = "Fullscreen";
+        // Cancel için panel açılışındaki anlık görüntü
+        private struct Snapshot
+        {
+            public float Master, Music, Sfx, Shake, Vfx, UiScale, DragOffset;
+            public bool  Muted, MuteUnfocused, Fullscreen, ShowFps;
+            public bool  Ghost, Highlight, Grid, ConfirmQuit, Haptics;
+            public bool  ReduceMotion, ReduceFlashing, LargeText;
+            public int   ResolutionIdx, VSync, TargetFps;
+            public ColorblindMode Colorblind;
+            public string Language;
+        }
 
-        // Panel açılınca önceki değerleri sakla — Cancel için
-        private float _prevMaster;
-        private float _prevMusic;
-        private float _prevSfx;
-        private bool  _prevFullscreen;
-        private bool  _desiredFullscreen;
+        private Snapshot _snapshot;
+        private bool _suppressCallbacks;      // UI'ı programatik doldururken event yazmasın
+        private Resolution[] _resolutions;
+        private int _resIndex;
+
+        private static readonly int[] FpsOptions = { -1, 30, 60, 90, 120, 144 };
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
         {
-            
-            Debug.Log($"[Settings] Awake | ApplyBtn null: {_applyButton == null}");
-            // Slider event'leri
-            _masterSlider?.onValueChanged.AddListener(OnMasterChanged);
-            _musicSlider?.onValueChanged.AddListener(OnMusicChanged);
-            _sfxSlider?.onValueChanged.AddListener(OnSFXChanged);
-
-            // Language butonları — lokalizasyon sisteminle doldur
-            _langPrevButton?.onClick.AddListener(OnLangPrev);
-            _langNextButton?.onClick.AddListener(OnLangNext);
-
-            // Fullscreen
-            _fullscreenToggle?.onValueChanged.AddListener(OnFullscreenChanged);
-
-            // Footer
-            _applyButton?.onClick.AddListener(OnApply);
-            _cancelButton?.onClick.AddListener(OnCancel);
-            _closeButton?.onClick.AddListener(OnClose);
+            GameSettings.EnsureLoaded();
+            Loc.Init();
+            BuildResolutionList();
         }
 
         private void OnEnable()
         {
-            LoadSettings();
-
-            // Listener'ları burada ekle ama duplicate olmasın
-            _applyButton?.onClick.RemoveListener(OnApply);
-            _applyButton?.onClick.AddListener(OnApply);
-    
-            _cancelButton?.onClick.RemoveListener(OnCancel);
-            _cancelButton?.onClick.AddListener(OnCancel);
-    
-            _closeButton?.onClick.RemoveListener(OnClose);
-            _closeButton?.onClick.AddListener(OnClose);
-    
-            _langPrevButton?.onClick.RemoveListener(OnLangPrev);
-            _langPrevButton?.onClick.AddListener(OnLangPrev);
-    
-            _langNextButton?.onClick.RemoveListener(OnLangNext);
-            _langNextButton?.onClick.AddListener(OnLangNext);
-    
-            _masterSlider?.onValueChanged.RemoveListener(OnMasterChanged);
-            _masterSlider?.onValueChanged.AddListener(OnMasterChanged);
-    
-            _musicSlider?.onValueChanged.RemoveListener(OnMusicChanged);
-            _musicSlider?.onValueChanged.AddListener(OnMusicChanged);
-    
-            _sfxSlider?.onValueChanged.RemoveListener(OnSFXChanged);
-            _sfxSlider?.onValueChanged.AddListener(OnSFXChanged);
-    
-            _fullscreenToggle?.onValueChanged.RemoveListener(OnFullscreenChanged);
-            _fullscreenToggle?.onValueChanged.AddListener(OnFullscreenChanged);
+            TakeSnapshot();
+            Bind(true);
+            RefreshAll();
+            Loc.OnChanged += RefreshAll;
         }
-        
+
         private void OnDisable()
         {
-            _applyButton?.onClick.RemoveListener(OnApply);
-            _cancelButton?.onClick.RemoveListener(OnCancel);
-            _closeButton?.onClick.RemoveListener(OnClose);
-            _langPrevButton?.onClick.RemoveListener(OnLangPrev);
-            _langNextButton?.onClick.RemoveListener(OnLangNext);
-            _masterSlider?.onValueChanged.RemoveListener(OnMasterChanged);
-            _musicSlider?.onValueChanged.RemoveListener(OnMusicChanged);
-            _sfxSlider?.onValueChanged.RemoveListener(OnSFXChanged);
-            _fullscreenToggle?.onValueChanged.RemoveListener(OnFullscreenChanged);
+            Loc.OnChanged -= RefreshAll;
+            Bind(false);
         }
 
-        // ── Load ─────────────────────────────────────────────────────────────
-        private void LoadSettings()
+        // ── Binding ──────────────────────────────────────────────────────────
+        /// <summary>Tüm listener'ları tek yerden ekler/çıkarır — duplicate imkânsız.</summary>
+        private void Bind(bool on)
         {
-            // Kayıtlı değerleri oku (AudioManager'daki default 0.75f ile eşleşiyor)
-            float master = PlayerPrefs.GetFloat(MASTER_KEY, 0.75f);
-            float music  = PlayerPrefs.GetFloat(MUSIC_KEY,  0.75f);
-            float sfx    = PlayerPrefs.GetFloat(SFX_KEY,    0.75f);
-            bool  fs     = PlayerPrefs.GetInt(FULLSCREEN_KEY, Screen.fullScreen ? 1 : 0) == 1;
+            BindSlider(_masterSlider,     OnMasterChanged,      on);
+            BindSlider(_musicSlider,      OnMusicChanged,       on);
+            BindSlider(_sfxSlider,        OnSfxChanged,         on);
+            BindSlider(_screenShakeSlider,OnScreenShakeChanged, on);
+            BindSlider(_vfxSlider,        OnVfxChanged,         on);
+            BindSlider(_uiScaleSlider,    OnUiScaleChanged,     on);
+            BindSlider(_dragOffsetSlider, OnDragOffsetChanged,  on);
 
-            // Önceki değerleri sakla (Cancel için)
-            _prevMaster     = master;
-            _prevMusic      = music;
-            _prevSfx        = sfx;
-            _prevFullscreen    = fs;
-            _desiredFullscreen = fs;
+            BindToggle(_muteToggle,           v => { GameSettings.Muted = v; RefreshAudio(); }, on);
+            BindToggle(_muteUnfocusedToggle,  v => GameSettings.MuteWhenUnfocused = v,          on);
+            BindToggle(_fullscreenToggle,     OnFullscreenChanged,                              on);
+            BindToggle(_showFpsToggle,        v => GameSettings.ShowFps = v,                    on);
+            BindToggle(_ghostToggle,          v => GameSettings.GhostPreview = v,               on);
+            BindToggle(_highlightToggle,      v => GameSettings.HighlightClearingLines = v,     on);
+            BindToggle(_gridToggle,           v => GameSettings.GridLines = v,                  on);
+            BindToggle(_confirmQuitToggle,    v => GameSettings.ConfirmQuit = v,                on);
+            BindToggle(_hapticsToggle,        v => GameSettings.Haptics = v,                    on);
+            BindToggle(_reduceFlashingToggle, v => GameSettings.ReduceFlashing = v,             on);
+            BindToggle(_largeTextToggle,      v => GameSettings.LargeText = v,                  on);
+            BindToggle(_reduceMotionToggle,   OnReduceMotionChanged,                            on);
 
-            // Slider'ları güncelle (event tetiklemeden)
-            SetSliderSilent(_masterSlider, master);
-            SetSliderSilent(_musicSlider,  music);
-            SetSliderSilent(_sfxSlider,    sfx);
+            BindButton(_langPrevButton,  () => { Loc.PreviousLanguage(); RefreshLanguage(); }, on);
+            BindButton(_langNextButton,  () => { Loc.NextLanguage();     RefreshLanguage(); }, on);
+            BindButton(_resPrevButton,   () => CycleResolution(-1), on);
+            BindButton(_resNextButton,   () => CycleResolution(+1), on);
+            BindButton(_vsyncButton,     CycleVSync,                on);
+            BindButton(_fpsButton,       CycleFps,                  on);
+            BindButton(_colorblindButton,CycleColorblind,           on);
 
-            // Etiketleri güncelle
-            RefreshValueText(_masterValueText, master);
-            RefreshValueText(_musicValueText,  music);
-            RefreshValueText(_sfxValueText,    sfx);
+            BindButton(_resetSettingsButton, OnResetSettings,        on);
+            BindButton(_resetProgressButton, OnResetProgressAsk,     on);
+            BindButton(_resetProgressConfirmYes, OnResetProgressConfirm, on);
+            BindButton(_resetProgressConfirmNo,  () => ShowResetConfirm(false), on);
 
-            // Fullscreen toggle — SetValueWithoutNotify prevents triggering Screen.fullScreen on panel open
-            if (_fullscreenToggle != null)
-                _fullscreenToggle.SetIsOnWithoutNotify(fs);
-            RefreshFullscreenIcon(fs);
+            BindButton(_applyButton,  OnApply,  on);
+            BindButton(_cancelButton, OnCancel, on);
+            BindButton(_closeButton,  OnCancel, on);
+        }
 
-            // Dil etiketi — kendi lokalizasyon sisteminle güncelle
-            // Örnek: if (_langLabel != null) _langLabel.text = LocalizationManager.CurrentLanguageName;
-            RefreshLangLabel();
+        private void BindSlider(Slider s, UnityEngine.Events.UnityAction<float> fn, bool on)
+        {
+            if (s == null) return;
+            s.onValueChanged.RemoveListener(fn);
+            if (on) s.onValueChanged.AddListener(fn);
+        }
+
+        private void BindToggle(Toggle t, Action<bool> fn, bool on)
+        {
+            if (t == null) return;
+            UnityEngine.Events.UnityAction<bool> wrapped = v => { if (!_suppressCallbacks) fn(v); };
+            // RemoveAllListeners: lambda referansı tutulamadığı için tek güvenli yol.
+            t.onValueChanged.RemoveAllListeners();
+            if (on) t.onValueChanged.AddListener(wrapped);
+        }
+
+        private void BindButton(Button b, Action fn, bool on)
+        {
+            if (b == null) return;
+            b.onClick.RemoveAllListeners();
+            if (on) b.onClick.AddListener(() => fn());
         }
 
         // ── Slider callbacks ─────────────────────────────────────────────────
-        private void OnMasterChanged(float value)
+        private void OnMasterChanged(float v)
         {
-            AudioManager.Instance?.SetMasterVolume(value);
-            RefreshValueText(_masterValueText, value);
+            if (_suppressCallbacks) return;
+            GameSettings.MasterVolume = v;
+            SetPercent(_masterValueText, v);
         }
 
-        private void OnMusicChanged(float value)
+        private void OnMusicChanged(float v)
         {
-            AudioManager.Instance?.SetMusicVolume(value);
-            RefreshValueText(_musicValueText, value);
+            if (_suppressCallbacks) return;
+            GameSettings.MusicVolume = v;
+            SetPercent(_musicValueText, v);
         }
 
-        private void OnSFXChanged(float value)
+        private void OnSfxChanged(float v)
         {
-            AudioManager.Instance?.SetSFXVolume(value);
-            RefreshValueText(_sfxValueText, value);
+            if (_suppressCallbacks) return;
+            GameSettings.SfxVolume = v;
+            SetPercent(_sfxValueText, v);
         }
 
-        // ── Language ─────────────────────────────────────────────────────────
-        private void OnLangPrev()
+        private void OnScreenShakeChanged(float v)
         {
-            // Kendi lokalizasyon sisteminle değiştir:
-            // LocalizationManager.PreviousLanguage();
-            // RefreshLangLabel();
-            Debug.Log("[Settings] Önceki dil — lokalizasyon sistemine bağla");
-            RefreshLangLabel();
+            if (_suppressCallbacks) return;
+            GameSettings.ScreenShake = v;
+            SetPercent(_screenShakeValueText, v);
         }
 
-        private void OnLangNext()
+        private void OnVfxChanged(float v)
         {
-            // Kendi lokalizasyon sisteminle değiştir:
-            // LocalizationManager.NextLanguage();
-            // RefreshLangLabel();
-            Debug.Log("[Settings] Sonraki dil — lokalizasyon sistemine bağla");
-            RefreshLangLabel();
+            if (_suppressCallbacks) return;
+            GameSettings.VfxIntensity = v;
+            SetPercent(_vfxValueText, v);
         }
 
-        private void RefreshLangLabel()
+        private void OnUiScaleChanged(float v)
         {
-            if (_langLabel == null) return;
-            // Lokalizasyon sisteminle değiştir:
-            // _langLabel.text = LocalizationManager.CurrentLanguageName;
-            _langLabel.text = "TÜRKÇE"; // placeholder
+            if (_suppressCallbacks) return;
+            GameSettings.UiScale = v;
+            if (_uiScaleValueText != null) _uiScaleValueText.text = $"{v:0.00}x";
         }
 
-        // ── Fullscreen ───────────────────────────────────────────────────────
-        private void OnFullscreenChanged(bool value)
+        private void OnDragOffsetChanged(float v)
         {
-            _desiredFullscreen = value;
-            RefreshFullscreenIcon(value);
+            if (_suppressCallbacks) return;
+            GameSettings.DragOffsetY = v;
+        }
+
+        // ── Toggle callbacks ─────────────────────────────────────────────────
+        private void OnFullscreenChanged(bool v)
+        {
+            GameSettings.Fullscreen = v;
+            RefreshFullscreenIcon(v);
+        }
+
+        /// <summary>ReduceMotion shake/VFX değerlerini ezdiği için o slider'ları da yeniler.</summary>
+        private void OnReduceMotionChanged(bool v)
+        {
+            GameSettings.ReduceMotion = v;
+            RefreshAccessibility();
+        }
+
+        // ── Cycling controls ─────────────────────────────────────────────────
+        private void BuildResolutionList()
+        {
+            var all = Screen.resolutions;
+            var unique = new List<Resolution>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                // Aynı genişlik/yükseklik farklı tazeleme hızlarıyla tekrarlanıyor — en yükseğini tut.
+                bool dup = false;
+                for (int j = 0; j < unique.Count; j++)
+                    if (unique[j].width == all[i].width && unique[j].height == all[i].height) { dup = true; break; }
+                if (!dup) unique.Add(all[i]);
+            }
+            _resolutions = unique.ToArray();
+
+            int saved = GameSettings.ResolutionIndex;
+            _resIndex = saved >= 0 && saved < _resolutions.Length ? saved : CurrentResolutionIndex();
+        }
+
+        private int CurrentResolutionIndex()
+        {
+            for (int i = 0; i < _resolutions.Length; i++)
+                if (_resolutions[i].width == Screen.width && _resolutions[i].height == Screen.height)
+                    return i;
+            return Mathf.Max(0, _resolutions.Length - 1);
+        }
+
+        private void CycleResolution(int step)
+        {
+            if (_resolutions == null || _resolutions.Length == 0) return;
+            _resIndex = (_resIndex + step + _resolutions.Length) % _resolutions.Length;
+            GameSettings.ResolutionIndex = _resIndex;
+            RefreshDisplay();
+        }
+
+        private void CycleVSync()
+        {
+            GameSettings.VSync = (GameSettings.VSync + 1) % 3;
+            RefreshDisplay();
+        }
+
+        private void CycleFps()
+        {
+            int cur = Array.IndexOf(FpsOptions, GameSettings.TargetFrameRate);
+            int next = (cur + 1 + FpsOptions.Length) % FpsOptions.Length;
+            GameSettings.TargetFrameRate = FpsOptions[next];
+            RefreshDisplay();
+        }
+
+        private void CycleColorblind()
+        {
+            int next = ((int)GameSettings.Colorblind + 1) % 5;
+            GameSettings.Colorblind = (ColorblindMode)next;
+            RefreshAccessibility();
+        }
+
+        // ── Refresh ──────────────────────────────────────────────────────────
+        private void RefreshAll()
+        {
+            _suppressCallbacks = true;
+            RefreshAudio();
+            RefreshDisplay();
+            RefreshGameplay();
+            RefreshAccessibility();
+            RefreshLanguage();
+            ShowResetConfirm(false);
+            _suppressCallbacks = false;
+        }
+
+        private void RefreshAudio()
+        {
+            bool prev = _suppressCallbacks; _suppressCallbacks = true;
+
+            SetSlider(_masterSlider, GameSettings.MasterVolume);
+            SetSlider(_musicSlider,  GameSettings.MusicVolume);
+            SetSlider(_sfxSlider,    GameSettings.SfxVolume);
+            SetPercent(_masterValueText, GameSettings.MasterVolume);
+            SetPercent(_musicValueText,  GameSettings.MusicVolume);
+            SetPercent(_sfxValueText,    GameSettings.SfxVolume);
+            SetToggle(_muteToggle,          GameSettings.Muted);
+            SetToggle(_muteUnfocusedToggle, GameSettings.MuteWhenUnfocused);
+
+            // Sustur açıkken ses slider'ları anlamsız — soluklaştır
+            SetInteractable(_masterSlider, !GameSettings.Muted);
+            SetInteractable(_musicSlider,  !GameSettings.Muted);
+            SetInteractable(_sfxSlider,    !GameSettings.Muted);
+
+            _suppressCallbacks = prev;
+        }
+
+        private void RefreshDisplay()
+        {
+            bool prev = _suppressCallbacks; _suppressCallbacks = true;
+
+            SetToggle(_fullscreenToggle, GameSettings.Fullscreen);
+            RefreshFullscreenIcon(GameSettings.Fullscreen);
+            SetToggle(_showFpsToggle, GameSettings.ShowFps);
+
+            if (_resLabel != null && _resolutions != null && _resolutions.Length > 0)
+            {
+                int i = Mathf.Clamp(_resIndex, 0, _resolutions.Length - 1);
+                _resLabel.text = $"{_resolutions[i].width} × {_resolutions[i].height}";
+            }
+
+            if (_vsyncLabel != null)
+            {
+                _vsyncLabel.text = GameSettings.VSync switch
+                {
+                    0 => Loc.Get("Settings.Display.VSync.Off"),
+                    1 => Loc.Get("Settings.Display.VSync.Every"),
+                    _ => Loc.Get("Settings.Display.VSync.Half"),
+                };
+            }
+
+            if (_fpsLabel != null)
+            {
+                int fps = GameSettings.TargetFrameRate;
+                _fpsLabel.text = fps <= 0 ? Loc.Get("Settings.Unlimited") : fps.ToString();
+            }
+
+            _suppressCallbacks = prev;
+        }
+
+        private void RefreshGameplay()
+        {
+            bool prev = _suppressCallbacks; _suppressCallbacks = true;
+
+            SetToggle(_ghostToggle,       GameSettings.GhostPreview);
+            SetToggle(_highlightToggle,   GameSettings.HighlightClearingLines);
+            SetToggle(_gridToggle,        GameSettings.GridLines);
+            SetToggle(_confirmQuitToggle, GameSettings.ConfirmQuit);
+            SetToggle(_hapticsToggle,     GameSettings.Haptics);
+            SetSlider(_dragOffsetSlider,  GameSettings.DragOffsetY);
+
+            _suppressCallbacks = prev;
+        }
+
+        private void RefreshAccessibility()
+        {
+            bool prev = _suppressCallbacks; _suppressCallbacks = true;
+
+            SetToggle(_reduceMotionToggle,   GameSettings.ReduceMotion);
+            SetToggle(_reduceFlashingToggle, GameSettings.ReduceFlashing);
+            SetToggle(_largeTextToggle,      GameSettings.LargeText);
+
+            SetSlider(_screenShakeSlider, GameSettings.ScreenShakeRaw);
+            SetSlider(_vfxSlider,         GameSettings.VfxIntensityRaw);
+            SetSlider(_uiScaleSlider,     GameSettings.UiScale);
+            SetPercent(_screenShakeValueText, GameSettings.ScreenShakeRaw);
+            SetPercent(_vfxValueText,         GameSettings.VfxIntensityRaw);
+            if (_uiScaleValueText != null) _uiScaleValueText.text = $"{GameSettings.UiScale:0.00}x";
+
+            // ReduceMotion bu ikisini zaten eziyor — kilitli göster
+            SetInteractable(_screenShakeSlider, !GameSettings.ReduceMotion);
+            SetInteractable(_vfxSlider,         !GameSettings.ReduceMotion);
+
+            if (_colorblindLabel != null)
+            {
+                _colorblindLabel.text = GameSettings.Colorblind switch
+                {
+                    ColorblindMode.Protanopia    => Loc.Get("Settings.Access.Colorblind.Protanopia"),
+                    ColorblindMode.Deuteranopia  => Loc.Get("Settings.Access.Colorblind.Deuteranopia"),
+                    ColorblindMode.Tritanopia    => Loc.Get("Settings.Access.Colorblind.Tritanopia"),
+                    ColorblindMode.HighContrast  => Loc.Get("Settings.Access.Colorblind.HighContrast"),
+                    _                            => Loc.Get("Settings.Access.Colorblind.None"),
+                };
+            }
+
+            _suppressCallbacks = prev;
+        }
+
+        private void RefreshLanguage()
+        {
+            if (_langLabel != null)
+                _langLabel.text = Loc.CurrentLanguageDisplayName;
+
+            bool multiple = Loc.AvailableLanguages.Count > 1;
+            if (_langPrevButton != null) _langPrevButton.interactable = multiple;
+            if (_langNextButton != null) _langNextButton.interactable = multiple;
         }
 
         private void RefreshFullscreenIcon(bool isOn)
@@ -245,71 +462,133 @@ namespace RogueBlockBlast.UI
             _fullscreenIcon.sprite = isOn ? _iconChecked : _iconUnchecked;
         }
 
-        // ── Footer ───────────────────────────────────────────────────────────
+        // ── Data ─────────────────────────────────────────────────────────────
+        private void OnResetSettings()
+        {
+            GameSettings.ResetToDefaults();
+            BuildResolutionList();
+            RefreshAll();
+        }
+
+        private void OnResetProgressAsk() => ShowResetConfirm(true);
+
+        private void ShowResetConfirm(bool visible)
+        {
+            if (_resetProgressConfirm != null) _resetProgressConfirm.SetActive(visible);
+        }
 
         /// <summary>
-        /// Apply: ses ayarlarını PlayerPrefs'e kalıcı yazar, paneli kapatır.
-        /// AudioManager zaten her slider değişiminde PlayerPrefs'e yazıyor
-        /// ama fullscreen'i burada da kaydediyoruz.
+        /// Coin, upgrade ve unlock ilerlemesini siler. Ayarlar ve dil korunur.
+        /// Geri alınamaz — bu yüzden onay kutusundan geçer.
         /// </summary>
+        private void OnResetProgressConfirm()
+        {
+            SaveDataService.ResetProgress();
+            ShowResetConfirm(false);
+            RefreshAll();
+        }
+
+        // ── Footer ───────────────────────────────────────────────────────────
         private void OnApply()
         {
-            Screen.fullScreen = _desiredFullscreen;
-            PlayerPrefs.SetInt(FULLSCREEN_KEY, _desiredFullscreen ? 1 : 0);
-            PlayerPrefs.Save();
-
+            GameSettings.ApplyAll();
             ClosePanel();
+        }
+
+        /// <summary>Panel açıldığı andaki değerlere geri döner.</summary>
+        private void OnCancel()
+        {
+            var s = _snapshot;
+
+            GameSettings.MasterVolume = s.Master;
+            GameSettings.MusicVolume  = s.Music;
+            GameSettings.SfxVolume    = s.Sfx;
+            GameSettings.Muted        = s.Muted;
+            GameSettings.MuteWhenUnfocused = s.MuteUnfocused;
+
+            GameSettings.Fullscreen      = s.Fullscreen;
+            GameSettings.ResolutionIndex = s.ResolutionIdx;
+            GameSettings.VSync           = s.VSync;
+            GameSettings.TargetFrameRate = s.TargetFps;
+            GameSettings.ShowFps         = s.ShowFps;
+
+            GameSettings.GhostPreview           = s.Ghost;
+            GameSettings.HighlightClearingLines = s.Highlight;
+            GameSettings.GridLines              = s.Grid;
+            GameSettings.ConfirmQuit            = s.ConfirmQuit;
+            GameSettings.Haptics                = s.Haptics;
+            GameSettings.DragOffsetY            = s.DragOffset;
+
+            GameSettings.ReduceMotion   = s.ReduceMotion;
+            GameSettings.ReduceFlashing = s.ReduceFlashing;
+            GameSettings.ScreenShake    = s.Shake;
+            GameSettings.VfxIntensity   = s.Vfx;
+            GameSettings.Colorblind     = s.Colorblind;
+            GameSettings.UiScale        = s.UiScale;
+            GameSettings.LargeText      = s.LargeText;
+
+            Loc.SetLanguage(s.Language);
+
+            GameSettings.ApplyAll();
+            ClosePanel();
+        }
+
+        private void TakeSnapshot()
+        {
+            _snapshot = new Snapshot
+            {
+                Master        = GameSettings.MasterVolume,
+                Music         = GameSettings.MusicVolume,
+                Sfx           = GameSettings.SfxVolume,
+                Muted         = GameSettings.Muted,
+                MuteUnfocused = GameSettings.MuteWhenUnfocused,
+
+                Fullscreen    = GameSettings.Fullscreen,
+                ResolutionIdx = GameSettings.ResolutionIndex,
+                VSync         = GameSettings.VSync,
+                TargetFps     = GameSettings.TargetFrameRate,
+                ShowFps       = GameSettings.ShowFps,
+
+                Ghost         = GameSettings.GhostPreview,
+                Highlight     = GameSettings.HighlightClearingLines,
+                Grid          = GameSettings.GridLines,
+                ConfirmQuit   = GameSettings.ConfirmQuit,
+                Haptics       = GameSettings.Haptics,
+                DragOffset    = GameSettings.DragOffsetY,
+
+                ReduceMotion  = GameSettings.ReduceMotion,
+                ReduceFlashing= GameSettings.ReduceFlashing,
+                Shake         = GameSettings.ScreenShakeRaw,
+                Vfx           = GameSettings.VfxIntensityRaw,
+                Colorblind    = GameSettings.Colorblind,
+                UiScale       = GameSettings.UiScale,
+                LargeText     = GameSettings.LargeText,
+
+                Language      = Loc.CurrentLanguage,
+            };
         }
 
         /// <summary>
-        /// Cancel: değişiklikleri geri al, paneli kapat.
+        /// Ana menüde PanelManager kapatır. Oyun sahnesinde (pause menüsü içinde)
+        /// PanelManager yok — o zaman panel kendini kapatır.
         /// </summary>
-        private void OnCancel()
-        {
-            // Sesleri eski haline döndür
-            AudioManager.Instance?.SetMasterVolume(_prevMaster);
-            AudioManager.Instance?.SetMusicVolume(_prevMusic);
-            AudioManager.Instance?.SetSFXVolume(_prevSfx);
-
-            // Fullscreen: nothing was applied yet, just reset the saved pref
-            PlayerPrefs.SetFloat(MASTER_KEY,   _prevMaster);
-            PlayerPrefs.SetFloat(MUSIC_KEY,    _prevMusic);
-            PlayerPrefs.SetFloat(SFX_KEY,      _prevSfx);
-            PlayerPrefs.SetInt(FULLSCREEN_KEY, _prevFullscreen ? 1 : 0);
-            PlayerPrefs.Save();
-
-            ClosePanel();
-        }
-
-        private void OnClose()
-        {
-            // Kapat = Cancel davranışı (değişiklikler kaybolur)
-            OnCancel();
-        }
-
         private void ClosePanel()
         {
-            PanelManager.Instance?.CloseCurrentPanel();
+            if (PanelManager.Instance != null) PanelManager.Instance.CloseCurrentPanel();
+            else gameObject.SetActive(false);
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
+        private static void SetSlider(Slider s, float v) { if (s != null) s.SetValueWithoutNotify(v); }
+        private static void SetToggle(Toggle t, bool v)  { if (t != null) t.SetIsOnWithoutNotify(v); }
+        private static void SetPercent(TMP_Text l, float v) { if (l != null) l.text = Mathf.RoundToInt(v * 100f).ToString(); }
 
-        /// <summary>
-        /// Slider'ı event tetiklemeden belirli değere ayarla.
-        /// </summary>
-        private static void SetSliderSilent(Slider slider, float value)
+        private static void SetInteractable(Selectable s, bool on)
         {
-            if (slider == null) return;
-            slider.SetValueWithoutNotify(value);
-        }
-
-        /// <summary>
-        /// Slider değerini 0-100 arası yüzde olarak göster.
-        /// </summary>
-        private static void RefreshValueText(TMP_Text label, float value)
-        {
-            if (label == null) return;
-            label.text = Mathf.RoundToInt(value * 100f).ToString();
+            if (s == null) return;
+            s.interactable = on;
+            var cg = s.GetComponent<CanvasGroup>();
+            if (cg != null) cg.alpha = on ? 1f : 0.45f;
         }
     }
 }

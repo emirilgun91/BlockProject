@@ -26,7 +26,9 @@ namespace RogueBlockBlast.UI
         [SerializeField] private TMP_Text _linesText;
         [SerializeField] private TMP_Text _piecesText;
         [SerializeField] private TMP_Text _maxComboText;
-        [SerializeField] private TMP_Text _cardsText;
+        [Tooltip("Bu turda kazanılan Blockcoin. Eskiden seçilen kart sayısını gösteriyordu.")]
+        [UnityEngine.Serialization.FormerlySerializedAs("_cardsText")]
+        [SerializeField] private TMP_Text _coinsEarnedText;
 
         [Header("Buttons")]
         [SerializeField] private Button _retryButton;
@@ -81,7 +83,7 @@ namespace RogueBlockBlast.UI
         /// Pass in the final score from your ScoreSystem.
         /// Stats are read automatically from RunStatsTracker.Instance.
         /// </summary>
-        public void Show(int finalScore)
+        public void Show(int finalScore, int coinsEarned = 0)
         {
             // ── Best score ──────────────────────────────────────────────────
             int bestScore  = PlayerPrefs.GetInt(BestScoreKey, 0);
@@ -105,14 +107,18 @@ namespace RogueBlockBlast.UI
             if (RunStatsTracker.Instance != null)
             {
                 var s = RunStatsTracker.Instance;
- 
+
                 _linesText.text    = $"{s.LinesCleared}";
                 _piecesText.text   = $"{s.PiecesPlaced}";
                 _maxComboText.text = s.MaxCombo > 10
                     ? $"×{s.MaxCombo / 10f:0.0}"
                     : "—";
-                _cardsText.text    = $"{s.CardsSelected}";
             }
+
+            // Kazanılan Blockcoin — RunStatsTracker'dan değil, run'ın kendi sayacından
+            // gelir (milestone ödülleri + Bounty Hunter + Perfect Clear hepsi orada toplanır).
+            if (_coinsEarnedText != null)
+                _coinsEarnedText.text = coinsEarned.ToString("N0");
  
             // ── Show ─────────────────────────────────────────────────────────
             Time.timeScale = 0f;

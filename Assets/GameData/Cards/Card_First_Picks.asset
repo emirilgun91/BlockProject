@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_First_Picks
   CardName: First Picks
-  Description: The first 5 shapes you place on the board during this Milestone will
-    not be deducted from the pool, but you cannot rotate these shapes.
-  Icon: {fileID: 0}
+  Description: The first 5 shapes this Milestone are free, but cannot be rotated.
+  Icon: {fileID: 4137494503772691050, guid: 0a3bd382595194a4c93ab2a3dad6d62e, type: 3}
   Rarity: 0
   Effects:
   - Type: 23

@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Selective_Blindness
   CardName: Selective Blindness
-  Description: Clearing 2 or more lines simultaneously grants 0 score. However, clearing
-    exactly 1 line (Single) grants 2x score and randomly removes 2 filled blocks
-    from the board. (This removal effect does nothing if there are fewer than 2 filled
-    blocks on the grid).
-  Icon: {fileID: 0}
+  Description: Single-line clears score 2x and remove 2 random blocks. Clearing 2
+    or more lines scores nothing.
+  Icon: {fileID: 8883301870138293632, guid: a8b7f7afffdeb54459ce0d7c69edc721, type: 3}
   Rarity: 1
   Effects:
   - Type: 29

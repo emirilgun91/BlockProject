@@ -14,13 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Safe_Zone
   CardName: Safe Zone
-  Description: Upon selecting this card, 1 visually distinct tile is randomly selected
-    on the 8x8 grid. When a shape is placed covering this tile, the combo multiplier's
-    drop floor becomes 2x (meaning it will not drop below 2x upon a reset) as long
-    as that shape is not destroyed by a line clear. If the combo is already below
-    2x, it remains as is. However, if that specific tile is cleared via a line clear,
-    the player is penalized and loses 8 shapes from their current pool.
-  Icon: {fileID: 0}
+  Description: Cover the marked tile to keep your combo from falling below 2x. Clearing
+    that tile costs you 8 shapes.
+  Icon: {fileID: -4132819174145549807, guid: d383b25c3f7861749838bdb023d6971e, type: 3}
   Rarity: 2
   Effects:
   - Type: 32

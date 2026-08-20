@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Center_Base
   CardName: Center Base
-  Description: Each tile you place in the central 2x2 area of the board grants +4 points.
-  Icon: {fileID: 0}
+  Description: Each tile placed in the center 2x2 area grants +4 points.
+  Icon: {fileID: 4358752943827026055, guid: 6100c19988bb8a84786bab3044af6306, type: 3}
   Rarity: 0
   Effects:
   - Type: 39

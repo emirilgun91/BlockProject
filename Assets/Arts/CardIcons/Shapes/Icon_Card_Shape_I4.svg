@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b494e2"/>
+      <stop offset="55%" stop-color="#8652d0"/>
+      <stop offset="100%" stop-color="#5e3992"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a47ddc" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#8652d0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="4.23" result="bl"/>
+      <feMerge><feMergeNode in="bl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4.7" result="bl"/>
+      <feColorMatrix in="bl" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.40 0" result="gl"/>
+      <feMerge><feMergeNode in="gl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g opacity="0.75">
+    <rect x="50.45" y="147.74" width="14.1" height="38.78" rx="7.05" fill="url(#trail)"/>
+    <rect x="97.45" y="147.74" width="14.1" height="38.78" rx="7.05" fill="url(#trail)"/>
+    <rect x="144.45" y="147.74" width="14.1" height="38.78" rx="7.05" fill="url(#trail)"/>
+    <rect x="191.45" y="147.74" width="14.1" height="38.78" rx="7.05" fill="url(#trail)"/>
+  </g>
+  <g filter="url(#bloom)">
+    <g>
+      <rect x="36.82" y="107.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#ccb6eb" stroke-width="2.35"/>
+      <rect x="43.44" y="112.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="42.61" y="138.34" width="29.78" height="4.14" rx="2.07" fill="#402764" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="83.82" y="107.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#ccb6eb" stroke-width="2.35"/>
+      <rect x="90.44" y="112.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="89.61" y="138.34" width="29.78" height="4.14" rx="2.07" fill="#402764" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="130.82" y="107.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#ccb6eb" stroke-width="2.35"/>
+      <rect x="137.44" y="112.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="136.61" y="138.34" width="29.78" height="4.14" rx="2.07" fill="#402764" opacity="0.5"/>
+    </g>
+    <g>
+      <rect x="177.82" y="107.32" width="41.36" height="41.36" rx="10.34" fill="url(#face)" stroke="#ccb6eb" stroke-width="2.35"/>
+      <rect x="184.44" y="112.7" width="28.12" height="6.2" rx="3.1" fill="#ffffff" opacity="0.30"/>
+      <rect x="183.61" y="138.34" width="29.78" height="4.14" rx="2.07" fill="#402764" opacity="0.5"/>
+    </g>
+  </g>
+  <g opacity="0.95">
+    <path d="M 198.5 89.7 L 201.39 101.44 L 211.58 104.32 L 201.39 107.21 L 198.5 118.13 L 195.61 107.21 L 185.42 104.32 L 195.61 101.44 Z" fill="#fff3c9" filter="url(#glow)"/>
+  </g>
+</svg>

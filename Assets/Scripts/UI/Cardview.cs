@@ -1,5 +1,6 @@
 ﻿using System;
 using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -84,8 +85,8 @@ namespace RogueBlockBlast.UI
         {
             if (_data == null) return;
 
-            _nameText.text = _data.CardName;
-            _descText.text = _data.Description;
+            _nameText.text = ContentLocalization.Name(_data);
+            _descText.text = ContentLocalization.Description(_data);
 
             if (_iconImage != null)
             {

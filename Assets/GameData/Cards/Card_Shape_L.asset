@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Card_Shape_L
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Shape_L
-  CardName: L Master
-  Description: L Tile Value +5, Spawn Rate -%10
-  Icon: {fileID: 0}
+  CardName: L
+  Description: L tiles score +5, but L appears 10% less often.
+  Icon: {fileID: 21300000, guid: dc9a167875cabe04b8111a8bfdd309c4, type: 3}
   Rarity: 0
   Effects: []
   BaseWeight: 45

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Card_Collector
   CardName: Card Collector
-  Description: Each card in your inventory adds +0.02 to your global score multiplier.
-  Icon: {fileID: 0}
+  Description: Each card you own adds +0.02 to your global score multiplier.
+  Icon: {fileID: -8954693614455420520, guid: c1831462ea378dd4782c35bbee3303b2, type: 3}
   Rarity: 3
   Effects:
   - Type: 45

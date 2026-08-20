@@ -14,10 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Diet_plan
   CardName: Diet Plan
-  Description: During this milestone, shapes of size 4 or larger will not appear
-    in the pool; they are all replaced by size 3 and size 2 shapes, but their base
-    scores are reduced by 20%.
-  Icon: {fileID: 0}
+  Description: This Milestone only spawns size 2-3 shapes, but their scores drop
+    by 20%.
+  Icon: {fileID: 7802352190263077424, guid: ba7c891020872fe4caae17dbd5aae2f9, type: 3}
   Rarity: 0
   Effects:
   - Type: 7

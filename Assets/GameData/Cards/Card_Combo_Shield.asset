@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Combo_Shield
   CardName: Combo Shield
-  Description: Once per run, your combo is protected from resetting when the charge bar empties.
-  Icon: {fileID: 0}
+  Description: Once per run, your combo survives when the charge bar empties.
+  Icon: {fileID: -8611066903715272101, guid: 9df90b644c645c64c870bdf508248ed4, type: 3}
   Rarity: 3
   Effects:
   - Type: 43

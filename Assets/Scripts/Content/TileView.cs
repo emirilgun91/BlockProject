@@ -36,6 +36,9 @@ namespace RogueBlockBlast.UI
         // ── Overlay ──────────────────────────────────────────────────────────
         private OverlayType _overlayType  = OverlayType.None;
         private string      _overlayLabel;
+        private SpriteRenderer _overlayIcon;
+        private float          _iconBaseSize = 1f;
+        private TextMeshPro    _bonusLabel;
 
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
@@ -103,6 +106,69 @@ namespace RogueBlockBlast.UI
             if (_scoreText == null) return;
             _scoreText.color = highlight ?? _scoreTextBaseColor;
             _scoreText.text  = value > 0f ? value.ToString("0") : string.Empty;
+        }
+
+        /// <summary>
+        /// Boş hücrede duran kalıcı pozisyon bonusu ipucu ("+3").
+        /// Corner Stone / Center Base gibi kartlar için: oyuncu şekli sürüklemeden de
+        /// hangi hücrenin ekstra puan verdiğini görsün.
+        ///
+        /// NOT: prefabdaki _scoreText bir Canvas (UGUI) child'ı ve tahta sprite'ının
+        /// arkasında kaldığı için ekranda görünmüyor. Bu yüzden ipucu, ikon gibi
+        /// çalışma zamanında oluşturulan bir dünya-uzayı TMP etiketiyle çiziliyor.
+        /// </summary>
+        public void SetBonusHint(float value, Color color)
+        {
+            if (value <= 0f) { HideBonusHint(); return; }
+
+            EnsureBonusLabel();
+            ApplyBonusLabelSize();          // tile boyutu ilk frame'de 0 olabiliyor — her seferinde tazele
+            _bonusLabel.text    = "+" + value.ToString("0");
+            _bonusLabel.color   = color;
+            _bonusLabel.enabled = true;
+        }
+
+        public void HideBonusHint()
+        {
+            if (_bonusLabel != null && _bonusLabel.enabled) _bonusLabel.enabled = false;
+        }
+
+        /// <summary>Etiketi hücreye oturt. Punto sabit — autosizing tile'dan tile'a fark yaratıyordu.</summary>
+        private void ApplyBonusLabelSize()
+        {
+            float tileSize = _sr.bounds.size.x;
+            if (tileSize <= 0.01f) return;   // henüz hazır değil, bir sonraki frame'de tekrar denenecek
+
+            var rt = _bonusLabel.rectTransform;
+            if (Mathf.Approximately(rt.sizeDelta.x, tileSize)) return;   // zaten doğru
+
+            rt.sizeDelta = new Vector2(tileSize, tileSize);
+            _bonusLabel.enableAutoSizing = false;
+            _bonusLabel.fontSize = tileSize * 4.2f;
+        }
+
+        private void EnsureBonusLabel()
+        {
+            if (_bonusLabel != null) return;
+
+            var go = new GameObject("BonusHint");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.identity;
+
+            _bonusLabel = go.AddComponent<TextMeshPro>();
+            _bonusLabel.alignment = TextAlignmentOptions.Center;
+            _bonusLabel.raycastTarget = false;
+            _bonusLabel.enableAutoSizing = false;
+            if (_scoreText != null && _scoreText.font != null) _bonusLabel.font = _scoreText.font;
+
+            // Blok ve ikonun üstünde çizilsin
+            var mr = go.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.sortingLayerID = _sr.sortingLayerID;
+                mr.sortingOrder   = _sr.sortingOrder + 3;
+            }
         }
 
         /// <summary>
@@ -206,27 +272,104 @@ namespace RogueBlockBlast.UI
         {
             _overlayType  = OverlayType.None;
             _overlayLabel = null;
+
+            // İkon da hemen sönmeli: BoardView her frame tüm hücreler için ClearOverlay
+            // çağırıp yalnızca overlay'li olanlar için ApplyOverlayVisual çağırıyor.
+            // Burada kapatmazsak eski ikon tahtada asılı kalır.
+            if (_overlayIcon != null) _overlayIcon.enabled = false;
         }
 
         /// <summary>
         /// Called by BoardView.Render() AFTER color/value are set.
-        /// Blends overlay tint on top and writes overlay label into scoreText.
+        ///
+        /// Özel hücreler artık renk tintiyle değil, kendi ikonlarıyla gösterilir
+        /// (Resources/OverlayIcons). Hücrenin DOLU olup olmaması görsel olarak
+        /// ayrışır: boş hücre koyu zemin + parlak ikon, dolu hücre blok rengi +
+        /// sönük ikon. Böylece oyuncu "buraya parça konabilir mi" sorusunu
+        /// bakar bakmaz anlar.
         /// </summary>
-        public void ApplyOverlayVisual()
+        public void ApplyOverlayVisual(bool cellFilled = false)
         {
-            if (_overlayType == OverlayType.None) return;
-            _sr.color = Color.Lerp(_sr.color, GetOverlayTint(_overlayType), 0.55f);
-            if (_scoreText != null)
-                _scoreText.text = _overlayLabel ?? string.Empty;
+            if (_overlayType == OverlayType.None)
+            {
+                if (_overlayIcon != null && _overlayIcon.enabled) _overlayIcon.enabled = false;
+                return;
+            }
+
+            EnsureOverlayIcon();
+
+            var tint = GetOverlayTint(_overlayType);
+
+            // Zemin: boşken sadece hafif renk ipucu ver — dolu blok gibi görünmesin
+            _sr.color = Color.Lerp(_sr.color, tint, cellFilled ? 0.35f : 0.14f);
+
+            _overlayIcon.sprite  = GetOverlayIcon(_overlayType);
+            _overlayIcon.enabled = _overlayIcon.sprite != null;
+            _overlayIcon.color   = new Color(tint.r, tint.g, tint.b, cellFilled ? 0.55f : 1f);
+
+            // Decaying Rift halkasının ortası boş — geri sayım rakamı içinden okunsun diye
+            // ikonu biraz büyütüyoruz. Diğerleri hücreyi doldurmasın diye daha küçük.
+            float sizeFactor = _overlayType == OverlayType.DecayingRift ? 0.88f : 0.66f;
+            _overlayIcon.transform.localScale = Vector3.one * (_iconBaseSize * sizeFactor);
+
+            // Etiket (rift geri sayımı gibi) ikonun üstünde, overlay renginde okunur
+            if (_scoreText != null && !string.IsNullOrEmpty(_overlayLabel))
+            {
+                _scoreText.text  = _overlayLabel;
+                _scoreText.color = Color.Lerp(tint, Color.white, 0.55f);
+            }
         }
+
+        /// <summary>İkon SpriteRenderer'ı yoksa çalışma zamanında oluşturur — prefab düzenlemek gerekmez.</summary>
+        private void EnsureOverlayIcon()
+        {
+            if (_overlayIcon != null) return;
+
+            var go = new GameObject("OverlayIcon");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.zero;
+
+            _overlayIcon = go.AddComponent<SpriteRenderer>();
+            // Blok sprite'ının hemen üstü. Skor yazısı ayrı (daha yüksek) sorting layer'da
+            // olduğu için rakam ikonun üzerinde kalmaya devam eder.
+            _overlayIcon.sortingLayerID = _sr.sortingLayerID;
+            _overlayIcon.sortingOrder   = _sr.sortingOrder + 1;
+
+            float tileSize = _sr.bounds.size.x;
+            if (tileSize <= 0f) tileSize = 1f;
+            _iconBaseSize = tileSize;
+        }
+
+        private static Sprite GetOverlayIcon(OverlayType type)
+        {
+            string name = type switch
+            {
+                OverlayType.SafeZone     => "Icon_SafeZone",
+                OverlayType.PhantomCell  => "Icon_PhantomCell",
+                OverlayType.DecayingRift => "Icon_DecayingRift",
+                OverlayType.NeonCableA   => "Icon_NeonCableA",
+                OverlayType.NeonCableB   => "Icon_NeonCableB",
+                _                        => null,
+            };
+            if (name == null) return null;
+
+            if (_iconCache.TryGetValue(name, out var cached)) return cached;
+            var sprite = Resources.Load<Sprite>("OverlayIcons/" + name);
+            if (sprite == null)
+                Debug.LogWarning($"[TileView] Overlay ikonu bulunamadı: Resources/OverlayIcons/{name}");
+            _iconCache[name] = sprite;
+            return sprite;
+        }
+
+        private static readonly System.Collections.Generic.Dictionary<string, Sprite> _iconCache = new();
 
         private static Color GetOverlayTint(OverlayType type) => type switch
         {
             OverlayType.NeonCableA   => new Color(0f,    1f,   0.75f),
-            OverlayType.NeonCableB   => new Color(0f,   0.75f,  1f),
-            OverlayType.SafeZone     => new Color(0.2f,  1f,   0.2f),
-            OverlayType.DecayingRift => new Color(1f,   0.3f,   0f),
-            OverlayType.PhantomCell  => new Color(0.65f, 0f,    1f),
+            OverlayType.NeonCableB   => new Color(0.2f, 0.77f,  1f),
+            OverlayType.SafeZone     => new Color(0.23f, 1f,   0.48f),
+            OverlayType.DecayingRift => new Color(1f,   0.30f, 0.18f),
+            OverlayType.PhantomCell  => new Color(0.72f, 0.30f, 1f),
             _                        => Color.white,
         };
 

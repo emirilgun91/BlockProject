@@ -1,32 +1,32 @@
-Key,English,German,Turkish,Italian,French,Polish,Norwegian,Portuguese,Portuguese (Brazil),Castilian Spanish,Spanish (Latin America),Russian,Arabic,Japanese,Korean,Chinese (Simplified),Chinese (Traditional)
-ShapeShop.Header.Title,Shape Shop,Sheypu,Şekil Dükkanı,,,,,,,,,,,,,,
-ShapeCard.ScoreLabel,Base Point,Base Pohint,Baz Puan,,,,,,,,,,,,,,
-ShapeCard.WeightLabel,Spawn Rate,Spawnu Reytu,Çıkma Olasılığı,,,,,,,,,,,,,,
-ShapeCard.Unlock,UNLOCK,UNLOCKE,KİLİDİ AÇ,,,,,,,,,,,,,,
-CardView.SelectButton,SELECT,SELECTO,KARTI SEÇ,,,,,,,,,,,,,,
-ComboBoard.Combo,COMBO,COMBA,KOMBO,,,,,,,,,,,,,,
-GameOver.RunEnd,Run Ended,Runde Enda,Tur Sona Erdi,,,,,,,,,,,,,,
-GameOver.GameOverTxt,YOU LOSE,YUHA LUSA,KAYBETTİN,,,,,,,,,,,,,,
-GameOver.FinalScore,FINAL SCORE,FINAL SKORE,FİNAL SKORU,,,,,,,,,,,,,,
-GameOver.NewRecord,NEW RECORD,NAW RECORD,YENİ REKOR,,,,,,,,,,,,,,
-GameOver.BestScore,BEST SCORE,BAST SKOR,EN İYİ SKOR,,,,,,,,,,,,,,
-GameOver.Lines,CLEAR,KLAAR,TEMİZLEME,,,,,,,,,,,,,,
-GameOver.Pieces,SHAPES,SHAPS,ŞEKİLLER,,,,,,,,,,,,,,
-GameOver.MaxCombo,MAX COMBO,MAKSU COMB,MAX KOMBO,,,,,,,,,,,,,,
-GameOver.Coin,EARNED COIN,EARNA COIN,KAZANILAN PARA,,,,,,,,,,,,,,
-GameOver.NewRun,NEW RUN,NEUW RUN,YENİ TUR,,,,,,,,,,,,,,
-GameOver.MainMenu,MAIN MENU,MANE MANU,ANA MENÜ,,,,,,,,,,,,,,
-ScoreBoard.ScoreText,SCORE,SKORE,SKOR,,,,,,,,,,,,,,
-MainMenu.NewRun,NEW RUN,NEUW RUN,YENİ OYUN,,,,,,,,,,,,,,
-MainMenu.Upgrades,UPGRADES,DEUTGRADE,GELİŞTİRMELER,,,,,,,,,,,,,,
-MainMenu.ShapeShop,SHAPE SHOP,SHAPU SHUP,ŞEKİL DÜKKANI,,,,,,,,,,,,,,
-MainMenu.Settings,SETTINGS,SETTONG,AYARLAR,,,,,,,,,,,,,,
-MainMenu.Quit,QUIT,EXITOS,ÇIKIŞ,,,,,,,,,,,,,,
-LastRunPanel.Title,LAST RUN,LOST RUN,SON TUR,,,,,,,,,,,,,,
-LastRunPanel.Countdown,"""0"" Seconds Later..","""0"" Sakond Later","""0"" Saniye Sonra..",,,,,,,,,,,,,,
-UpgradePanel.Title,UPGRADES,APGRADES,GELİŞTİRMELER,,,,,,,,,,,,,,
-UpgradePanel.Empty.Title,CHOOSE ONE,CHOSA UNA,BİR GELİŞTİRME SEÇİNİZ,,,,,,,,,,,,,,
-UpgradePanel.Empty.Desc,Upgrades makes your score higher.,abeceba,Geliştirmeler daha yüksek skor kazanmanızı sağlar.,,,,,,,,,,,,,,
-UpgradePanel.BuyTxt,BUY,BOUG,SATIN AL,,,,,,,,,,,,,,
-UpgradePanel.SellTxt,SELL,SALL,IADE ET,,,,,,,,,,,,,,
-UpgradeSlot.OwnedTxt,OWNED,OWNAD,,,,,,,,,,,,,,,
+﻿Key,English,German,Turkish,Italian,French,Polish,Norwegian,Portuguese,Portuguese (Brazil),Castilian Spanish,Spanish (Latin America),Russian,Arabic,Japanese,Korean,Chinese (Simplified),Chinese (Traditional)
+ShapeShop.Header.Title,Shape Shop,FORMENLADEN,Şekil Dükkanı,NEGOZIO FORME,BOUTIQUE DE FORMES,SKLEP Z KSZTAŁTAMI,BRIKKEBUTIKK,LOJA DE FORMAS,LOJA DE FORMAS,TIENDA DE FIGURAS,TIENDA DE PIEZAS,МАГАЗИН ФИГУР,,シェイプショップ,블록 상점,方块商店,方塊商店
+ShapeCard.ScoreLabel,Base Point,Grundpunkte,Baz Puan,Punti base,Points de base,Punkty bazowe,Grunnpoeng,Pontos base,Pontos base,Puntos base,Puntos base,Базовые очки,,基本ポイント,기본 점수,基础分数,基礎分數
+ShapeCard.WeightLabel,Spawn Rate,Erscheinungsrate,Çıkma Olasılığı,Frequenza,Taux d'apparition,Częstotliwość,Forekomst,Taxa de aparição,Taxa de aparição,Tasa de aparición,Tasa de aparición,Частота выпадения,,出現率,출현 확률,出现率,出現率
+ShapeCard.Unlock,UNLOCK,FREISCHALTEN,KİLİDİ AÇ,SBLOCCA,DÉBLOQUER,ODBLOKUJ,LÅS OPP,DESBLOQUEAR,DESBLOQUEAR,DESBLOQUEAR,DESBLOQUEAR,ОТКРЫТЬ,,アンロック,잠금 해제,解锁,解鎖
+CardView.SelectButton,SELECT,AUSWÄHLEN,KARTI SEÇ,SELEZIONA,CHOISIR,WYBIERZ,VELG,SELECIONAR,SELECIONAR,SELECCIONAR,SELECCIONAR,ВЫБРАТЬ,,選択,선택,选择,選擇
+ComboBoard.Combo,COMBO,COMBO,KOMBO,COMBO,COMBO,KOMBO,KOMBO,COMBO,COMBO,COMBO,COMBO,КОМБО,,コンボ,콤보,连击,連擊
+GameOver.RunEnd,Run Ended,Lauf beendet,Tur Sona Erdi,Run terminata,Partie terminée,Rozgrywka zakończona,Runden er over,Jornada terminada,Jornada terminada,Partida terminada,Partida terminada,Забег окончен,,ラン終了,판 종료,本局结束,本局結束
+GameOver.GameOverTxt,YOU LOSE,VERLOREN,KAYBETTİN,HAI PERSO,PERDU,PRZEGRANA,DU TAPTE,PERDESTE,VOCÊ PERDEU,HAS PERDIDO,HAS PERDIDO,ВЫ ПРОИГРАЛИ,,ゲームオーバー,패배,你输了,你輸了
+GameOver.FinalScore,FINAL SCORE,ENDPUNKTZAHL,FİNAL SKORU,PUNTEGGIO FINALE,SCORE FINAL,WYNIK KOŃCOWY,SLUTTPOENG,PONTUAÇÃO FINAL,PONTUAÇÃO FINAL,PUNTUACIÓN FINAL,PUNTAJE FINAL,ИТОГОВЫЙ СЧЁТ,,最終スコア,최종 점수,最终得分,最終得分
+GameOver.NewRecord,NEW RECORD,NEUER REKORD,YENİ REKOR,NUOVO RECORD,NOUVEAU RECORD,NOWY REKORD,NY REKORD,NOVO RECORDE,NOVO RECORDE,NUEVO RÉCORD,NUEVO RÉCORD,НОВЫЙ РЕКОРД,,新記録,신기록,新纪录,新紀錄
+GameOver.BestScore,BEST SCORE,BESTLEISTUNG,EN İYİ SKOR,MIGLIOR PUNTEGGIO,MEILLEUR SCORE,NAJLEPSZY WYNIK,BESTE POENG,MELHOR PONTUAÇÃO,MELHOR PONTUAÇÃO,MEJOR PUNTUACIÓN,MEJOR PUNTAJE,ЛУЧШИЙ СЧЁТ,,ベストスコア,최고 점수,最高分,最高分
+GameOver.Lines,CLEAR,GELÖSCHT,TEMİZLEME,LINEE,LIGNES,LINIE,FJERNET,LINHAS,LINHAS,LÍNEAS,LÍNEAS,ЛИНИИ,,消去,제거,消除,消除
+GameOver.Pieces,SHAPES,FORMEN,ŞEKİLLER,FORME,FORMES,KSZTAŁTY,BRIKKER,FORMAS,FORMAS,FIGURAS,PIEZAS,ФИГУРЫ,,ブロック,블록,方块,方塊
+GameOver.MaxCombo,MAX COMBO,MAX. COMBO,MAX KOMBO,COMBO MAX,COMBO MAX,MAKS. KOMBO,MAKS KOMBO,COMBO MÁX,COMBO MÁX,COMBO MÁX,COMBO MÁX,МАКС. КОМБО,,最大コンボ,최대 콤보,最高连击,最高連擊
+GameOver.Coin,EARNED COIN,VERDIENTE MÜNZEN,KAZANILAN PARA,MONETE OTTENUTE,PIÈCES GAGNÉES,ZDOBYTE MONETY,OPPTJENTE MYNTER,MOEDAS GANHAS,MOEDAS GANHAS,MONEDAS GANADAS,MONEDAS GANADAS,ЗАРАБОТАНО МОНЕТ,,獲得コイン,획득 코인,获得金币,獲得金幣
+GameOver.NewRun,NEW RUN,NEUER LAUF,YENİ TUR,NUOVA RUN,NOUVELLE PARTIE,NOWA GRA,NY RUNDE,NOVA JORNADA,NOVA JORNADA,NUEVA PARTIDA,NUEVA PARTIDA,НОВЫЙ ЗАБЕГ,,新しいラン,새 판,新的一局,新的一局
+GameOver.MainMenu,MAIN MENU,HAUPTMENÜ,ANA MENÜ,MENU PRINCIPALE,MENU PRINCIPAL,MENU GŁÓWNE,HOVEDMENY,MENU PRINCIPAL,MENU PRINCIPAL,MENÚ PRINCIPAL,MENÚ PRINCIPAL,ГЛАВНОЕ МЕНЮ,,メインメニュー,메인 메뉴,主菜单,主菜單
+ScoreBoard.ScoreText,SCORE,PUNKTE,SKOR,PUNTEGGIO,SCORE,WYNIK,POENG,PONTUAÇÃO,PONTUAÇÃO,PUNTUACIÓN,PUNTAJE,СЧЁТ,,スコア,점수,分数,分數
+MainMenu.NewRun,NEW RUN,NEUER LAUF,YENİ OYUN,NUOVA RUN,NOUVELLE PARTIE,NOWA GRA,NY RUNDE,NOVA JORNADA,NOVA JORNADA,NUEVA PARTIDA,NUEVA PARTIDA,НОВЫЙ ЗАБЕГ,,新しいラン,새 게임,开始游戏,開始遊戲
+MainMenu.Upgrades,UPGRADES,VERBESSERUNGEN,GELİŞTİRMELER,POTENZIAMENTI,AMÉLIORATIONS,ULEPSZENIA,OPPGRADERINGER,MELHORIAS,MELHORIAS,MEJORAS,MEJORAS,УЛУЧШЕНИЯ,,アップグレード,업그레이드,升级,升級
+MainMenu.ShapeShop,SHAPE SHOP,FORMENLADEN,ŞEKİL DÜKKANI,NEGOZIO FORME,BOUTIQUE DE FORMES,SKLEP Z KSZTAŁTAMI,BRIKKEBUTIKK,LOJA DE FORMAS,LOJA DE FORMAS,TIENDA DE FIGURAS,TIENDA DE PIEZAS,МАГАЗИН ФИГУР,,シェイプショップ,블록 상점,方块商店,方塊商店
+MainMenu.Settings,SETTINGS,EINSTELLUNGEN,AYARLAR,IMPOSTAZIONI,PARAMÈTRES,USTAWIENIA,INNSTILLINGER,DEFINIÇÕES,CONFIGURAÇÕES,AJUSTES,CONFIGURACIÓN,НАСТРОЙКИ,,設定,설정,设置,設置
+MainMenu.Quit,QUIT,BEENDEN,ÇIKIŞ,ESCI,QUITTER,WYJŚCIE,AVSLUTT,SAIR,SAIR,SALIR,SALIR,ВЫХОД,,終了,종료,退出,退出
+LastRunPanel.Title,LAST RUN,LETZTER LAUF,SON TUR,ULTIMA RUN,DERNIÈRE PARTIE,OSTATNIA GRA,FORRIGE RUNDE,ÚLTIMA JORNADA,ÚLTIMA JORNADA,ÚLTIMA PARTIDA,ÚLTIMA PARTIDA,ПОСЛЕДНИЙ ЗАБЕГ,,前回のラン,마지막 판,上一局,上一局
+LastRunPanel.Countdown,"""0"" Seconds Later..","""0"" Sekunden später...","""0"" Saniye Sonra..","""0"" secondi dopo...","""0"" secondes plus tard...","""0"" sekund później...","""0"" sekunder senere...","""0"" segundos depois...","""0"" segundos depois...","""0"" segundos después...","""0"" segundos después...","""0"" секунд спустя...",,"""0"" 秒後...","""0""초 후...","""0"" 秒后...","""0"" 秒後..."
+UpgradePanel.Title,UPGRADES,VERBESSERUNGEN,GELİŞTİRMELER,POTENZIAMENTI,AMÉLIORATIONS,ULEPSZENIA,OPPGRADERINGER,MELHORIAS,MELHORIAS,MEJORAS,MEJORAS,УЛУЧШЕНИЯ,,アップグレード,업그레이드,升级,升級
+UpgradePanel.Empty.Title,CHOOSE ONE,WÄHLE EINE AUS,BİR GELİŞTİRME SEÇİNİZ,SCEGLINE UNO,CHOISISSEZ-EN UNE,WYBIERZ JEDNO,VELG EN,ESCOLHE UMA,ESCOLHE UMA,ELIGE UNA,ELIGE UNA,ВЫБЕРИТЕ ОДНО,,1つ選択,하나를 선택하세요,选择一项,選擇一項
+UpgradePanel.Empty.Desc,Upgrades makes your score higher.,Verbesserungen erhöhen deine Punktzahl.,Geliştirmeler daha yüksek skor kazanmanızı sağlar.,I potenziamenti aumentano il punteggio.,Les améliorations augmentent votre score.,Ulepszenia zwiększają twój wynik.,Oppgraderinger gir deg høyere poengsum.,As melhorias aumentam a tua pontuação.,As melhorias aumentam a sua pontuação.,Las mejoras aumentan tu puntuación.,Las mejoras aumentan tu puntaje.,Улучшения повышают ваш счёт.,,アップグレードでスコアが上がります。,업그레이드는 점수를 높여줍니다.,升级可以提高你的分数。,升級可以提高你的分數。
+UpgradePanel.BuyTxt,BUY,KAUFEN,SATIN AL,ACQUISTA,ACHETER,KUP,KJØP,COMPRAR,COMPRAR,COMPRAR,COMPRAR,КУПИТЬ,,購入,구매,购买,購買
+UpgradePanel.SellTxt,SELL,VERKAUFEN,IADE ET,VENDI,REVENDRE,SPRZEDAJ,SELG,VENDER,VENDER,VENDER,VENDER,ПРОДАТЬ,,売却,판매,出售,出售
+UpgradeSlot.OwnedTxt,OWNED,IM BESITZ,SAHİP,POSSEDUTO,POSSÉDÉ,POSIADANE,EID,ADQUIRIDO,ADQUIRIDO,EN POSESIÓN,EN POSESIÓN,КУПЛЕНО,,所持済み,보유 중,已拥有,已擁有

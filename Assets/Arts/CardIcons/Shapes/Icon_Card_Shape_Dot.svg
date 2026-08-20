@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b494e2"/>
+      <stop offset="55%" stop-color="#8652d0"/>
+      <stop offset="100%" stop-color="#5e3992"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a47ddc" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#8652d0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="5.58" result="bl"/>
+      <feMerge><feMergeNode in="bl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6.2" result="bl"/>
+      <feColorMatrix in="bl" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.40 0" result="gl"/>
+      <feMerge><feMergeNode in="gl"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g opacity="0.75">
+    <rect x="118.7" y="154.04" width="18.6" height="32.55" rx="9.3" fill="url(#trail)"/>
+  </g>
+  <g filter="url(#bloom)">
+    <g>
+      <rect x="100.72" y="100.72" width="54.56" height="54.56" rx="13.64" fill="url(#face)" stroke="#ccb6eb" stroke-width="3.1"/>
+      <rect x="109.45" y="107.81" width="37.1" height="8.18" rx="4.09" fill="#ffffff" opacity="0.30"/>
+      <rect x="108.36" y="141.64" width="39.28" height="5.46" rx="2.73" fill="#402764" opacity="0.5"/>
+    </g>
+  </g>
+  <g opacity="0.95">
+    <path d="M 128 59.11 L 134.9 87.15 L 159.29 94.06 L 134.9 100.96 L 128 127.07 L 121.1 100.96 L 96.71 94.06 L 121.1 87.15 Z" fill="#fff3c9" filter="url(#glow)"/>
+  </g>
+</svg>

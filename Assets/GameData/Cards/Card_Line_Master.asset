@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Cart_Line_Master
   CardName: Line Master
-  Description: Only horizontal line clears grant score, multiplying the earned points
-    by 2.5x. Vertical clears grant 0 points (but they still maintain the combo bar).
-  Icon: {fileID: 0}
+  Description: Horizontal clears score 2.5x. Vertical clears score nothing but still
+    hold the combo.
+  Icon: {fileID: -2775286137847240856, guid: a2af02e8c98fbdd499b11a214f92d769, type: 3}
   Rarity: 2
   Effects:
   - Type: 18

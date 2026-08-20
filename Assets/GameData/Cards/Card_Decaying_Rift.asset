@@ -14,13 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Decaying_Rift
   CardName: Decaying Rift
-  Description: For every 7 shapes placed on the board, a red neon tile with a "5"
-    counter on it appears. Each time the player places a shape, this counter decreases
-    by 1. If the counter reaches 0, that tile becomes a dead zone where no shapes
-    can be placed for the remainder of the current milestone. If a line clear includes
-    this tile before the counter reaches 0, the rift closes and +2 shapes are added
-    to the player's shape pool.
-  Icon: {fileID: 0}
+  Description: Every 7 shapes, a rift opens with a 5-placement countdown. Clear it
+    for +2 pool shapes; let it hit 0 and the tile is blocked for the rest of the
+    Milestone.
+  Icon: {fileID: -3658263722293496224, guid: 807d36a995ed9cf40b49b3a8751fcfed, type: 3}
   Rarity: 1
   Effects:
   - Type: 34

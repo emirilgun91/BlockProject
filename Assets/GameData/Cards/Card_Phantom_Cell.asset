@@ -14,13 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Phantom_Cell
   CardName: Phantom Cell
-  Description: A tile with a neon "impassable" visual appears randomly on the 8x8
-    grid. This tile is always considered "filled" for the purpose of line clear logic.
-    (This means it counts towards completing a horizontal or vertical line even without
-    an actual shape block on it), but it is excluded from the score calculation.
-    When the row or column containing the Phantom Cell is cleared, the Phantom Cell
-    vanishes and relocates to another random empty tile on the board.
-  Icon: {fileID: 7740770645608920724, guid: 793217a0efea3cc428d432623f0b2632, type: 3}
+  Description: A blocked tile counts as filled for line clears but scores nothing.
+    It relocates each time its line is cleared.
+  Icon: {fileID: -3974311346175978133, guid: 416a9862b8d867b49b45fa5c9e5e2dfe, type: 3}
   Rarity: 1
   Effects:
   - Type: 37

@@ -1,4 +1,5 @@
 ﻿using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Core;
 using TMPro;
 using UnityEngine;
@@ -37,6 +38,12 @@ namespace RogueBlockBlast.UI
 
         [Header("Dot Colors")]
         [SerializeField] private Color _dotUnlockedColor = new Color(0.08f, 0.85f, 0.45f); // yeşil
+
+        [Header("Affordability Colors")]
+        [Tooltip("Fiyat yazısının normal rengi.")]
+        [SerializeField] private Color _affordableColor   = new Color(1f, 0.84f, 0.35f);
+        [Tooltip("Para yetmediğinde fiyat rengi — buton yine tıklanabilir, uyarı çıkar.")]
+        [SerializeField] private Color _unaffordableColor = new Color(0.95f, 0.35f, 0.32f);
         [SerializeField] private Color _dotLockedColor   = new Color(0.35f, 0.40f, 0.50f); // gri
 
         [Header("Preview")]
@@ -100,7 +107,7 @@ namespace RogueBlockBlast.UI
 
             // İsim
             if (_nameText != null)
-                _nameText.text = _shape.Id.Replace("_", " ").ToUpper();
+                _nameText.text = Loc.ToUpper(ContentLocalization.Name(_shape));
 
             // ── Status dot ───────────────────────────────────────────────────
             if (_statusDot != null)
@@ -123,15 +130,21 @@ namespace RogueBlockBlast.UI
                 if (_unlockCostText != null)
                     _unlockCostText.text = $"{_shape.UnlockCost}";
                 if (_unlockBtn != null)
-                    _unlockBtn.interactable = CoinWallet.Instance?.CanAfford(_shape.UnlockCost) ?? false;
+                    _unlockBtn.interactable = true;   // para yetmezse tıklayınca uyarı çıkar
+                if (_unlockCostText != null)
+                    _unlockCostText.color = (CoinWallet.Instance?.CanAfford(_shape.UnlockCost) ?? false)
+                        ? _affordableColor : _unaffordableColor;
                 return;
             }
 
             // ── Score ────────────────────────────────────────────────────────
             float tileVal     = registry.GetTileValue(_shape.Id, _shape.BaseTileValue);
-            float tileValNext = tileVal + registry.ValuePerUpgradeLevel;
+            // Sonraki seviyenin kazancı eğriden gelir — sabit artış varsayma
+            float tileValNext = tileVal + registry.GetNextScoreGain(_shape.Id);
             int   sCost       = registry.GetScoreUpgradeCost(_shape.Id);
-            bool  canScore    = registry.CanUpgradeScore(_shape.Id) && coins >= sCost;
+            // Buton para yetmese de açık kalır — tıklayınca uyarı çıkar (kapalı buton sebebini anlatmıyor)
+            bool  canScore    = registry.CanUpgradeScore(_shape.Id);
+            bool  affordScore = coins >= sCost;
 
             if (_scoreValueText != null)
             {
@@ -143,15 +156,21 @@ namespace RogueBlockBlast.UI
                     _scoreValueText.text = $"{tileVal:0}";
             }
 
-            if (_scoreCostText  != null) _scoreCostText.text           = $"{sCost}";
+            if (_scoreCostText  != null)
+            {
+                _scoreCostText.text  = $"{sCost}";
+                _scoreCostText.color = affordScore ? _affordableColor : _unaffordableColor;
+            }
             if (_scoreUpgradeBtn!= null) _scoreUpgradeBtn.interactable = canScore;
 
             // ── Weight ───────────────────────────────────────────────────────
             int  effectiveW = registry.GetEffectiveWeight(_shape.Id, _shape.BaseWeight);
             int  wUpCost    = registry.GetWeightIncreaseCost(_shape.Id);
             int  wDownCost  = registry.GetWeightDecreaseCost(_shape.Id);
-            bool canUp      = registry.CanIncreaseWeight(_shape.Id) && coins >= wUpCost;
-            bool canDown    = registry.CanDecreaseWeight(_shape.Id, _shape.BaseWeight) && coins >= wDownCost;
+            bool canUp      = registry.CanIncreaseWeight(_shape.Id);
+            bool affordUp   = coins >= wUpCost;
+            bool canDown    = registry.CanDecreaseWeight(_shape.Id, _shape.BaseWeight);
+            bool affordDown = coins >= wDownCost;
 
             if (_weightValueText != null)
                 _weightValueText.text = $"{effectiveW}";
@@ -164,9 +183,11 @@ namespace RogueBlockBlast.UI
 
             if (_weightUpBtn   != null) _weightUpBtn.interactable  = canUp;
             if (_weightDownBtn != null) _weightDownBtn.interactable = canDown;
-
             if (_weightCostText != null)
-                _weightCostText.text = $"{wUpCost} / {wDownCost}";
+            {
+                _weightCostText.text  = $"{wUpCost} / {wDownCost}";
+                _weightCostText.color = (affordUp || affordDown) ? _affordableColor : _unaffordableColor;
+            }
         }
 
         // ── Button Handlers ──────────────────────────────────────────────────
@@ -178,13 +199,13 @@ namespace RogueBlockBlast.UI
 
             if (!CoinWallet.Instance.Spend(cost))
             {
-                ShapeShopToast.Instance?.Show("Yetersiz coin!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
                 return;
             }
 
             reg.UpgradeScore(_shape.Id);
             _controller.RefreshAll();
-            ShapeShopToast.Instance?.Show($"{_nameText.text} baz puanı yükseltildi!", ToastType.Success);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.ScoreUpgraded", _nameText.text), ToastType.Success);
         }
 
         private void OnWeightUp()
@@ -194,13 +215,13 @@ namespace RogueBlockBlast.UI
 
             if (!CoinWallet.Instance.Spend(cost))
             {
-                ShapeShopToast.Instance?.Show("Yetersiz coin!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
                 return;
             }
 
             reg.IncreaseWeight(_shape.Id);
             _controller.RefreshAll();
-            ShapeShopToast.Instance?.Show($"{_nameText.text} çıkma ihtimali arttırıldı!", ToastType.Success);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.WeightIncreased", _nameText.text), ToastType.Success);
         }
 
         private void OnWeightDown()
@@ -210,26 +231,26 @@ namespace RogueBlockBlast.UI
 
             if (!CoinWallet.Instance.Spend(cost))
             {
-                ShapeShopToast.Instance?.Show("Yetersiz coin!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
                 return;
             }
 
             reg.DecreaseWeight(_shape.Id, _shape.BaseWeight);
             _controller.RefreshAll();
-            ShapeShopToast.Instance?.Show($"{_nameText.text} çıkma ihtimali azaltıldı.", ToastType.Default);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.WeightDecreased", _nameText.text), ToastType.Default);
         }
 
         private void OnUnlock()
         {
             if (!CoinWallet.Instance.Spend(_shape.UnlockCost))
             {
-                ShapeShopToast.Instance?.Show("Yetersiz coin!", ToastType.Error);
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
                 return;
             }
 
             UnlockRegistry.Instance.UnlockShape(_shape.Id);
             _controller.RefreshAll();
-            ShapeShopToast.Instance?.Show($"{_nameText.text} açıldı!", ToastType.Success);
+            ShapeShopToast.Instance?.Show(Loc.Get("Toast.ShapeUnlocked", _nameText.text), ToastType.Success);
         }
 
         // ── Preview ──────────────────────────────────────────────────────────

@@ -53,18 +53,60 @@ namespace RogueBlockBlast.Core
         public int GetScoreLevel(string id) =>
             _scoreLevels.TryGetValue(id, out int l) ? l : 0;
 
-        public float GetTileValue(string id, float baseValue) =>
-            baseValue + GetScoreLevel(id) * ValuePerUpgradeLevel;
+        /// <summary>
+        /// Upgrade dahil tile değeri.
+        /// ScoreGain eğrisi doluysa seviyelerin kümülatif toplamı eklenir (3+5+7 = +15),
+        /// boşsa eski sabit artış (level × ValuePerUpgradeLevel) kullanılır.
+        /// </summary>
+        public float GetTileValue(string id, float baseValue)
+        {
+            int level = GetScoreLevel(id);
+            if (level <= 0) return baseValue;
 
-        public bool CanUpgradeScore(string id) =>
-            GetScoreLevel(id) < MaxScoreUpgradeLevel;
+            if (_shapeCache.TryGetValue(id, out var s) && !s.ScoreGain.IsEmpty)
+                return baseValue + s.ScoreGain.GetCumulative(level);
 
+            return baseValue + level * ValuePerUpgradeLevel;
+        }
+
+        /// <summary>Bir sonraki seviyede tile değerine eklenecek puan.</summary>
+        public float GetNextScoreGain(string id)
+        {
+            int level = GetScoreLevel(id);
+            if (_shapeCache.TryGetValue(id, out var s) && !s.ScoreGain.IsEmpty)
+                return s.ScoreGain.GetValue(level + 1);
+            return ValuePerUpgradeLevel;
+        }
+
+        public bool CanUpgradeScore(string id)
+        {
+            int level = GetScoreLevel(id);
+            if (_shapeCache.TryGetValue(id, out var s) && !s.ScoreGain.IsEmpty)
+                return s.ScoreGain.CanUpgrade(level) && level < MaxScoreUpgradeLevel;
+            return level < MaxScoreUpgradeLevel;
+        }
+
+        /// <summary>Bir sonraki seviyenin coin maliyeti.</summary>
         public int GetScoreUpgradeCost(string id)
         {
             int level = GetScoreLevel(id);
             if (_shapeCache.TryGetValue(id, out var s))
+            {
+                if (!s.ScoreCost.IsEmpty) return s.ScoreCost.GetValue(level + 1);
                 return s.ScoreUpgradeBaseCost + level * s.ScoreUpgradeCostPerLevel;
+            }
             return 10 + level * 5;
+        }
+
+        /// <summary>Bu shape kaç kez yükseltilebilir — UI'da "3 / 5" göstermek için.</summary>
+        public int GetMaxScoreLevel(string id)
+        {
+            if (_shapeCache.TryGetValue(id, out var s) && !s.ScoreGain.IsEmpty)
+            {
+                int curveMax = s.ScoreGain.EffectiveMaxLevel;
+                return curveMax > 0 ? Mathf.Min(curveMax, MaxScoreUpgradeLevel) : MaxScoreUpgradeLevel;
+            }
+            return MaxScoreUpgradeLevel;
         }
 
         public bool UpgradeScore(string id)

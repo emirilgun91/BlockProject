@@ -1,4 +1,5 @@
 ﻿using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,11 +58,12 @@ namespace RogueBlockBlast.UI
             if (card == null) return;
 
             // İsim — stack varsa badge ekle
+            string cardName = ContentLocalization.Name(card);
             _nameText.text = stackCount > 1
-                ? $"{card.CardName}  <size=11><color=#8a93aa>x{stackCount}</color></size>"
-                : card.CardName;
+                ? $"{cardName}  <size=11><color=#8a93aa>x{stackCount}</color></size>"
+                : cardName;
 
-            _descText.text = card.Description;
+            _descText.text = ContentLocalization.Description(card);
 
             // Effect özeti
             if (_effectText != null)

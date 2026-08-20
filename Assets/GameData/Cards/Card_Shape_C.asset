@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Shape_C
   CardName: C
-  Description: C Tile Value +4, Spawn Rate -%8
-  Icon: {fileID: 0}
+  Description: C tiles score +4, but C appears 8% less often.
+  Icon: {fileID: 21300000, guid: d4de6970a10a2144a986da88c09c3940, type: 3}
   Rarity: 0
   Effects: []
   BaseWeight: 100

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Future_Investment
   CardName: Future Investment
-  Description: Increases the current Milestone's target score by 20%. If you succeed,
-    the target score for the next Milestone is reduced by 15%.
-  Icon: {fileID: 0}
+  Description: Raises this Milestone's target by 20%. Clear it and the next target
+    drops 15%.
+  Icon: {fileID: -4766527980457479534, guid: 3a3f418661757d742b4ff607fd641ffc, type: 3}
   Rarity: 1
   Effects:
   - Type: 21

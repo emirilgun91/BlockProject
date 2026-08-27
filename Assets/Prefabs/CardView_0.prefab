@@ -203,7 +203,7 @@ MonoBehaviour:
   m_fontSizeMin: 10
   m_fontSizeMax: 26
   m_fontStyle: 0
-  m_HorizontalAlignment: 16
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -738,7 +738,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: SELECT
+  m_text: "KARTI SE\xC7"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}
   m_sharedMaterial: {fileID: 2344010023159884698, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}

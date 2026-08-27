@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_StartingCombo
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_starting_combo
-  NameKey: Combo Power
-  DescriptionKey: Increase Combo Power
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: 1570096078051873769, guid: c89fec23fe86e7148babed110b3d8bb0, type: 3}
   UnlockStageIndex: 5
   MaxLevel: 3

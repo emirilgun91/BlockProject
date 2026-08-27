@@ -63,6 +63,10 @@ namespace RogueBlockBlast.UI
         [SerializeField] private TMP_Text _scoreCostText;
         [SerializeField] private Button   _scoreUpgradeBtn;
 
+        [Tooltip("Puan yükseltme efekti. Boş bırakılırsa çalışma anında kurulur; " +
+                 "efekt istemiyorsanız bileşeni karttan silin.")]
+        [SerializeField] private FX.ShapeScoreUpgradeFX _scoreUpgradeFX;
+
         [Header("Stats — Weight")]
         [SerializeField] private TMP_Text _weightValueText;
         [SerializeField] private Image    _weightBarFill;
@@ -87,6 +91,8 @@ namespace RogueBlockBlast.UI
             _controller = controller;
 
             // Buton listener'ları
+            EnsureScoreUpgradeFX();
+
             _scoreUpgradeBtn?.onClick.AddListener(OnScoreUpgrade);
             _weightUpBtn?.onClick.AddListener(OnWeightUp);
             _weightDownBtn?.onClick.AddListener(OnWeightDown);
@@ -158,8 +164,13 @@ namespace RogueBlockBlast.UI
 
             if (_scoreCostText  != null)
             {
-                _scoreCostText.text  = $"{sCost}";
-                _scoreCostText.color = affordScore ? _affordableColor : _unaffordableColor;
+                // Max seviyede fiyat anlamsız — UpgradesController ile aynı
+                // anahtarı kullanır (Shop.MaxLevel), iki dükkân aynı dili konuşsun.
+                // Renk de "yetersiz para" kırmızısına düşmemeli: max bir uyarı değil.
+                _scoreCostText.text  = canScore ? $"{sCost}" : Loc.Get("Shop.MaxLevel");
+                _scoreCostText.color = !canScore || affordScore
+                    ? _affordableColor
+                    : _unaffordableColor;
             }
             if (_scoreUpgradeBtn!= null) _scoreUpgradeBtn.interactable = canScore;
 
@@ -192,6 +203,21 @@ namespace RogueBlockBlast.UI
 
         // ── Button Handlers ──────────────────────────────────────────────────
 
+        /// <summary>
+        /// Puan yükseltme efektini prefaba dokunmadan hazırlar. Inspector'dan
+        /// atanmışsa ona saygı duyar.
+        /// </summary>
+        private void EnsureScoreUpgradeFX()
+        {
+            if (_scoreValueText == null) return;
+
+            if (_scoreUpgradeFX == null)
+                _scoreUpgradeFX = GetComponent<FX.ShapeScoreUpgradeFX>()
+                               ?? gameObject.AddComponent<FX.ShapeScoreUpgradeFX>();
+
+            _scoreUpgradeFX.Bind(_scoreValueText, transform as RectTransform);
+        }
+
         private void OnScoreUpgrade()
         {
             var reg  = ShapeUpgradeRegistry.Instance;
@@ -203,8 +229,17 @@ namespace RogueBlockBlast.UI
                 return;
             }
 
+            // Kazanç yükseltmeden ÖNCE okunur — sonrasında bu değer bir sonraki
+            // seviyenin kazancını gösterir ve efekt yanlış sayı yazar.
+            float gained = reg.GetNextScoreGain(_shape.Id);
+
             reg.UpgradeScore(_shape.Id);
+
+            // Efekt Refresh'ten SONRA oynatılır: Refresh puan yazısını yeniden
+            // kurar ve arada oynatılan tween'i ezerdi.
             _controller.RefreshAll();
+            _scoreUpgradeFX?.Play(gained);
+
             ShapeShopToast.Instance?.Show(Loc.Get("Toast.ScoreUpgraded", _nameText.text), ToastType.Success);
         }
 

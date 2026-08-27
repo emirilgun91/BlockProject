@@ -17,6 +17,36 @@ namespace RogueBlockBlast.UI
         [Header("Prefabs")]
         public TileView TilePrefab;
 
+        [Header("Empty Cell Life")]
+        [Tooltip("Boş hücrenin taban rengi.")]
+        [SerializeField] private Color _emptyCellColor = new Color32(0x1c, 0x21, 0x32, 0xff);
+
+        [Tooltip("0 = kapalı (varsayılan). Boş hücrelerde çapraz ilerleyen dalganın şiddeti. " +
+                 "Tahtanın en büyük ölü yüzeyi 64 aynı koyu kare — bu onu nefes aldırır.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _emptyPulseAmount = 0f;
+
+        [SerializeField] private Color _emptyPulseColor    = new Color32(0x2a, 0x35, 0x52, 0xff);
+        [SerializeField] private float _emptyPulseSpeed    = 1.2f;
+        [Tooltip("Dalganın hücre başına faz farkı — küçük değer uzun dalga.")]
+        [SerializeField] private float _emptyPulseWavelength = 0.55f;
+
+        /// <summary>Boş hücre taban rengi — atmosfer bileşenleri runtime'da sürebilir.</summary>
+        public Color EmptyCellColor { get => _emptyCellColor; set => _emptyCellColor = value; }
+
+        /// <summary>Dalganın tepe rengi.</summary>
+        public Color EmptyPulseColor { get => _emptyPulseColor; set => _emptyPulseColor = value; }
+
+        /// <summary>Dalga şiddeti. 0 = kapalı; varsayılan bu, mevcut sahne etkilenmez.</summary>
+        public float EmptyPulseAmount
+        {
+            get => _emptyPulseAmount;
+            set => _emptyPulseAmount = Mathf.Clamp01(value);
+        }
+
+        /// <summary>Dalga hızı.</summary>
+        public float EmptyPulseSpeed { get => _emptyPulseSpeed; set => _emptyPulseSpeed = value; }
+
         [Header("Intro Animation")]
         [SerializeField] private bool  _playIntroOnBuild  = true;
         [SerializeField] private float _introStagger      = 0.008f;
@@ -107,11 +137,8 @@ namespace RogueBlockBlast.UI
         // ── Mouse Helpers ────────────────────────────────────────────────────
         public bool IsMouseOverBoard(Camera cam)
         {
-            if (_tiles == null || cam == null || Mouse.current == null) return false;
-
-            Vector2 mp    = Mouse.current.position.ReadValue();
-            Vector3 w3    = cam.ScreenToWorldPoint(new Vector3(mp.x, mp.y, 0f));
-            Vector2 local = new Vector2(w3.x, w3.y) - OriginWorld;
+            if (_tiles == null) return false;
+            if (!TryGetBoardPoint(cam, out Vector2 local)) return false;
 
             float bx = local.x / CellSize;
             float by = local.y / CellSize;
@@ -183,7 +210,6 @@ namespace RogueBlockBlast.UI
         {
             if (_tiles == null) return;
 
-            Color emptyCell   = new Color32(0x1c, 0x21, 0x32, 0xff);
             Color deadZoneTint = new Color(0.28f, 0.05f, 0.05f, 1f);
             Color ghostOk     = BlockColorPalette.GhostValid;
             Color ghostBad    = BlockColorPalette.GhostInvalid;
@@ -202,9 +228,9 @@ namespace RogueBlockBlast.UI
                 else if (deadZone)
                     color = deadZoneTint;
                 else if (phantom)
-                    color = emptyCell; // overlay handles the visual tint
+                    color = EmptyCellAt(x, y); // overlay handles the visual tint
                 else
-                    color = filled ? board.GetCellColor(x, y) : emptyCell;
+                    color = filled ? board.GetCellColor(x, y) : EmptyCellAt(x, y);
 
                 _tiles[x, y].SetColor(color);
 
@@ -267,19 +293,59 @@ namespace RogueBlockBlast.UI
             return _tiles[x, y];
         }
 
+        /// <summary>
+        /// Boş hücrenin o anki rengi. <see cref="_emptyPulseAmount"/> 0 iken
+        /// taban renk aynen döner — varsayılan bu, mevcut sahne etkilenmez.
+        ///
+        /// Dalga çapraz ilerler (x + y), böylece tahtada tek yönlü bir akış
+        /// hissi oluşur. <see cref="Time.unscaledTime"/> kullanılır: kart
+        /// seçiminde <c>timeScale = 0</c> olsa da tahta nefes almaya devam eder.
+        /// </summary>
+        private Color EmptyCellAt(int x, int y)
+        {
+            if (_emptyPulseAmount <= 0.0001f) return _emptyCellColor;
+
+            float phase = (x + y) * _emptyPulseWavelength - Time.unscaledTime * _emptyPulseSpeed;
+            float wave  = Mathf.Sin(phase) * 0.5f + 0.5f;
+
+            return Color.Lerp(_emptyCellColor, _emptyPulseColor, wave * _emptyPulseAmount);
+        }
+
         // ── Private ──────────────────────────────────────────────────────────
         private Vector2Int? GetRawCell(Camera cam)
         {
-            if (_tiles == null || cam == null || Mouse.current == null) return null;
-
-            Vector2 mp    = Mouse.current.position.ReadValue();
-            Vector3 w3    = cam.ScreenToWorldPoint(new Vector3(mp.x, mp.y, 0f));
-            Vector2 local = new Vector2(w3.x, w3.y) - OriginWorld;
+            if (_tiles == null) return null;
+            if (!TryGetBoardPoint(cam, out Vector2 local)) return null;
 
             return new Vector2Int(
                 Mathf.FloorToInt(local.x / CellSize),
                 Mathf.FloorToInt(local.y / CellSize)
             );
+        }
+
+        /// <summary>
+        /// Fare pozisyonunu tahtanın düzlemine (dünya z = 0) düşürür ve
+        /// OriginWorld'e göre yerel koordinat döndürür.
+        ///
+        /// Işın-düzlem kesişimi kullanılır; bu ortografik kamerada eski
+        /// <c>ScreenToWorldPoint</c> yaklaşımıyla birebir aynı sonucu verir,
+        /// perspektif kamerada ise doğru çalışan tek yöntemdir. 2.5D prototip
+        /// (SampleScene) bu sayede tahta seçimini paylaşabiliyor.
+        /// </summary>
+        private bool TryGetBoardPoint(Camera cam, out Vector2 local)
+        {
+            local = default;
+            if (cam == null || Mouse.current == null) return false;
+
+            Vector2 mp    = Mouse.current.position.ReadValue();
+            Ray     ray   = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
+            var     plane = new Plane(Vector3.forward, Vector3.zero);
+
+            if (!plane.Raycast(ray, out float dist)) return false;
+
+            Vector3 hit = ray.GetPoint(dist);
+            local = new Vector2(hit.x, hit.y) - OriginWorld;
+            return true;
         }
 
         private Vector3 GridToWorldCenter(int x, int y) => new Vector3(

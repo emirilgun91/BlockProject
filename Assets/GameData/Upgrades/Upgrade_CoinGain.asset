@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_CoinGain
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_coin_gain
-  NameKey: Coin Gain
-  DescriptionKey: more coin more upgrade
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: 6492771307100284923, guid: 5133c82743cf31f4d839e953b725cc5a, type: 3}
   UnlockStageIndex: 3
   MaxLevel: 5

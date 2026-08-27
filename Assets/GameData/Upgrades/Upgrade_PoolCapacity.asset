@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_PoolCapacity
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_pool_capacity
-  NameKey: Pool Capacity
-  DescriptionKey: Pool capacity increase
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: 8132873455764344801, guid: 02380ab2cb1ca6e4b8bec0f7b8842438, type: 3}
   UnlockStageIndex: 3
   MaxLevel: 5

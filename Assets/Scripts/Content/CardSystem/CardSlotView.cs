@@ -29,6 +29,15 @@ namespace RogueBlockBlast.UI
         [Tooltip("Kartın anlık katkısını gösteren satır. Boş bırakılırsa runtime'da oluşturulur.")]
         [SerializeField] private TMP_Text   _liveValueText;
 
+        [Header("Icon Fit")]
+        [Tooltip("AÇIK (varsayılan): ikon slotun tamamını (alt şerit hariç) doldurur.\n\n" +
+                 "Prefabda ikon yatayda esniyor ama dikeyde 62px'e kilitliydi; slot " +
+                 "büyüdüğünde ikon büyümüyor, minicik kalıyordu.")]
+        [SerializeField] private bool _fitIconToSlot = true;
+
+        [Tooltip("İkonun kenar boşluğu (px).")]
+        [SerializeField] private float _iconPadding = 7f;
+
         // Rarity renkleri — palette ile uyumlu
         private static readonly Color RarityCommon   = HexColor("2E6DA4");
         private static readonly Color RarityUncommon = HexColor("148F77");
@@ -39,6 +48,34 @@ namespace RogueBlockBlast.UI
         private int    _stackCount;
 
         // ── Public API ───────────────────────────────────────────────────────
+
+        private void Awake() => FitIcon();
+
+        /// <summary>
+        /// İkonu slotun tamamına yayar — altta canlı değer şeridine yer bırakarak.
+        ///
+        /// Prefabda ikon <c>anchorMin(0,1) / anchorMax(1,1)</c> ve
+        /// <c>sizeDelta(-14, 62)</c> ile duruyordu: yatayda esniyor ama dikeyde
+        /// 62px'e kilitli. Slot büyüdüğünde ikon büyümüyordu. Burada iki eksende
+        /// de esnetilir; <c>preserveAspect</c> ile de bozulması engellenir.
+        /// </summary>
+        private void FitIcon()
+        {
+            if (!_fitIconToSlot || _iconImage == null) return;
+
+            var rect = _iconImage.rectTransform;
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot     = new Vector2(0.5f, 0.5f);
+
+            float pad = Mathf.Max(0f, _iconPadding);
+            rect.offsetMin = new Vector2(pad, LiveValueBandHeight);
+            rect.offsetMax = new Vector2(-pad, -pad);
+
+            // Slot kare olmayabilir; ikon çarpılmasın.
+            _iconImage.preserveAspect = true;
+        }
 
         public void Bind(CardSO card, int stackCount)
         {

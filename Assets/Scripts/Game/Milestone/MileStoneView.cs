@@ -29,6 +29,20 @@ namespace RogueBlockBlast.UI
         [SerializeField] private RectTransform _fillBarRect;  // Fill veya ProgressBar rect — punch için
         [SerializeField] private float         _fillDuration = 0.3f;
 
+        [Header("Milestone Pop")]
+        [Tooltip("Milestone anında barın dikey şişme oranı — TABAN ölçeğin katı.\n\n" +
+                 "Eskiden mutlak değer yazılıyordu (0.0045 / 0.002); o sayılar eski " +
+                 "skin'in bar ölçeğine göre elle ayarlanmıştı ve panel yeniden " +
+                 "skinlenince anlamlarını yitirdi. Kat olarak tutmak skin'den bağımsız kılar.")]
+        [SerializeField] private float _milestonePopScale = 1.25f;
+
+        [Tooltip("Şişmeden sonra dönülecek oran — 1 = taban ölçek.")]
+        [SerializeField] private float _milestoneSettleScale = 1f;
+
+        // Taban ölçek ilk kullanımda yakalanır; sahnedeki değer neyse o.
+        private Vector3 _fillBarBaseScale = Vector3.one;
+        private bool    _fillBarBaseCaptured;
+
         [Header("Text")]
         [SerializeField] private TMP_Text _thresholdText;
         [SerializeField] private TMP_Text _piecesText;       // opsiyonel
@@ -137,6 +151,17 @@ namespace RogueBlockBlast.UI
         }
 
  
+        /// <summary>
+        /// Barın taban ölçeğini bir kez yakalar. Animasyon sırasında okunursa
+        /// şişmiş hâli taban sanılır ve bar her milestone'da biraz daha büyür.
+        /// </summary>
+        private void CaptureFillBarBaseScale()
+        {
+            if (_fillBarBaseCaptured || _fillBarRect == null) return;
+            _fillBarBaseScale    = _fillBarRect.localScale;
+            _fillBarBaseCaptured = true;
+        }
+
         public void PlayMilestoneReachedFX()
         {
             AudioManager.Instance.PlaySFX(MilestoneReach);
@@ -158,7 +183,10 @@ namespace RogueBlockBlast.UI
             // Bar dolduğu an şişme ve Teal renge geçiş başlar.
             if (_fillBarRect != null)
             {
-                _milestoneSequence.Append(_fillBarRect.DOScaleY(0.0045f, 0.3f).SetEase(Ease.OutBack, 1.5f));
+                CaptureFillBarBaseScale();
+                _milestoneSequence.Append(
+                    _fillBarRect.DOScaleY(_fillBarBaseScale.y * _milestonePopScale, 0.3f)
+                                .SetEase(Ease.OutBack, 0.8f));
             }
             else
             {
@@ -177,7 +205,9 @@ namespace RogueBlockBlast.UI
             // Bar sıfıra akar, boyutu küçülür ve rengi aslına döner.
             if (_fillBarRect != null)
             {
-                _milestoneSequence.Append(_fillBarRect.DOScaleY(0.002f, 0.4f).SetEase(Ease.InOutQuad));
+                _milestoneSequence.Append(
+                    _fillBarRect.DOScaleY(_fillBarBaseScale.y * _milestoneSettleScale, 0.4f)
+                                .SetEase(Ease.InOutQuad));
             }
             else
             {

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_PoolReroll
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_pool_reroll
-  NameKey: Pool Reroll
-  DescriptionKey: Reroll Poll
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: -6897235604829859371, guid: e3f58f7ebd470b54395d94c068870182, type: 3}
   UnlockStageIndex: 4
   MaxLevel: 3

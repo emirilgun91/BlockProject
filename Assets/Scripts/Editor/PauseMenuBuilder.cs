@@ -185,6 +185,13 @@ namespace RogueBlockBlast.EditorTools
                                       new Color32(0x07, 0x1A, 0x12, 0xFF));
             var settings = MenuButton(list, "SettingsButton", "Pause.Settings", BtnNeutral);
             var mainMenu = MenuButton(list, "MainMenuButton", "Pause.MainMenu", BtnNeutral);
+
+            // Geri bildirim: tıklamayı ExternalLinkButton kendi Awake'inde
+            // bağlar — burada onClick'e dokunulmaz. URL boşken
+            // PauseMenuController butonu gizler; adres sonradan girilecek.
+            var feedback = MenuButton(list, "FeedbackButton", "Pause.Feedback", BtnNeutral);
+            feedback.gameObject.AddComponent<RogueBlockBlast.UI.ExternalLinkButton>();
+
             var quit     = MenuButton(list, "QuitButton",     "Pause.Quit",     BtnDanger);
 
             // ── Çıkış onay kutusu ────────────────────────────────────────────
@@ -236,6 +243,7 @@ namespace RogueBlockBlast.EditorTools
             Set("_resumeButton", resume);
             Set("_settingsButton", settings);
             Set("_mainMenuButton", mainMenu);
+            Set("_feedbackButton", feedback);
             Set("_quitButton", quit);
             Set("_confirmBox", confirm.gameObject);
             Set("_confirmYes", yes);

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_DeadPoolRevive
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_dead_pool_revive
-  NameKey: Not Game Over
-  DescriptionKey: Game over no Pool reroll yes
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: -5205943352263177221, guid: 82526d4268f89bf41abc9a06ece42e41, type: 3}
   UnlockStageIndex: 7
   MaxLevel: 2

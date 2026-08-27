@@ -49,11 +49,35 @@ namespace RogueBlockBlast.Game
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
 
+        [Header("Demo")]
+        [Tooltip("AÇIK: bu skor eşiğine sahip milestone'a ulaşınca demo bitiş paneli " +
+                 "açılır ve run sona erer. Tam sürümde kapatın.")]
+        [SerializeField] private bool _demoBuild = true;
+
+        [Tooltip("Demoyu bitiren milestone'un skor eşiği. MilestoneConfig'te " +
+                 "20000 = 'Stage 6'. Eşik üzerinden bakılır çünkü etiketler " +
+                 "(Stage 8'den sonra Stage 10'a atlıyor) güvenilir bir sıra vermiyor.")]
+        [SerializeField] private int _demoEndScoreThreshold = 20000;
+
         // ── Core systems ─────────────────────────────────────────────────────
         private BoardModel      _board;
         private RunModel        _run;
         private ScoreSystem     _scoreSystem     = new ScoreSystem();
         private ComboSystem     _comboSystem     = new ComboSystem();
+
+        /// <summary>
+        /// Combo sistemi — sahne atmosferi gibi görsel bileşenler duruma abone
+        /// olabilsin diye açık. Bu örnek run boyunca değişmez (yalnızca
+        /// <c>Reset()</c> edilir), o yüzden bir kez abone olmak yeterlidir.
+        /// </summary>
+        public ComboSystem Combo => _comboSystem;
+
+        /// <summary>
+        /// Milestone sistemi — UI süsleri kalan şekil sayısı gibi duruma abone
+        /// olabilsin diye açık. <b>Start() içinde kurulur</b>, o yüzden erken
+        /// erişimde null olabilir; abone olan taraf tembel bağlanmalıdır.
+        /// </summary>
+        public MilestoneSystem Milestone => _milestoneSystem;
         private MilestoneSystem _milestoneSystem;
 
         // ── Card state ───────────────────────────────────────────────────────
@@ -751,6 +775,32 @@ namespace RogueBlockBlast.Game
 
             MilestoneView?.PlayMilestoneReachedFX();
             FrameFeedbackController.Instance?.OnMilestone();
+
+            // ── Demo sonu ─────────────────────────────────────────────────────
+            // Ödül ve kutlama efekti oynatıldıktan SONRA bakılır: oyuncu son
+            // aşamayı kazandığını görsün, panel bunun üstüne gelsin. Kart
+            // seçimi hiç açılmaz — run burada biter.
+            if (_demoBuild && data.ScoreThreshold >= _demoEndScoreThreshold)
+            {
+                var demoPanel = DemoEndPanel.Instance;
+
+                if (demoPanel != null)
+                {
+                    // Bayrak yalnızca panel gerçekten açıldıysa set edilir.
+                    // Aksi hâlde run "bitti" sayılır ama hiçbir ekran açılmaz;
+                    // oyuncu oynamaya devam eder ve gerçekten öldüğünde
+                    // OnGameOver bu bayrak yüzünden sessizce geri döner —
+                    // yani Game Over ekranı hiç gelmez.
+                    _gameOverFired = true;
+                    demoPanel.Show();
+                    return;
+                }
+
+                Debug.LogError(
+                    "[RunController] Demo sonuna ulaşıldı ama sahnede DemoEndPanel yok. " +
+                    "Run normal akışına devam ediyor. Paneli kurmak için: " +
+                    "Tools ▸ RogueBlockBlast ▸ Demo ▸ Build End Panel");
+            }
 
             CardSO newlyUnlockedCard = null;
             if (UnlockRegistry.Instance != null &&

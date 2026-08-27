@@ -26,6 +26,18 @@ namespace RogueBlockBlast.UI
         [SerializeField] private GameObject _rerollButton;    // reroll butonu root
         [SerializeField] private TMP_Text   _rerollCountText; // "x2"
         [SerializeField] private AudioClip CardSelected;
+        /// <summary>
+        /// Opsiyonel dış sunum. Atanmışsa bu bileşen kendi UGUI panelini
+        /// açmaz; kart listesini sunucuya devreder. Havuz mantığı (kilit
+        /// filtresi, unique, ağırlık, reroll) her iki yolda da burada kalır —
+        /// tek kaynak.
+        ///
+        /// 2.5D prototipi bunu dünya-uzayı fiziksel kartlar için kullanıyor;
+        /// bkz. <c>Game.Prototype.PhysicalCardPresenter</c>. Null bırakılırsa
+        /// davranış eskisiyle birebir aynıdır.
+        /// </summary>
+        public ICardPresenter ExternalPresenter { get; set; }
+
         private Action<CardSO> _onCardPicked;
         private bool           _fadingIn;
         private bool           _isOpen;
@@ -104,6 +116,11 @@ namespace RogueBlockBlast.UI
 
             Time.timeScale = 0f;
             Game.GameStateController.LockInput();
+
+            // Dış sunum varsa UGUI paneli hiç açılmaz — sunucu ApplyCards
+            // içinde çoktan devreye girdi.
+            if (ExternalPresenter != null) return;
+
             _root.SetActive(true);
             _isOpen   = true;
             _fadingIn = true;
@@ -145,6 +162,14 @@ namespace RogueBlockBlast.UI
             bool showNewBadge = newCard != null &&
                                 available.Count > 0 &&
                                 available[0] == newCard;
+
+            if (ExternalPresenter != null)
+            {
+                ExternalPresenter.Present(
+                    available, showNewBadge, OnCardSelected,
+                    _rerollsRemaining, OnRerollClicked);
+                return;
+            }
 
             if (_newBadge != null)
                 _newBadge.SetActive(showNewBadge);
@@ -221,6 +246,11 @@ namespace RogueBlockBlast.UI
         private void CloseAndResume(CardSO card)
         {
             AudioManager.Instance.PlaySFX(CardSelected);
+
+            // Kapanış animasyonu oyunu bloklamaz: timeScale hemen geri gelir,
+            // sunucu kendi çıkışını unscaled zamanda oynatır.
+            ExternalPresenter?.Dismiss(card);
+
             _fadingIn      = false;
             Time.timeScale = 1f;
             Game.GameStateController.UnlockInput();

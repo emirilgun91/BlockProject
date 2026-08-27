@@ -48,6 +48,18 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Color _bgSelected = new Color(0.05f, 0.11f, 0.22f);
         [SerializeField] private Color _bgOwned    = new Color(0.04f, 0.10f, 0.08f);
 
+        [Header("Locked look")]
+        [Tooltip("Kilitliyken ikona uygulanan çarpımsal ton. Koyu ve soğuk bir " +
+                 "değer ikonu soldurup 'şu an alınamaz' hissini verir — kilit " +
+                 "rozeti tek başına ilk bakışta yeterince ayırt edici değildi.")]
+        [SerializeField] private Color _iconLocked = new Color(0.30f, 0.34f, 0.44f, 0.65f);
+
+        [Tooltip("Kilitli slotun arka planı — açık olanlardan belirgin şekilde koyu.")]
+        [SerializeField] private Color _bgLocked = new Color(0.015f, 0.025f, 0.05f);
+
+        [Tooltip("Kilitliyken seviye noktalarının tonu.")]
+        [SerializeField] private Color _dotLockedColor = new Color(0.16f, 0.19f, 0.26f, 0.35f);
+
         // Runtime
         private UpgradeSO _upgrade;
         public UpgradeSO  Upgrade => _upgrade;
@@ -97,9 +109,12 @@ namespace RogueBlockBlast.UI
             bool isOwned    = level > 0;
             bool isUnlocked = registry?.IsUnlocked(_upgrade) ?? false;
 
-            // İkon
-            if (_iconImage != null && _upgrade.Icon != null)
-                _iconImage.sprite = _upgrade.Icon;
+            // İkon — kilitliyken soldurulur
+            if (_iconImage != null)
+            {
+                if (_upgrade.Icon != null) _iconImage.sprite = _upgrade.Icon;
+                _iconImage.color = isUnlocked ? Color.white : _iconLocked;
+            }
 
             // Owned badge
             if (_ownedBadge != null)
@@ -113,21 +128,23 @@ namespace RogueBlockBlast.UI
             if (_lockCostText != null)
                 _lockCostText.text = Loc.Get("Upgrades.LockedStage", _upgrade.UnlockStageIndex);
 
-            // BG rengi
+            // BG rengi — kilit her şeyin önünde gelir, yoksa seçilen kilitli
+            // slot açıkmış gibi görünür.
             if (_bgImage != null)
             {
-                _bgImage.color = isSelected ? _bgSelected
-                               : isOwned    ? _bgOwned
-                               :              _bgNormal;
+                _bgImage.color = !isUnlocked ? _bgLocked
+                               : isSelected  ? _bgSelected
+                               : isOwned     ? _bgOwned
+                               :               _bgNormal;
             }
 
             // Dots
-            RefreshDots(level, isOwned);
+            RefreshDots(level, isOwned, isUnlocked);
         }
 
         // ── Private ──────────────────────────────────────────────────────────
 
-        private void RefreshDots(int level, bool isOwned)
+        private void RefreshDots(int level, bool isOwned, bool isUnlocked)
         {
             if (_dots == null) return;
 
@@ -147,9 +164,11 @@ namespace RogueBlockBlast.UI
                 if (!inRange) continue;
 
                 bool filled = i < level;
-                var  target = filled
-                    ? (isOwned ? _dotOwnedColor : _dotOnColor)
-                    : _dotOffColor;
+                var  target = !isUnlocked
+                    ? _dotLockedColor
+                    : filled
+                        ? (isOwned ? _dotOwnedColor : _dotOnColor)
+                        : _dotOffColor;
 
                 var dot = _dots[i];
                 dot.DOKill();

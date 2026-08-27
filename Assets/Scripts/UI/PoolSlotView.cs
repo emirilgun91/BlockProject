@@ -21,17 +21,64 @@ namespace RogueBlockBlast.UI
         [Header("Entrance Animation")]
         [SerializeField] private float _entranceDuration = 0.3f;
 
+        [Header("Selected Pulse")]
+        [Tooltip("Seçili şeklin yavaşça nefes alması. 0 = kapalı.\n\n" +
+                 "Yalnızca _container'a (içerideki şekle) uygulanır — slotun " +
+                 "çerçevesi sabit kalır.")]
+        [SerializeField] private float _selectedPulseAmount = 0.05f;
+        [SerializeField] private float _selectedPulseSpeed  = 0.55f;
+
         // ── Scale animation ──────────────────────────────────────────────────
         float _targetScale = 1f;
-        private Tween _entranceTween;
+        private Tween   _entranceTween;
+        private bool    _isSelected;
+        private float   _pulsePhase;
+        private Vector3 _containerBaseScale = Vector3.one;
+
+        void Awake()
+        {
+            if (_container != null) _containerBaseScale = _container.localScale;
+        }
 
         void Update()
         {
+            // Slotun kökü: yalnızca mevcut seçim/hover/giriş ölçeği. Nabız
+            // buraya karışmaz, yoksa çerçeve de nefes alır.
             transform.localScale = Vector3.Lerp(
                 transform.localScale,
                 Vector3.one * _targetScale,
                 Time.deltaTime * 12f
             );
+
+            ApplySelectedPulse();
+        }
+
+        /// <summary>
+        /// Nabız yalnızca şeklin durduğu container'a uygulanır; slotun
+        /// çerçevesi, arka planı ve seçim çerçevesi sabit kalır.
+        /// </summary>
+        private void ApplySelectedPulse()
+        {
+            if (_container == null) return;
+
+            if (!_isSelected || _selectedPulseAmount <= 0f)
+            {
+                _container.localScale = Vector3.Lerp(
+                    _container.localScale, _containerBaseScale, Time.deltaTime * 10f);
+                return;
+            }
+
+            float vfx = Mathf.Clamp01(Core.Settings.GameSettings.VfxIntensity);
+            if (Core.Settings.GameSettings.ReduceMotion || vfx <= 0.001f)
+            {
+                _container.localScale = _containerBaseScale;
+                return;
+            }
+
+            _pulsePhase += Time.unscaledDeltaTime * _selectedPulseSpeed;
+            float s = 1f + Mathf.Sin(_pulsePhase * Mathf.PI * 2f) * _selectedPulseAmount * vfx;
+
+            _container.localScale = _containerBaseScale * s;
         }
 
         public void SetHighlight(bool value)
@@ -123,6 +170,10 @@ namespace RogueBlockBlast.UI
 
             if (_selectionFrame != null)
                 _selectionFrame.SetActive(selected);
+
+            // Yeni seçimde nabız baştan başlasın — her seçim aynı hisle açılır.
+            if (selected && !_isSelected) _pulsePhase = 0f;
+            _isSelected = selected;
 
             _targetScale = selected ? 1.1f : 1f;
         }

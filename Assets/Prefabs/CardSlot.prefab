@@ -375,7 +375,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -522,6 +522,8 @@ MonoBehaviour:
   _stackBadge: {fileID: 2753618455394084578}
   _stackText: {fileID: 6191253544684025675}
   _liveValueText: {fileID: 4992455089565781971}
+  _fitIconToSlot: 1
+  _iconPadding: 7
 --- !u!1 &8156138820759021746
 GameObject:
   m_ObjectHideFlags: 0
@@ -557,7 +559,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 76}
+  m_SizeDelta: {x: 0, y: 150}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &993307253675482716
 CanvasRenderer:

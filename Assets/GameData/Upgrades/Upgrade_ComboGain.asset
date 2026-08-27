@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_ComboGain
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_combo_gain
-  NameKey: Combo Gain Boost
-  DescriptionKey: More combo more score
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: -5177169228622864428, guid: 61de91709fd681c4798ff93436ab12a2, type: 3}
   UnlockStageIndex: 6
   MaxLevel: 5

@@ -25,9 +25,14 @@ namespace RogueBlockBlast.UI.FX
         private const float IconLiftY      = 2.5f;
 
         // ── Glow ─────────────────────────────────────────────────────────────
-        private static readonly Color GlowBlue = new Color(0.31f, 0.62f, 0.95f);
+        // Palet sarısı (#F0BB4C) — satın alma flash'ıyla aynı aileden.
+        private static readonly Color GlowColor = new Color(0.94f, 0.73f, 0.30f);
         private const float GlowAlpha    = 0.42f;
         private const float GlowPadding  = -14f;   // kart rect'inin dışına taşar
+
+        // Hale, slot boyutundan bağımsız olarak %10 küçültülür. Padding'i
+        // kısmak yerine ölçek kullanmak, farklı slot ölçülerinde de tam %10 verir.
+        private const float GlowScale    = 0.9f;
 
         // ── Shine ────────────────────────────────────────────────────────────
         private const float ShineInterval = 7f;    // ortalama bekleme (çok yavaş)
@@ -74,7 +79,8 @@ namespace RogueBlockBlast.UI.FX
         {
             // Dış mavi glow — kartın dışına taşar, içi boş halo olduğu için kartı yıkamaz.
             _glow = UIFXOverlay.CreateStretched(_rect, "FX_HoverGlow", UIFXSprites.OuterGlow, GlowPadding);
-            _glow.color = new Color(GlowBlue.r, GlowBlue.g, GlowBlue.b, 0f);
+            _glow.color = new Color(GlowColor.r, GlowColor.g, GlowColor.b, 0f);
+            _glow.rectTransform.localScale = Vector3.one * GlowScale;
             _glow.transform.SetAsFirstSibling();
 
             // Metalik parlama — kart sınırları içinde kırpılır.
@@ -232,7 +238,7 @@ namespace RogueBlockBlast.UI.FX
                 if (_restCached) _iconRect.anchoredPosition = _iconBasePos;
             }
 
-            if (_glow  != null) { _glow.DOKill();  _glow.color  = new Color(GlowBlue.r, GlowBlue.g, GlowBlue.b, 0f); }
+            if (_glow  != null) { _glow.DOKill();  _glow.color  = new Color(GlowColor.r, GlowColor.g, GlowColor.b, 0f); }
             if (_shine != null) { _shine.DOKill(); _shine.color = new Color(1f, 1f, 1f, 0f); }
             if (_flash != null) { _flash.DOKill(); _flash.color = new Color(GoldFlash.r, GoldFlash.g, GoldFlash.b, 0f); }
             if (_burst != null) { _burst.DOKill(); _burst.color = new Color(GoldFlash.r, GoldFlash.g, GoldFlash.b, 0f); }

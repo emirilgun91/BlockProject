@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Upgrade_CardReroll
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.UpgradeSO
   Id: upgrade_card_reroll
-  NameKey: Card Reroll
-  DescriptionKey: More chance to get new cards
+  NameKey: 
+  DescriptionKey: 
   Icon: {fileID: 375184529311429373, guid: cfd285c1cdeafe34fb3855ea7e0c7c75, type: 3}
   UnlockStageIndex: 5
   MaxLevel: 4

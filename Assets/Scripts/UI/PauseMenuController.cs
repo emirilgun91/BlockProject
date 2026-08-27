@@ -34,6 +34,10 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Button _mainMenuButton;
         [SerializeField] private Button _quitButton;
 
+        [Tooltip("Geri bildirim bağlantısı. Tıklama işini üstündeki " +
+                 "ExternalLinkButton yapar; burada yalnızca URL boşsa gizlenir.")]
+        [SerializeField] private Button _feedbackButton;
+
         [Header("Confirm Box")]
         [Tooltip("Çıkış onayı kutusu — GameSettings.ConfirmQuit açıkken kullanılır.")]
         [SerializeField] private GameObject _confirmBox;
@@ -123,7 +127,23 @@ namespace RogueBlockBlast.UI
 
             SetActive(_root, true);
             SetActive(_confirmBox, false);
+            RefreshFeedbackButton();
             _pending = PendingAction.None;
+        }
+
+        /// <summary>
+        /// Geri bildirim butonunu yalnızca bir URL tanımlıysa gösterir.
+        /// Adres henüz girilmemişken tıklanınca hiçbir şey yapmayan bir buton
+        /// göstermek, butonu hiç göstermemekten kötü.
+        /// </summary>
+        private void RefreshFeedbackButton()
+        {
+            if (_feedbackButton == null) return;
+
+            var link = _feedbackButton.GetComponent<ExternalLinkButton>();
+            bool hasUrl = link != null && !string.IsNullOrWhiteSpace(link.Url);
+
+            _feedbackButton.gameObject.SetActive(hasUrl);
         }
 
         public void Resume()

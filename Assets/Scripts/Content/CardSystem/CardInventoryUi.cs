@@ -38,6 +38,31 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _slotSize    = 68f;
         [SerializeField] private float _slotSpacing = 8f;
 
+        [Header("Auto Fit")]
+        [Tooltip("AÇIK (varsayılan): hücre boyutu ve sütun sayısı panelin GERÇEK " +
+                 "genişliğinden hesaplanır ve slotlar paneli düzgün doldurur.\n\n" +
+                 "Sabit hücre boyutu, panel yeniden skinlendiğinde ikonların minicik " +
+                 "kalmasına yol açıyordu. Auto-fit bunu kendiliğinden düzeltir.")]
+        [SerializeField] private bool _autoFit = true;
+
+        [Tooltip("Hedeflenen slot kenarı (px). Sütun sayısı buna en yakın düşecek " +
+                 "şekilde seçilir, sonra hücre paneli tam dolduracak biçimde büyütülür.")]
+        [SerializeField] private float _autoFitTargetSlot = 86f;
+
+        [SerializeField] private float _autoFitSpacing = 10f;
+
+        [Tooltip("Sütun sayısı sınırı. Panel çok genişse gereksiz sütun açılmasın.")]
+        [SerializeField] private int _autoFitMaxColumns = 4;
+
+        [Tooltip("Hücre kenarının izin verilen aralığı (px).")]
+        [SerializeField] private Vector2 _autoFitSlotRange = new Vector2(48f, 140f);
+
+        [Tooltip("Kenar boşluğu (px) — sol/sağ/üst.")]
+        [SerializeField] private float _autoFitPadding = 12f;
+
+        // Panel genişliği değiştiğinde yeniden hesaplamak için son ölçü.
+        private float _lastFitWidth = -1f;
+
         // ── State ────────────────────────────────────────────────────────────
         // CardSO.Id → (CardSO, count, SlotView)
         private readonly Dictionary<string, (CardSO card, int count, CardSlotView slot)>
@@ -69,6 +94,8 @@ namespace RogueBlockBlast.UI
             csf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
             csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
+            if (_autoFit) { ApplyAutoFit(force: true); return; }
+
             if (!_applyGridFromScript) return;
 
             var grid = _content.GetComponent<GridLayoutGroup>();
@@ -81,6 +108,64 @@ namespace RogueBlockBlast.UI
             grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
             grid.startAxis       = GridLayoutGroup.Axis.Horizontal;
             grid.childAlignment  = TextAnchor.UpperCenter;
+        }
+
+        private void LateUpdate()
+        {
+            if (_autoFit) ApplyAutoFit(force: false);
+        }
+
+        /// <summary>
+        /// Hücre boyutunu ve sütun sayısını panelin gerçek genişliğinden hesaplar.
+        ///
+        /// Sabit hücre boyutu yazmak, panel yeniden skinlendiğinde ikonların
+        /// minicik kalmasına yol açıyordu. Burada tersi yapılır: önce hedef slot
+        /// boyutuna en yakın sütun sayısı seçilir, sonra hücre paneli <b>tam
+        /// dolduracak</b> şekilde büyütülür. Kalan boşluk sıfıra iner.
+        ///
+        /// Genişlik değişmedikçe hiçbir şey yazılmaz — her frame layout
+        /// tetiklemenin maliyeti bu kontrolle ödenmez.
+        /// </summary>
+        private void ApplyAutoFit(bool force)
+        {
+            if (_content == null) return;
+
+            float width = _content.rect.width;
+
+            // Layout henüz çalışmamışsa ölçü güvenilmez; bir sonraki frame'e bırak.
+            if (width < 1f) return;
+            if (!force && Mathf.Abs(width - _lastFitWidth) < 0.5f) return;
+
+            _lastFitWidth = width;
+
+            var grid = _content.GetComponent<GridLayoutGroup>();
+            if (grid == null) grid = _content.gameObject.AddComponent<GridLayoutGroup>();
+
+            float pad       = Mathf.Max(0f, _autoFitPadding);
+            float spacing   = Mathf.Max(0f, _autoFitSpacing);
+            float available = width - pad * 2f;
+
+            if (available <= 1f) return;
+
+            // Hedef boyuta en yakın sütun sayısı.
+            int maxCols = Mathf.Max(1, _autoFitMaxColumns);
+            int columns = Mathf.Clamp(
+                Mathf.RoundToInt((available + spacing) / (_autoFitTargetSlot + spacing)),
+                1, maxCols);
+
+            // O sütun sayısıyla paneli tam dolduran hücre kenarı.
+            float cell = (available - (columns - 1) * spacing) / columns;
+            cell = Mathf.Clamp(cell, _autoFitSlotRange.x, _autoFitSlotRange.y);
+
+            grid.cellSize        = new Vector2(cell, cell + CardSlotView.LiveValueBandHeight);
+            grid.spacing         = new Vector2(spacing, spacing);
+            grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = columns;
+            grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis       = GridLayoutGroup.Axis.Horizontal;
+            // Yatayda ortalar — hücreler paneli tam doldurmasa da simetrik durur.
+            grid.childAlignment  = TextAnchor.UpperCenter;
+            grid.padding         = new RectOffset((int)pad, (int)pad, (int)pad, (int)pad);
         }
 
         // ── Public API ───────────────────────────────────────────────────────

@@ -79,8 +79,8 @@ namespace RogueBlockBlast.EditorTools
 
         static void LoadAssets()
         {
-            _bold    = FindFont("Eczar-Bold SDF") ?? FindFont("Eczar-SemiBold SDF");
-            _regular = FindFont("Eczar-Regular SDF") ?? _bold;
+            _bold    = FindFont("Exo2-Bold SDF") ?? FindFont("Exo2-SemiBold SDF");
+            _regular = FindFont("Exo2-Regular SDF") ?? _bold;
             _round   = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
         }
 

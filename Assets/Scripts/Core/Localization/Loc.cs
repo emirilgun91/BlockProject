@@ -65,6 +65,11 @@ namespace RogueBlockBlast.Core.Localization
                 !string.IsNullOrEmpty(saved) && _languages.Contains(saved) ? saved :
                 DetectSystemLanguage();
 
+            // Fallback zinciri dil YAZILMADAN önce dizilir; yazıldığı anda
+            // metinler yeniden çiziliyor ve o an doğru CJK fontu aktif olmalı.
+            CjkFontFallback.Reset();
+            CjkFontFallback.Apply(pick);
+
             SL.Language = pick;
             GameSettings.Language = pick;
 
@@ -78,11 +83,15 @@ namespace RogueBlockBlast.Core.Localization
             string native = Application.systemLanguage.ToString();
             if (_languages.Contains(native)) return native;
 
-            // Çince gibi ayrık varyantlar için elle eşleme
+            // Sütun adıyla birebir eşleşmeyen sistem dilleri için elle eşleme.
+            //
+            // Geleneksel Çince artık desteklenmiyor; o sistemleri İngilizce'ye
+            // düşürmek yerine Basitleştirilmiş Çince'ye yönlendiriyoruz —
+            // yazı sistemi farklı ama okunabilirlik İngilizce'den yüksek.
             string mapped = Application.systemLanguage switch
             {
                 SystemLanguage.ChineseSimplified  => "Chinese (Simplified)",
-                SystemLanguage.ChineseTraditional => "Chinese (Traditional)",
+                SystemLanguage.ChineseTraditional => "Chinese (Simplified)",
                 SystemLanguage.Chinese            => "Chinese (Simplified)",
                 SystemLanguage.Portuguese         => "Portuguese",
                 SystemLanguage.Spanish            => "Castilian Spanish",
@@ -99,6 +108,10 @@ namespace RogueBlockBlast.Core.Localization
             Init();
             if (string.IsNullOrEmpty(language) || !_languages.Contains(language)) return;
             if (language == SL.Language) return;
+
+            // Zincir önce dizilir — SL.Language ataması metinleri hemen
+            // yeniden çiziyor ve o anda doğru CJK fontu aktif olmalı.
+            CjkFontFallback.Apply(language);
 
             SL.Language = language;          // OnLocalizationChanged → OnChanged
             GameSettings.Language = language;

@@ -52,6 +52,28 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float         _cellSize = 20f;
         [SerializeField] private float         _cellGap  = 3f;
 
+        [Header("Preview — Background")]
+        [Tooltip("Şeklin arkasındaki taban görsel. Rengi şeklin renginin " +
+                 "koyu tonuna ayarlanır; sprite'ın kendi alfası korunur.")]
+        [SerializeField] private Image _shapeBackground;
+
+        [Tooltip("0 = şekil rengiyle aynı, 1 = siyah. Taban ne kadar koyulaşsın.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _backgroundDarken = 0.55f;
+
+        [Header("Preview — Shadow")]
+        [Tooltip("Şeklin birebir aynısı, siyah ve büyütülmüş hâlde arkaya çizilir.")]
+        [SerializeField] private bool _showShapeShadow = true;
+
+        [Tooltip("Gölgenin ölçeği. Merkezden büyür, yani her yönde eşit taşar.")]
+        [SerializeField] private float _shadowScale = 1.1f;
+
+        [Tooltip("Gölgenin kayması (px). Sıfır bırakılırsa kontur gibi durur; " +
+                 "aşağı kaydırmak gölge hissi verir.")]
+        [SerializeField] private Vector2 _shadowOffset = new Vector2(0f, -4f);
+
+        [SerializeField] private Color _shadowColor = new Color(0f, 0f, 0f, 0.55f);
+
         [Header("Lock")]
         [SerializeField] private GameObject _lockedOverlay;
 
@@ -317,9 +339,58 @@ namespace RogueBlockBlast.UI
             float totalW = w * _cellSize + (w - 1) * _cellGap;
             float totalH = h * _cellSize + (h - 1) * _cellGap;
 
+            // Taban görsel şeklin renginin koyu tonunu alır. Sprite'ın kendi
+            // alfası korunur — sanatçının verdiği saydamlık bozulmasın.
+            if (_shapeBackground != null)
+            {
+                var baseColor = Color.Lerp(_shape.BlockColor, Color.black, _backgroundDarken);
+                _shapeBackground.color = new Color(
+                    baseColor.r, baseColor.g, baseColor.b, _shapeBackground.color.a);
+            }
+
+            // Gölge önce kurulur ki kardeş sırasında arkada kalsın; UI'da
+            // önce eklenen önce çizilir.
+            if (_showShapeShadow)
+            {
+                var shadow = NewPreviewLayer("ShapeShadow");
+                shadow.localScale       = Vector3.one * _shadowScale;
+                shadow.anchoredPosition = _shadowOffset;
+
+                SpawnCells(shadow, minX, minY, totalW, totalH, _shadowColor);
+            }
+
+            var main = NewPreviewLayer("ShapeCells");
+            SpawnCells(main, minX, minY, totalW, totalH, _shape.BlockColor);
+        }
+
+        /// <summary>
+        /// Önizleme katmanı — container'ı birebir dolduran boş bir rect.
+        /// Hücre konumları parent'ın merkezine göre hesaplandığı için katmanın
+        /// container'la aynı ölçüde ve merkez pivotlu olması şart; aksi hâlde
+        /// mevcut yerleşim matematiği kayar.
+        /// </summary>
+        private RectTransform NewPreviewLayer(string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(_previewContainer, worldPositionStays: false);
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot     = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            return rect;
+        }
+
+        /// <summary>Şeklin hücrelerini verilen katmana, verilen renkte kurar.</summary>
+        private void SpawnCells(RectTransform layer, int minX, int minY,
+                                float totalW, float totalH, Color color)
+        {
             foreach (var c in _shape.Cells)
             {
-                var go   = Instantiate(_cellPrefab, _previewContainer);
+                var go   = Instantiate(_cellPrefab, layer);
                 var rect = go.GetComponent<RectTransform>();
 
                 rect.sizeDelta = new Vector2(_cellSize, _cellSize);
@@ -329,7 +400,7 @@ namespace RogueBlockBlast.UI
                 );
 
                 var img = go.GetComponent<Image>();
-                if (img != null) img.color = _shape.BlockColor;
+                if (img != null) img.color = color;
             }
         }
     }

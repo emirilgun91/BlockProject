@@ -31,6 +31,23 @@ namespace RogueBlockBlast.Core.Localization
             return Loc.GetOr($"Card.{Key(card.Id, card.name)}.Desc", card.Description);
         }
 
+        /// <summary>
+        /// Kartın alt kısmındaki efekt satırı.
+        ///
+        /// Anahtar şeması <c>Card.&lt;id&gt;.Effect&lt;sıra&gt;</c> — sıra 1'den başlar.
+        /// Sıra tabanlı olmasının bedeli, bir kartın efektleri yeniden
+        /// sıralanırsa metinlerin kayması; karşılığında asset'lere alan
+        /// eklemeden çalışıyor. Kartların çoğunda tek efekt var.
+        ///
+        /// Anahtar yoksa asset'teki metin döner — çeviri sırayla eklenebilir,
+        /// hiçbir aşamada boş satır görünmez.
+        /// </summary>
+        public static string EffectDescription(CardSO card, int index, string fallback)
+        {
+            if (card == null) return fallback;
+            return Loc.GetOr($"Card.{Key(card.Id, card.name)}.Effect{index}", fallback);
+        }
+
         // ── Upgrade ──────────────────────────────────────────────────────────
         public static string Name(UpgradeSO upgrade)
         {

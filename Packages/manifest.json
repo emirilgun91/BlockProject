@@ -55,7 +55,9 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.ivanmurzak.unity.mcp.particlesystem": "1.2.31",
+    "com.ivanmurzak.unity.mcp.inputsystem": "1.0.17"
   },
   "scopedRegistries": [
     {

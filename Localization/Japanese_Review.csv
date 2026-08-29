@@ -1,0 +1,269 @@
+Sheet,Key,English,Japanese
+Game,Card.Card_Bounty_Hunter.Name,Bounty Hunter,賞金稼ぎ
+Game,Card.Card_Bounty_Hunter.Desc,"Every line clear grants +1 Blockcoin, but all future Milestone targets rise by 20%.",ライン消去ごとに +1 Blockcoin。ただし以降の目標スコアが 20% 上がります。
+Game,Card.Card_Card_Collector.Name,Card Collector,カードコレクター
+Game,Card.Card_Card_Collector.Desc,Each card you own adds +0.02 to your global score multiplier.,所持カード 1 枚につき、全体スコア倍率が +0.02 されます。
+Game,Card.Card_Center_Base.Name,Center Base,センターベース
+Game,Card.Card_Center_Base.Desc,Each tile placed in the center 2x2 area grants +4 points.,中央 2x2 エリアに置いたブロック 1 つにつき +4 点。
+Game,Card.Card_Chain_Master.Name,Chain Master,チェインマスター
+Game,Card.Card_Chain_Master.Desc,Each consecutive clear permanently adds +0.02 to your combo gain.,連続でラインを消すたび、コンボ増加量が永続的に +0.02 されます。
+Game,Card.Card_Combo_Shield.Name,Combo Shield,コンボシールド
+Game,Card.Card_Combo_Shield.Desc,"Once per run, your combo survives when the charge bar empties.",1 ラン中 1 回、ゲージが空になってもコンボが維持されます。
+Game,Card.Card_Corner_Stone.Name,Corner Stone,コーナーストーン
+Game,Card.Card_Corner_Stone.Desc,Each tile placed on one of the four corners grants +3 points.,四隅のいずれかに置いたブロック 1 つにつき +3 点。
+Game,Card.Card_Decaying_Rift.Name,Decaying Rift,崩壊する亀裂
+Game,Card.Card_Decaying_Rift.Desc,"Every 7 shapes, a rift opens with a 5-placement countdown. Clear it for +2 pool shapes; let it hit 0 and the tile is blocked for the rest of the Milestone.",7 個ごとに亀裂が出現し、5 手のカウントダウンが始まります。消せば +2 ブロック、0 になるとその目標が終わるまでマスが封鎖されます。
+Game,Card.Diet_plan.Name,Diet Plan,ダイエット計画
+Game,Card.Diet_plan.Desc,"This Milestone only spawns size 2-3 shapes, but their scores drop by 20%.",この目標では 2〜3 マスのブロックのみ出現しますが、得点が 20% 下がります。
+Game,Card.Card_Double_Strike.Name,Double Strike,ダブルストライク
+Game,Card.Card_Double_Strike.Desc,Clearing 2 or more lines at once multiplies the score by 1.5.,2 ライン以上を同時に消すとスコアが 1.5 倍になります。
+Game,Card.Card_First_Picks.Name,First Picks,ファーストピック
+Game,Card.Card_First_Picks.Desc,"The first 5 shapes this Milestone are free, but cannot be rotated.",この目標の最初の 5 個は無料ですが、回転できません。
+Game,Card.Card_Future_Investment.Name,Future Investment,将来への投資
+Game,Card.Card_Future_Investment.Desc,Raises this Milestone's target by 20%. Clear it and the next target drops 15%.,現在の目標を 20% 引き上げます。達成すると次の目標が 15% 下がります。
+Game,Card.Card_Gambler.Name,Gambler,ギャンブラー
+Game,Card.Card_Gambler.Desc,Each placement has a 20% chance to double its score - or halve it.,配置ごとに 20% の確率で得点が 2 倍、または半分になります。
+Game,Card.Card_Ghost_Drop.Name,Ghost Drop,ゴーストドロップ
+Game,Card.Card_Ghost_Drop.Desc,A shape placed touching nothing is free. Works 3 times per Milestone.,何にも接していないブロックは無料。目標ごとに 3 回まで。
+Game,Card.Card_Heavy_Load.Name,Heavy Load,重い荷物
+Game,Card.Card_Heavy_Load.Desc,"Pool capacity +6 shapes, but global score multiplier -0.10.",ブロック所持数 +6、ただし全体スコア倍率 -0.10。
+Game,Card.Card_Hoarder.Name,Hoarder,溜め込み屋
+Game,Card.Card_Hoarder.Desc,Finish a Milestone with 15 or more shapes left to start the next one with +3 pool capacity.,ブロックを 15 個以上残して目標を達成すると、次の目標を所持数 +3 で始めます。
+Game,Card.Card_Hyperfocus.Name,Hyper Focus,ハイパーフォーカス
+Game,Card.Card_Hyperfocus.Desc,"Combo multiplier grows twice as fast, but every combo reset costs 2 shapes.",コンボ倍率の上昇が 2 倍になりますが、コンボが切れるたび 2 ブロック失います。
+Game,Card.Cart_Line_Master.Name,Line Master,ラインマスター
+Game,Card.Cart_Line_Master.Desc,Horizontal clears score 2.5x. Vertical clears score nothing but still hold the combo.,横のラインのみ 2.5 倍で得点。縦のラインは無得点ですがコンボは維持されます。
+Game,Card.Card_Momentum.Name,Momentum,勢い
+Game,Card.Card_Momentum.Desc,Every line you clear adds +0.05 to your combo multiplier gain.,ライン消去ごとにコンボ増加量が +0.05 されます。
+Game,Card.Card_Momentum_Shield.Name,Momentum Shield,モメンタムシールド
+Game,Card.Card_Momentum_Shield.Desc,"At 3x combo or higher, an unplaceable shape vanishes instead of ending the run. Your combo drops to minimum.",コンボ 3x 以上なら、置けないブロックはゲーム終了ではなく消滅します。コンボは最小値まで下がります。
+Game,Card.Card_Neon_Cable.Name,Neon Cable,ネオンケーブル
+Game,Card.Card_Neon_Cable.Desc,Two linked tiles appear on the board. Clearing one detonates the other and its neighbours for score. They move with every new draw.,連結された 2 マスが出現。片方を消すともう片方と周囲が爆発して得点になります。新しいブロックを引くたびに位置が変わります。
+Game,Card.Card_Patient.Name,Patient,忍耐
+Game,Card.Card_Patient.Desc,"After 3 placements without a clear, your next clear scores double.",ライン消去なしで 3 手経つと、次の消去が 2 倍得点になります。
+Game,Card.Card_Perfect_Clear.Name,Perfect Clear,パーフェクトクリア
+Game,Card.Card_Perfect_Clear.Desc,Emptying the entire board grants +100 Blockcoins and +2 combo.,盤面を完全に空にすると +100 Blockcoin と +2 コンボ。
+Game,Card.Card_Phantom_Cell.Name,Phantom Cell,ファントムセル
+Game,Card.Card_Phantom_Cell.Desc,A blocked tile counts as filled for line clears but scores nothing. It relocates each time its line is cleared.,封鎖マスはライン判定では埋まっている扱いですが得点にはなりません。消去のたび別の場所へ移動します。
+Game,Card.Card_Safe_Zone.Name,Safe Zone,セーフゾーン
+Game,Card.Card_Safe_Zone.Desc,Cover the marked tile to keep your combo from falling below 2x. Clearing that tile costs you 8 shapes.,印のマスを覆うとコンボが 2x 未満に下がりません。そのマスを消すと 8 ブロック失います。
+Game,Card.Card_Score_Multiplier.Name,Score Multiplier,スコア倍率
+Game,Card.Card_Score_Multiplier.Desc,All score you earn is increased by 10%.,獲得する得点がすべて 10% 増加します。
+Game,Card.Card_Selective_Blindness.Name,Selective Blindness,選択的盲目
+Game,Card.Card_Selective_Blindness.Desc,Single-line clears score 2x and remove 2 random blocks. Clearing 2 or more lines scores nothing.,1 ライン消しは 2 倍得点＋ランダムに 2 ブロック除去。2 ライン以上は得点なし。
+Game,Card.Card_Slow_Burn.Name,Slow Burn,スロウバーン
+Game,Card.Card_Slow_Burn.Desc,"The first 5 shapes score half, but the last 10 shapes in the pool score triple.",最初の 5 個は得点半減、所持ブロックの最後の 10 個は 3 倍になります。
+Game,Card.Card_Soft_Landing.Name,Soft Landing,ソフトランディング
+Game,Card.Card_Soft_Landing.Desc,"On a combo reset, the multiplier halves instead of dropping to minimum.",コンボが切れたとき、倍率は最小値ではなく半分になります。
+Game,Card.Cart_Tunnel_Vision.Name,Tunnel Vision,トンネルビジョン
+Game,Card.Cart_Tunnel_Vision.Desc,Vertical clears score 2.5x. Horizontal clears score nothing but still hold the combo.,縦のラインのみ 2.5 倍で得点。横のラインは無得点ですがコンボは維持されます。
+Game,Card.Card_Wide_Pool.Name,Wide Pool,ワイドプール
+Game,Card.Card_Wide_Pool.Desc,Maximum pool capacity is increased by 6 shapes.,最大所持ブロック数が 6 増えます。
+Game,Card.Card_Shape_4gen.Name,4Gen,4Gen
+Game,Card.Card_Shape_4gen.Desc,"4Gen tiles score +2, but 4Gen appears 5% less often.",4Gen のブロックは +2 点、ただし 4Gen の出現率が 5% 下がります。
+Game,Card.Card_Shape_6Sq.Name,6Square,6スクエア
+Game,Card.Card_Shape_6Sq.Desc,"6Square tiles score +2, but 6Square appears 5% less often.",6スクエア のブロックは +2 点、ただし 6スクエア の出現率が 5% 下がります。
+Game,Card.Card_Shape_C.Name,C,C
+Game,Card.Card_Shape_C.Desc,"C tiles score +4, but C appears 8% less often.",C のブロックは +4 点、ただし C の出現率が 8% 下がります。
+Game,Card.Card_Shape_Cross.Name,Cross,クロス
+Game,Card.Card_Shape_Cross.Desc,"Cross tiles score +2, but Cross appears 3% less often.",クロス のブロックは +2 点、ただし クロス の出現率が 3% 下がります。
+Game,Card.Card_Shape_Dot.Name,Dot,ドット
+Game,Card.Card_Shape_Dot.Desc,"Dot tiles score +8, but Dot appears 3% less often.",ドット のブロックは +8 点、ただし ドット の出現率が 3% 下がります。
+Game,Card.Card_Shape_I3.Name,I3,I3
+Game,Card.Card_Shape_I3.Desc,"I3 tiles score +2, but I3 appears 5% less often.",I3 のブロックは +2 点、ただし I3 の出現率が 5% 下がります。
+Game,Card.Card_Shape_I4.Name,I4,I4
+Game,Card.Card_Shape_I4.Desc,"I4 tiles score +2, but I4 appears 7% less often.",I4 のブロックは +2 点、ただし I4 の出現率が 7% 下がります。
+Game,Card.Card_Shape_J.Name,J,J
+Game,Card.Card_Shape_J.Desc,"J tiles score +5, but J appears 7% less often.",J のブロックは +5 点、ただし J の出現率が 7% 下がります。
+Game,Card.Card_Shape_L.Name,L,L
+Game,Card.Card_Shape_L.Desc,"L tiles score +5, but L appears 10% less often.",L のブロックは +5 点、ただし L の出現率が 10% 下がります。
+Game,Card.Card_Shape_LongL.Name,Long L,ロングL
+Game,Card.Card_Shape_LongL.Desc,"Long L tiles score +3, but Long L appears 12% less often.",ロングL のブロックは +3 点、ただし ロングL の出現率が 12% 下がります。
+Game,Card.Card_Shape_O.Name,O,O
+Game,Card.Card_Shape_O.Desc,"O tiles score +2, but O appears 5% less often.",O のブロックは +2 点、ただし O の出現率が 5% 下がります。
+Game,Card.Card_Shape_S.Name,S,S
+Game,Card.Card_Shape_S.Desc,"S tiles score +2, but S appears 5% less often.",S のブロックは +2 点、ただし S の出現率が 5% 下がります。
+Game,Card.Card_Shape_T.Name,T,T
+Game,Card.Card_Shape_T.Desc,"T tiles score +3, but T appears 5% less often.",T のブロックは +3 点、ただし T の出現率が 5% 下がります。
+Game,Card.Card_Shape_Z.Name,Z,Z
+Game,Card.Card_Shape_Z.Desc,"Z tiles score +3, but Z appears 8% less often.",Z のブロックは +3 点、ただし Z の出現率が 8% 下がります。
+Game,Pause.Title,PAUSED,一時停止
+Game,Pause.Resume,RESUME,再開
+Game,Pause.Settings,SETTINGS,設定
+Game,Pause.MainMenu,MAIN MENU,メインメニュー
+Game,Pause.Quit,QUIT TO DESKTOP,ゲームを終了
+Game,GameOver.Reason.NoMoves,NO MOVES LEFT,手がありません
+Game,GameOver.Reason.PoolExhausted,POOL EXHAUSTED,ブロック切れ
+Game,GameOver.Reason.CannotPlace,SHAPE CANNOT BE PLACED,配置できません
+Game,GameOver.Reason.Default,GAME OVER,ゲームオーバー
+Game,Card.Card_Safe_Zone.Broken,SAFE ZONE BROKEN  -{0} SHAPES,セーフゾーン破壊  -{0} ブロック
+Game,Toast.NotEnoughCoins,NOT ENOUGH BLOCKCOINS,BLOCKCOINが足りません
+Game,Toast.ScoreUpgraded,{0} base score upgraded!,{0} の基本ポイントを強化しました！
+Game,Toast.WeightIncreased,{0} appears more often now!,{0} の出現率が上がりました！
+Game,Toast.WeightDecreased,{0} appears less often now.,{0} の出現率が下がりました。
+Game,Toast.ShapeUnlocked,{0} UNLOCKED!,{0} をアンロック！
+Game,Toast.UpgradeBought,{0} upgraded!,{0} を強化しました！
+Game,Toast.UpgradeSold,{0} refunded.,{0} を返品しました。
+Game,Toast.SellFailed,COULD NOT REFUND,返品できません
+Game,Popup.DoubleStrike,DOUBLE STRIKE  x{0},ダブルストライク  x{0}
+Game,Popup.GambleWon,GAMBLE WON  x{0},ギャンブル成功  x{0}
+Game,Popup.GambleLost,GAMBLE LOST  x{0},ギャンブル失敗  x{0}
+Game,Popup.Patience,PATIENCE  x{0},忍耐  x{0}
+Game,GameOver.Explain.NoMoves,None of your shapes fit on the board anymore.,どのブロックも盤面に置けません。
+Game,GameOver.Explain.PoolExhausted,You ran out of shapes before reaching the milestone.,目標に到達する前にブロックが尽きました。
+Game,GameOver.Explain.CannotPlace,First Picks blocked rotation and nothing fits as drawn.,First Picks で回転が封じられ、そのままでは置けません。
+Game,GameOver.Explain.Default,Your run has ended.,ランが終了しました。
+Game,Shape.Shape_Dot.Name,Dot,ドット
+Game,Shape.Shape_I3.Name,I3,I3
+Game,Shape.Shape_I4.Name,I4,I4
+Game,Shape.Shape_O.Name,O,O
+Game,Shape.Shape_T.Name,T,T
+Game,Shape.Shape_S.Name,S,S
+Game,Shape.Shape_Z.Name,Z,Z
+Game,Shape.Shape_L.Name,L,L
+Game,Shape.Shape_J.Name,J,J
+Game,Shape.Shape_C.Name,C,C
+Game,Shape.Shape_LongL.Name,Long L,ロングL
+Game,Shape.Shape_Cross.Name,Cross,クロス
+Game,Shape.Shape_4Gen.Name,4Gen,4Gen
+Game,Shape.Shape_6Sq.Name,6Square,6スクエア
+Game,DemoEnd.Title,THANKS FOR PLAYING,プレイしてくれてありがとう
+Game,DemoEnd.Body,"You have reached the end of the demo. If you enjoyed it, adding the game to your wishlist helps a lot. Share your thoughts and suggestions with the feedback button.",デモはここまでです。気に入っていただけたら、ウィッシュリストへの追加がとても励みになります。ご意見やご提案はフィードバックボタンからお寄せください。
+Game,DemoEnd.MainMenu,BACK TO MENU,メニューに戻る
+Game,DemoEnd.Wishlist,ADD TO WISHLIST,ウィッシュリストに追加
+Game,DemoEnd.Feedback,SEND FEEDBACK,フィードバックを送る
+Game,Pause.Feedback,SEND FEEDBACK,フィードバックを送る
+Game,Milestone.Title,MILESTONE,目標
+Game,Milestone.PiecesLeft,{0} left,残り {0}
+Game,Milestone.NewCard,New Card Earned!,新しいカードを獲得！
+Game,Card.Card_Card_Collector.Effect1,Global multiplier +0.02 per owned card,所持カード1枚ごとに全体倍率 +0.02
+Game,Card.Card_Center_Base.Effect1,+4 score per center tile,中央マス1つにつき +4 点
+Game,Card.Card_Chain_Master.Effect1,Combo gain +0.02 per chained clear,連続でライン消去するごとにコンボ増加量 +0.02
+Game,Card.Card_Combo_Shield.Effect1,Blocks one combo reset per run,1 プレイにつき 1 回コンボリセットを防ぐ
+Game,Card.Card_Corner_Stone.Effect1,+3 score per corner tile,角マス1つにつき +3 点
+Game,Card.Card_Double_Strike.Effect1,2+ line clears score x1.5,2 ライン以上同時消しで得点 x1.5
+Game,Card.Card_Heavy_Load.Effect1,"Pool limit +6, global multiplier -0.10",所持数 +6、全体倍率 -0.10
+Game,Card.Card_Momentum.Effect1,Combo gain +0.05 per clear,ライン消去ごとにコンボ増加量 +0.05
+Game,Card.Card_Patient.Effect1,Score x2 after 3 clear-less placements,ライン消去なしの 3 手後に得点 x2
+Game,Card.Card_Score_Multiplier.Effect1,Global score multiplier +0.10,全体スコア倍率 +0.10
+Game,Card.Card_Wide_Pool.Effect1,Pool limit +6,所持数 +6
+MainMenu,ShapeShop.Header.Title,Shape Shop,シェイプショップ
+MainMenu,ShapeCard.ScoreLabel,Base Point,基本ポイント
+MainMenu,ShapeCard.WeightLabel,Spawn Rate,出現率
+MainMenu,ShapeCard.Unlock,UNLOCK,アンロック
+MainMenu,CardView.SelectButton,SELECT,選択
+MainMenu,ComboBoard.Combo,COMBO,コンボ
+MainMenu,GameOver.RunEnd,Run Ended,ラン終了
+MainMenu,GameOver.GameOverTxt,YOU LOSE,ゲームオーバー
+MainMenu,GameOver.FinalScore,FINAL SCORE,最終スコア
+MainMenu,GameOver.NewRecord,NEW RECORD,新記録
+MainMenu,GameOver.BestScore,BEST SCORE,ベストスコア
+MainMenu,GameOver.Lines,CLEAR,消去
+MainMenu,GameOver.Pieces,SHAPES,ブロック
+MainMenu,GameOver.MaxCombo,MAX COMBO,最大コンボ
+MainMenu,GameOver.Coin,EARNED COIN,獲得コイン
+MainMenu,GameOver.NewRun,NEW RUN,新しいラン
+MainMenu,GameOver.MainMenu,MAIN MENU,メインメニュー
+MainMenu,ScoreBoard.ScoreText,SCORE,スコア
+MainMenu,MainMenu.NewRun,NEW RUN,新しいラン
+MainMenu,MainMenu.Upgrades,UPGRADES,アップグレード
+MainMenu,MainMenu.ShapeShop,SHAPE SHOP,シェイプショップ
+MainMenu,MainMenu.Settings,SETTINGS,設定
+MainMenu,MainMenu.Quit,QUIT,終了
+MainMenu,LastRunPanel.Title,LAST RUN,前回のラン
+MainMenu,LastRunPanel.Countdown,0 Seconds Later..,0 秒後...
+MainMenu,UpgradePanel.Title,UPGRADES,アップグレード
+MainMenu,UpgradePanel.Empty.Title,CHOOSE ONE,1つ選択
+MainMenu,UpgradePanel.Empty.Desc,Upgrades makes your score higher.,アップグレードでスコアが上がります。
+MainMenu,UpgradePanel.BuyTxt,BUY,購入
+MainMenu,UpgradePanel.SellTxt,SELL,売却
+MainMenu,UpgradeSlot.OwnedTxt,OWNED,所持済み
+MainMenu,Upgrade.upgrade_pool_capacity.Name,Pool Capacity,所持数アップ
+MainMenu,Upgrade.upgrade_pool_capacity.Desc,Each level adds 2 shapes to your pool.,1 レベルごとに所持ブロックが 2 個増えます。
+MainMenu,Upgrade.upgrade_pool_reroll.Name,Pool Reroll,所持ブロック引き直し
+MainMenu,Upgrade.upgrade_pool_reroll.Desc,Each level grants one pool reroll per run.,1 レベルごとに 1 回 所持ブロックを引き直せます。
+MainMenu,Upgrade.upgrade_card_reroll.Name,Card Reroll,カード引き直し
+MainMenu,Upgrade.upgrade_card_reroll.Desc,Each level grants one card reroll per run.,1 レベルごとに 1 回 カードを引き直せます。
+MainMenu,Upgrade.upgrade_combo_gain.Name,Combo Gain,コンボ増加量
+MainMenu,Upgrade.upgrade_combo_gain.Desc,Each level adds 0.03 to the combo gained per line clear.,1 レベルごとにライン消去で得るコンボが 0.03 増えます。
+MainMenu,Upgrade.upgrade_dead_pool_revive.Name,Second Wind,再起のチャンス
+MainMenu,Upgrade.upgrade_dead_pool_revive.Desc,Each level refills the pool once instead of ending the run.,1 レベルごとに 1 回 ゲームオーバーの代わりに所持ブロックが補充されます。
+MainMenu,Upgrade.upgrade_combo_bar.Name,Combo Bar,コンボゲージ
+MainMenu,Upgrade.upgrade_combo_bar.Desc,Each level adds one charge slot so your combo holds longer.,1 レベルごとにゲージが 1 段増えコンボが長く続きます。
+MainMenu,Upgrade.upgrade_coin_gain.Name,Coin Gain,コイン獲得量
+MainMenu,Upgrade.upgrade_coin_gain.Desc,Each level earns 4% more coins from every Milestone.,1 レベルごとに目標達成時のコインが 4% 増えます。
+MainMenu,Upgrade.upgrade_starting_combo.Name,Combo Power,コンボ初期値
+MainMenu,Upgrade.upgrade_starting_combo.Desc,Each level starts your run with 0.1 more combo multiplier.,1 レベルごとにコンボ倍率 0.1 高い状態で開始します。
+Settings,Language.English,English,English
+Settings,Language.Turkish,Türkçe,Türkçe
+Settings,Language.German,Deutsch,Deutsch
+Settings,Settings.Title,SETTINGS,設定
+Settings,Settings.Section.Audio,AUDIO,オーディオ
+Settings,Settings.Section.Display,DISPLAY,画面
+Settings,Settings.Section.Gameplay,GAMEPLAY,ゲームプレイ
+Settings,Settings.Section.Accessibility,ACCESSIBILITY,アクセシビリティ
+Settings,Settings.Section.Language,LANGUAGE,言語
+Settings,Settings.Section.Data,DATA,データ
+Settings,Settings.Audio.Master,Master Volume,マスター音量
+Settings,Settings.Audio.Music,Music,音楽
+Settings,Settings.Audio.Sfx,Sound Effects,効果音
+Settings,Settings.Audio.Mute,Mute All,すべてミュート
+Settings,Settings.Audio.MuteUnfocused,Mute When Minimized,バックグラウンドでミュート
+Settings,Settings.Display.Fullscreen,Fullscreen,フルスクリーン
+Settings,Settings.Display.Resolution,Resolution,解像度
+Settings,Settings.Display.VSync,V-Sync,垂直同期
+Settings,Settings.Display.VSync.Off,Off,オフ
+Settings,Settings.Display.VSync.Every,Every Frame,毎フレーム
+Settings,Settings.Display.VSync.Half,Every 2nd Frame,2フレームごと
+Settings,Settings.Display.FpsLimit,Frame Rate Limit,フレームレート上限
+Settings,Settings.Display.ShowFps,Show FPS Counter,FPS表示
+Settings,Settings.Gameplay.Ghost,Placement Preview,配置プレビュー
+Settings,Settings.Gameplay.Ghost.Tip,Shows where the shape will land.,ブロックが置かれる位置を表示します。
+Settings,Settings.Gameplay.Highlight,Highlight Clearing Lines,消えるラインを強調
+Settings,Settings.Gameplay.Grid,Grid Lines,グリッド線
+Settings,Settings.Gameplay.ConfirmQuit,Confirm Before Quitting,終了前に確認
+Settings,Settings.Gameplay.Haptics,Vibration,振動
+Settings,Settings.Gameplay.DragOffset,Touch Drag Offset,タッチのずれ
+Settings,Settings.Gameplay.DragOffset.Tip,Lifts the shape above your finger.,ブロックを指の上に持ち上げます。
+Settings,Settings.Access.ReduceMotion,Reduce Motion,モーションを減らす
+Settings,Settings.Access.ReduceMotion.Tip,Disables screen shake and heavy animation.,画面の揺れと激しいアニメーションを無効にします。
+Settings,Settings.Access.ReduceFlashing,Reduce Flashing,点滅を減らす
+Settings,Settings.Access.ScreenShake,Screen Shake,画面の揺れ
+Settings,Settings.Access.Vfx,Effect Intensity,エフェクト強度
+Settings,Settings.Access.Colorblind,Colorblind Mode,色覚サポート
+Settings,Settings.Access.Colorblind.None,Off,オフ
+Settings,Settings.Access.Colorblind.Protanopia,Protanopia,1型色覚
+Settings,Settings.Access.Colorblind.Deuteranopia,Deuteranopia,2型色覚
+Settings,Settings.Access.Colorblind.Tritanopia,Tritanopia,3型色覚
+Settings,Settings.Access.Colorblind.HighContrast,High Contrast,ハイコントラスト
+Settings,Settings.Access.UiScale,Interface Scale,UIの大きさ
+Settings,Settings.Access.LargeText,Large Text,大きな文字
+Settings,Settings.Data.ResetSettings,RESET SETTINGS,設定をリセット
+Settings,Settings.Data.ResetProgress,RESET ALL PROGRESS,進行状況をすべて削除
+Settings,Settings.Data.ResetProgress.Warn,"This deletes your Blockcoins, upgrades and unlocks. This cannot be undone.",Blockcoin、アップグレード、アンロックがすべて削除されます。取り消せません。
+Settings,Settings.Data.ResetDone,Progress reset.,進行状況をリセットしました。
+Settings,Settings.Apply,APPLY,適用
+Settings,Settings.Cancel,CANCEL,キャンセル
+Settings,Settings.Unlimited,Unlimited,無制限
+Settings,Dialog.QuitRun.Title,Quit this run?,このランを終了しますか？
+Settings,Dialog.QuitRun.Body,Your current run will be lost.,現在のランは失われます。
+Settings,Dialog.QuitGame.Title,Quit game?,ゲームを終了しますか？
+Settings,Dialog.Yes,YES,はい
+Settings,Dialog.No,NO,いいえ
+Settings,Common.ComingSoon,COMING SOON,近日公開
+Settings,Upgrades.Empty.Title,SELECT AN ITEM,項目を選択
+Settings,Upgrades.Empty.Desc,Pick an upgrade above to see its details.,上のアップグレードを選ぶと詳細が表示されます。
+Settings,Upgrades.LockedStage,Stage {0},ステージ {0}
+Settings,Common.Max,MAX,最大
+Settings,Language.French,Français,Français
+Settings,Language.Castilian Spanish,Español,Español
+Settings,Language.Italian,Italiano,Italiano
+Settings,Language.Portuguese,Português,Português
+Settings,Language.Russian,Русский,Русский
+Settings,Language.Polish,Polski,Polski
+Settings,Language.Japanese,日本語,日本語
+Settings,Language.Korean,한국어,한국어
+Settings,Language.Chinese (Simplified),简体中文,简体中文
+Settings,Language.Norwegian,Norsk,Norsk
+Settings,Language.Portuguese (Brazil),Português (Brasil),Português (Brasil)
+Settings,Language.Spanish (Latin America),Español (Latinoamérica),Español (Latinoamérica)

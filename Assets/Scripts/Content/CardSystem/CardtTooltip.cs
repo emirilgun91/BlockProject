@@ -68,21 +68,31 @@ namespace RogueBlockBlast.UI
             // Effect özeti
             if (_effectText != null)
             {
-                if (card.Effects != null && card.Effects.Count > 0)
+                var sb = new System.Text.StringBuilder();
+
+                if (card.Effects != null)
                 {
-                    var sb = new System.Text.StringBuilder();
-                    foreach (var e in card.Effects)
+                    for (int i = 0; i < card.Effects.Count; i++)
                     {
-                        if (!string.IsNullOrWhiteSpace(e.Description))
-                            sb.AppendLine($"▸  {e.Description}");
+                        // Anahtar sırası 1'den başlar; asset'teki metin yedek
+                        // olarak geçilir, böylece çevirisi olmayan efekt boş
+                        // kalmaz.
+                        string line = ContentLocalization.EffectDescription(
+                            card, i + 1, card.Effects[i].Description);
+
+                        if (!string.IsNullOrWhiteSpace(line))
+                            sb.AppendLine($"▸  {line}");
                     }
-                    _effectText.text    = sb.ToString().TrimEnd();
-                    _effectText.gameObject.SetActive(true);
                 }
-                else
-                {
-                    _effectText.gameObject.SetActive(false);
-                }
+
+                // Efekt listesi dolu ama açıklamaları boş olabilir — şu an tüm
+                // kartlarda öyle. Eskiden bu durumda boş bir yazı nesnesi açık
+                // kalıyor ve tooltip'te yer kaplıyordu; ölçüte metnin kendisi
+                // alınmalı, efekt sayısı değil.
+                string effects = sb.ToString().TrimEnd();
+
+                _effectText.text = effects;
+                _effectText.gameObject.SetActive(effects.Length > 0);
             }
 
             _canvasGroup.alpha          = 1f;

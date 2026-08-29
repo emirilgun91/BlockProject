@@ -152,7 +152,7 @@ namespace RogueBlockBlast.UI
             int sellCost = level > 0 ? upgrade.GetCostForLevel(level) / 2 : 0;
 
             if (_buyPriceText  != null)
-                _buyPriceText.text  = maxed ? Loc.Get("Shop.MaxLevel") : buyCost.ToString("N0");
+                _buyPriceText.text  = maxed ? Loc.Get("Common.Max") : buyCost.ToString("N0");
 
             if (_sellPriceText != null)
                 _sellPriceText.text = level > 0 ? sellCost.ToString("N0") : "—";

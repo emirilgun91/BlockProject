@@ -301,7 +301,10 @@ namespace RogueBlockBlast.EditorTools
 
         private static int MigrateScenes(Dictionary<TMP_FontAsset, TMP_FontAsset> map)
         {
-            var guids   = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" });
+            // Yalnızca gerçek oyun sahneleri. "Assets" altını taramak
+            // _Recovery klasöründeki onlarca çökme yedeğini de açıp kaydederdi —
+            // hem gereksiz hem de git'te kafa karıştırıcı bir fark üretirdi.
+            var guids   = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes" });
             int changed = 0;
 
             for (int i = 0; i < guids.Length; i++)

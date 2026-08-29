@@ -102,8 +102,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 1
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 1193dd051a267444bbc0881228933c90, type: 2}
+  m_sharedMaterial: {fileID: -7464505926706589636, guid: 1193dd051a267444bbc0881228933c90, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -229,6 +229,8 @@ MonoBehaviour:
   _selectionFrame: {fileID: 5553968716205359604}
   _fitPadding: 0.8
   _entranceDuration: 0.3
+  _selectedPulseAmount: 0.05
+  _selectedPulseSpeed: 0.55
 --- !u!1 &4379199536092709246
 GameObject:
   m_ObjectHideFlags: 0

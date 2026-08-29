@@ -22,9 +22,17 @@ namespace RogueBlockBlast.Game
     /// </summary>
     public sealed class DebugPanel : MonoBehaviour
     {
+        // Panel kapalı. Geri açmak için DEBUG_PANEL define'ini ekle (ya da Enabled'ı true yap).
+#if DEBUG_PANEL
+        private const bool Enabled = true;
+#else
+        private const bool Enabled = false;
+#endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
+            if (!Enabled) return;
             if (FindFirstObjectByType<DebugPanel>() != null) return;
             var go = new GameObject("[DebugPanel]");
             go.AddComponent<DebugPanel>();

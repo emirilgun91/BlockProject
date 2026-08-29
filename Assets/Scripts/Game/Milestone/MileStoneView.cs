@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Core;
 using TMPro;
 using UnityEngine;
@@ -61,11 +62,22 @@ namespace RogueBlockBlast.UI
         [SerializeField] private TMP_Text _newCardText;        // "New Card Earned!" yazacak TMP
         [SerializeField] private float    _newCardShowDuration = 2.5f;
 
+        [Header("Title")]
+        [Tooltip("Panelin 'MILESTONE' başlığı. Sahnede gömülü metin yerine " +
+                 "buradan yazılır ki dil değişiminde yenilenebilsin.")]
+        [SerializeField] private TMP_Text _titleText;
+
         [SerializeField] private AudioClip MilestoneReach;
         // ── Runtime ──────────────────────────────────────────────────────────
         private MilestoneSystem _system;
         private Sequence        _milestoneSequence;
         private Sequence        _newCardSequence;
+
+        // Dil değişiminde metinleri yeniden yazabilmek için son durum saklanır.
+        // Aksi hâlde başlık ve "N kaldı" bir sonraki yerleştirmeye kadar eski
+        // dilde kalırdı — başlık ise hiç güncellenmezdi.
+        private MilestoneProgressState _lastState;
+        private bool                   _hasState;
 
         // ── Public API ───────────────────────────────────────────────────────
         public void Bind(MilestoneSystem system)
@@ -75,6 +87,13 @@ namespace RogueBlockBlast.UI
 
             _system = system;
             _system.OnProgressChanged += HandleProgressChanged;
+
+            Loc.OnChanged -= HandleLanguageChanged;
+            Loc.OnChanged += HandleLanguageChanged;
+
+            // Başlık ilk durum gelmeden de doğru dilde görünsün.
+            if (_titleText != null)
+                _titleText.text = Loc.Get("Milestone.Title");
         }
 
         private void OnDestroy()
@@ -82,13 +101,24 @@ namespace RogueBlockBlast.UI
             if (_system != null)
                 _system.OnProgressChanged -= HandleProgressChanged;
 
+            Loc.OnChanged -= HandleLanguageChanged;
+
             _milestoneSequence?.Kill();
             _newCardSequence?.Kill();
+        }
+
+        private void HandleLanguageChanged()
+        {
+            if (_hasState) UpdateTexts(_lastState);
+            else if (_titleText != null) _titleText.text = Loc.Get("Milestone.Title");
         }
 
         // ── Handler ──────────────────────────────────────────────────────────
         private void HandleProgressChanged(MilestoneProgressState state)
         {
+            _lastState = state;
+            _hasState  = true;
+
             UpdateFill(state);
             UpdateTexts(state);
         }
@@ -117,18 +147,28 @@ namespace RogueBlockBlast.UI
         // ── Texts ─────────────────────────────────────────────────────────────
         private void UpdateTexts(MilestoneProgressState state)
         {
+            // Başlık sabit bir etiket ama dil değişince yenilenmeli; bu yüzden
+            // sahnede gömülü metin yerine burada yazılıyor.
+            if (_titleText != null)
+                _titleText.text = Loc.Get("Milestone.Title");
+
             if (_thresholdText != null)
             {
+                // "MAX" üç yerde geçiyor (upgrade paneli, shape shop, burası) —
+                // hepsi tek anahtarı paylaşır.
                 _thresholdText.text = state.AllCleared
-                    ? "MAX"
+                    ? Loc.Get("Common.Max")
                     : state.NextThreshold.ToString("N0");
             }
 
             if (_piecesText != null)
             {
+                // Sayı ile kelimenin sırası dile göre değişiyor
+                // ("{0} kaldı" ama "pozostało {0}"), o yüzden biçim dizesi
+                // çeviriden geliyor — string birleştirme yapılmaz.
                 _piecesText.text = state.AllCleared
                     ? string.Empty
-                    : $"{state.PiecesRemaining} left";
+                    : Loc.Get("Milestone.PiecesLeft", state.PiecesRemaining);
             }
         }
 
@@ -138,7 +178,9 @@ namespace RogueBlockBlast.UI
 
             _newCardSequence?.Kill();
 
-            _newCardText.text  = $"New Card Earned!\n<size=80%>{cardName}</size>";
+            // Zengin metin sarmalayıcısı kodda kalır, çeviriye yalnızca cümle
+            // girer — CSV'ye rich text koymak çevirmenin bozabileceği bir yüzey açar.
+            _newCardText.text  = $"{Loc.Get("Milestone.NewCard")}\n<size=80%>{cardName}</size>";
             _newCardText.alpha = 0f;
             _newCardText.gameObject.SetActive(true);
 

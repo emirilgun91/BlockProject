@@ -1,0 +1,269 @@
+Sheet,Key,English,Chinese (Simplified)
+Game,Card.Card_Bounty_Hunter.Name,Bounty Hunter,赏金猎人
+Game,Card.Card_Bounty_Hunter.Desc,"Every line clear grants +1 Blockcoin, but all future Milestone targets rise by 20%.",每消除一行获得 +1 Blockcoin，但之后所有目标分数提高 20%。
+Game,Card.Card_Card_Collector.Name,Card Collector,集卡者
+Game,Card.Card_Card_Collector.Desc,Each card you own adds +0.02 to your global score multiplier.,每拥有一张卡牌，全局分数倍率 +0.02。
+Game,Card.Card_Center_Base.Name,Center Base,中心基地
+Game,Card.Card_Center_Base.Desc,Each tile placed in the center 2x2 area grants +4 points.,放在中央 2x2 区域的每个方块 +4 分。
+Game,Card.Card_Chain_Master.Name,Chain Master,连锁大师
+Game,Card.Card_Chain_Master.Desc,Each consecutive clear permanently adds +0.02 to your combo gain.,每次连续消行都会永久提升连击增益 0.02。
+Game,Card.Card_Combo_Shield.Name,Combo Shield,连击护盾
+Game,Card.Card_Combo_Shield.Desc,"Once per run, your combo survives when the charge bar empties.",每局一次，能量条清空时连击不会中断。
+Game,Card.Card_Corner_Stone.Name,Corner Stone,基石
+Game,Card.Card_Corner_Stone.Desc,Each tile placed on one of the four corners grants +3 points.,放在四个角落的每个方块 +3 分。
+Game,Card.Card_Decaying_Rift.Name,Decaying Rift,衰变裂隙
+Game,Card.Card_Decaying_Rift.Desc,"Every 7 shapes, a rift opens with a 5-placement countdown. Clear it for +2 pool shapes; let it hit 0 and the tile is blocked for the rest of the Milestone.",每放置 7 个方块出现一道裂隙，倒数 5 步。消除它可获得 +2 方块；归零则该格封锁至本目标结束。
+Game,Card.Diet_plan.Name,Diet Plan,减肥计划
+Game,Card.Diet_plan.Desc,"This Milestone only spawns size 2-3 shapes, but their scores drop by 20%.",本目标只出现 2-3 格的方块，但它们的分数降低 20%。
+Game,Card.Card_Double_Strike.Name,Double Strike,双重打击
+Game,Card.Card_Double_Strike.Desc,Clearing 2 or more lines at once multiplies the score by 1.5.,一次消除 2 行或以上，分数 ×1.5。
+Game,Card.Card_First_Picks.Name,First Picks,首选
+Game,Card.Card_First_Picks.Desc,"The first 5 shapes this Milestone are free, but cannot be rotated.",本目标的前 5 个方块免费，但不能旋转。
+Game,Card.Card_Future_Investment.Name,Future Investment,未来投资
+Game,Card.Card_Future_Investment.Desc,Raises this Milestone's target by 20%. Clear it and the next target drops 15%.,当前目标提高 20%。若达成，下个目标降低 15%。
+Game,Card.Card_Gambler.Name,Gambler,赌徒
+Game,Card.Card_Gambler.Desc,Each placement has a 20% chance to double its score - or halve it.,每次放置有 20% 概率使分数翻倍——或减半。
+Game,Card.Card_Ghost_Drop.Name,Ghost Drop,幽灵放置
+Game,Card.Card_Ghost_Drop.Desc,A shape placed touching nothing is free. Works 3 times per Milestone.,不接触任何方块的放置免费。每目标 3 次。
+Game,Card.Card_Heavy_Load.Name,Heavy Load,重负
+Game,Card.Card_Heavy_Load.Desc,"Pool capacity +6 shapes, but global score multiplier -0.10.",方块储备 +6，但全局分数倍率 -0.10。
+Game,Card.Card_Hoarder.Name,Hoarder,囤积者
+Game,Card.Card_Hoarder.Desc,Finish a Milestone with 15 or more shapes left to start the next one with +3 pool capacity.,以剩余 15 个及以上方块完成目标，下个目标储备 +3 开局。
+Game,Card.Card_Hyperfocus.Name,Hyper Focus,超专注
+Game,Card.Card_Hyperfocus.Desc,"Combo multiplier grows twice as fast, but every combo reset costs 2 shapes.",连击倍率增长翻倍，但每次连击中断损失 2 个方块。
+Game,Card.Cart_Line_Master.Name,Line Master,横行大师
+Game,Card.Cart_Line_Master.Desc,Horizontal clears score 2.5x. Vertical clears score nothing but still hold the combo.,只有横行计分（2.5 倍）。竖列不计分但保持连击。
+Game,Card.Card_Momentum.Name,Momentum,势头
+Game,Card.Card_Momentum.Desc,Every line you clear adds +0.05 to your combo multiplier gain.,每消除一行，连击增益 +0.05。
+Game,Card.Card_Momentum_Shield.Name,Momentum Shield,势头护盾
+Game,Card.Card_Momentum_Shield.Desc,"At 3x combo or higher, an unplaceable shape vanishes instead of ending the run. Your combo drops to minimum.",连击达 3x 以上时，无法放置的方块会消失而非结束游戏。连击降至最低值。
+Game,Card.Card_Neon_Cable.Name,Neon Cable,霓虹电缆
+Game,Card.Card_Neon_Cable.Desc,Two linked tiles appear on the board. Clearing one detonates the other and its neighbours for score. They move with every new draw.,出现两个相连的格子。消除其一会引爆另一个及其周围并得分。每次抽取新方块时位置改变。
+Game,Card.Card_Patient.Name,Patient,耐心
+Game,Card.Card_Patient.Desc,"After 3 placements without a clear, your next clear scores double.",连续 3 次放置未消行后，下次消行得分翻倍。
+Game,Card.Card_Perfect_Clear.Name,Perfect Clear,完美清除
+Game,Card.Card_Perfect_Clear.Desc,Emptying the entire board grants +100 Blockcoins and +2 combo.,清空整个棋盘获得 +100 Blockcoin 和 +2 连击。
+Game,Card.Card_Phantom_Cell.Name,Phantom Cell,幻影格
+Game,Card.Card_Phantom_Cell.Desc,A blocked tile counts as filled for line clears but scores nothing. It relocates each time its line is cleared.,封锁格在消行判定中算作已填充，但不计分。每次消除后会移动位置。
+Game,Card.Card_Safe_Zone.Name,Safe Zone,安全区
+Game,Card.Card_Safe_Zone.Desc,Cover the marked tile to keep your combo from falling below 2x. Clearing that tile costs you 8 shapes.,覆盖标记格可防止连击跌破 2x。消除该格将损失 8 个方块。
+Game,Card.Card_Score_Multiplier.Name,Score Multiplier,分数倍率
+Game,Card.Card_Score_Multiplier.Desc,All score you earn is increased by 10%.,所有获得的分数提高 10%。
+Game,Card.Card_Selective_Blindness.Name,Selective Blindness,选择性失明
+Game,Card.Card_Selective_Blindness.Desc,Single-line clears score 2x and remove 2 random blocks. Clearing 2 or more lines scores nothing.,单行消除得双倍分并随机移除 2 个方块。同时消除 2 行及以上不得分。
+Game,Card.Card_Slow_Burn.Name,Slow Burn,慢燃
+Game,Card.Card_Slow_Burn.Desc,"The first 5 shapes score half, but the last 10 shapes in the pool score triple.",前 5 个方块得分减半，储备中最后 10 个方块得分三倍。
+Game,Card.Card_Soft_Landing.Name,Soft Landing,软着陆
+Game,Card.Card_Soft_Landing.Desc,"On a combo reset, the multiplier halves instead of dropping to minimum.",连击中断时倍率减半，而非跌至最低值。
+Game,Card.Cart_Tunnel_Vision.Name,Tunnel Vision,隧道视野
+Game,Card.Cart_Tunnel_Vision.Desc,Vertical clears score 2.5x. Horizontal clears score nothing but still hold the combo.,只有竖列计分（2.5 倍）。横行不计分但保持连击。
+Game,Card.Card_Wide_Pool.Name,Wide Pool,扩容池
+Game,Card.Card_Wide_Pool.Desc,Maximum pool capacity is increased by 6 shapes.,方块储备上限增加 6 个。
+Game,Card.Card_Shape_4gen.Name,4Gen,4Gen
+Game,Card.Card_Shape_4gen.Desc,"4Gen tiles score +2, but 4Gen appears 5% less often.",4Gen 方块 +2 分，但 4Gen 的出现率降低 5%。
+Game,Card.Card_Shape_6Sq.Name,6Square,6格方块
+Game,Card.Card_Shape_6Sq.Desc,"6Square tiles score +2, but 6Square appears 5% less often.",6格方块 方块 +2 分，但 6格方块 的出现率降低 5%。
+Game,Card.Card_Shape_C.Name,C,C
+Game,Card.Card_Shape_C.Desc,"C tiles score +4, but C appears 8% less often.",C 方块 +4 分，但 C 的出现率降低 8%。
+Game,Card.Card_Shape_Cross.Name,Cross,十字
+Game,Card.Card_Shape_Cross.Desc,"Cross tiles score +2, but Cross appears 3% less often.",十字 方块 +2 分，但 十字 的出现率降低 3%。
+Game,Card.Card_Shape_Dot.Name,Dot,点
+Game,Card.Card_Shape_Dot.Desc,"Dot tiles score +8, but Dot appears 3% less often.",点 方块 +8 分，但 点 的出现率降低 3%。
+Game,Card.Card_Shape_I3.Name,I3,I3
+Game,Card.Card_Shape_I3.Desc,"I3 tiles score +2, but I3 appears 5% less often.",I3 方块 +2 分，但 I3 的出现率降低 5%。
+Game,Card.Card_Shape_I4.Name,I4,I4
+Game,Card.Card_Shape_I4.Desc,"I4 tiles score +2, but I4 appears 7% less often.",I4 方块 +2 分，但 I4 的出现率降低 7%。
+Game,Card.Card_Shape_J.Name,J,J
+Game,Card.Card_Shape_J.Desc,"J tiles score +5, but J appears 7% less often.",J 方块 +5 分，但 J 的出现率降低 7%。
+Game,Card.Card_Shape_L.Name,L,L
+Game,Card.Card_Shape_L.Desc,"L tiles score +5, but L appears 10% less often.",L 方块 +5 分，但 L 的出现率降低 10%。
+Game,Card.Card_Shape_LongL.Name,Long L,长L
+Game,Card.Card_Shape_LongL.Desc,"Long L tiles score +3, but Long L appears 12% less often.",长L 方块 +3 分，但 长L 的出现率降低 12%。
+Game,Card.Card_Shape_O.Name,O,O
+Game,Card.Card_Shape_O.Desc,"O tiles score +2, but O appears 5% less often.",O 方块 +2 分，但 O 的出现率降低 5%。
+Game,Card.Card_Shape_S.Name,S,S
+Game,Card.Card_Shape_S.Desc,"S tiles score +2, but S appears 5% less often.",S 方块 +2 分，但 S 的出现率降低 5%。
+Game,Card.Card_Shape_T.Name,T,T
+Game,Card.Card_Shape_T.Desc,"T tiles score +3, but T appears 5% less often.",T 方块 +3 分，但 T 的出现率降低 5%。
+Game,Card.Card_Shape_Z.Name,Z,Z
+Game,Card.Card_Shape_Z.Desc,"Z tiles score +3, but Z appears 8% less often.",Z 方块 +3 分，但 Z 的出现率降低 8%。
+Game,Pause.Title,PAUSED,已暂停
+Game,Pause.Resume,RESUME,继续
+Game,Pause.Settings,SETTINGS,设置
+Game,Pause.MainMenu,MAIN MENU,主菜单
+Game,Pause.Quit,QUIT TO DESKTOP,退出游戏
+Game,GameOver.Reason.NoMoves,NO MOVES LEFT,无路可走
+Game,GameOver.Reason.PoolExhausted,POOL EXHAUSTED,方块耗尽
+Game,GameOver.Reason.CannotPlace,SHAPE CANNOT BE PLACED,无法放置
+Game,GameOver.Reason.Default,GAME OVER,游戏结束
+Game,Card.Card_Safe_Zone.Broken,SAFE ZONE BROKEN  -{0} SHAPES,安全区被破坏  -{0} 方块
+Game,Toast.NotEnoughCoins,NOT ENOUGH BLOCKCOINS,BLOCKCOIN 不足
+Game,Toast.ScoreUpgraded,{0} base score upgraded!,{0} 的基础分数已提升！
+Game,Toast.WeightIncreased,{0} appears more often now!,{0} 的出现率提高了！
+Game,Toast.WeightDecreased,{0} appears less often now.,{0} 的出现率降低了。
+Game,Toast.ShapeUnlocked,{0} UNLOCKED!,已解锁 {0}！
+Game,Toast.UpgradeBought,{0} upgraded!,{0} 已升级！
+Game,Toast.UpgradeSold,{0} refunded.,已退还 {0}。
+Game,Toast.SellFailed,COULD NOT REFUND,无法退还
+Game,Popup.DoubleStrike,DOUBLE STRIKE  x{0},双重打击  x{0}
+Game,Popup.GambleWon,GAMBLE WON  x{0},赌赢了  x{0}
+Game,Popup.GambleLost,GAMBLE LOST  x{0},赌输了  x{0}
+Game,Popup.Patience,PATIENCE  x{0},耐心  x{0}
+Game,GameOver.Explain.NoMoves,None of your shapes fit on the board anymore.,没有任何方块能放进棋盘了。
+Game,GameOver.Explain.PoolExhausted,You ran out of shapes before reaching the milestone.,在达成目标前方块已用完。
+Game,GameOver.Explain.CannotPlace,First Picks blocked rotation and nothing fits as drawn.,First Picks 禁用了旋转，方块无法放入。
+Game,GameOver.Explain.Default,Your run has ended.,本局结束了。
+Game,Shape.Shape_Dot.Name,Dot,点
+Game,Shape.Shape_I3.Name,I3,I3
+Game,Shape.Shape_I4.Name,I4,I4
+Game,Shape.Shape_O.Name,O,O
+Game,Shape.Shape_T.Name,T,T
+Game,Shape.Shape_S.Name,S,S
+Game,Shape.Shape_Z.Name,Z,Z
+Game,Shape.Shape_L.Name,L,L
+Game,Shape.Shape_J.Name,J,J
+Game,Shape.Shape_C.Name,C,C
+Game,Shape.Shape_LongL.Name,Long L,长L
+Game,Shape.Shape_Cross.Name,Cross,十字
+Game,Shape.Shape_4Gen.Name,4Gen,4Gen
+Game,Shape.Shape_6Sq.Name,6Square,6格方块
+Game,DemoEnd.Title,THANKS FOR PLAYING,感谢您的游玩
+Game,DemoEnd.Body,"You have reached the end of the demo. If you enjoyed it, adding the game to your wishlist helps a lot. Share your thoughts and suggestions with the feedback button.",试玩到此结束。如果您喜欢，把游戏加入愿望单会是很大的支持。欢迎通过反馈按钮分享您的意见和建议。
+Game,DemoEnd.MainMenu,BACK TO MENU,返回主菜单
+Game,DemoEnd.Wishlist,ADD TO WISHLIST,加入愿望单
+Game,DemoEnd.Feedback,SEND FEEDBACK,提交反馈
+Game,Pause.Feedback,SEND FEEDBACK,提交反馈
+Game,Milestone.Title,MILESTONE,目标
+Game,Milestone.PiecesLeft,{0} left,剩余 {0}
+Game,Milestone.NewCard,New Card Earned!,获得新卡牌！
+Game,Card.Card_Card_Collector.Effect1,Global multiplier +0.02 per owned card,每持有一张卡牌全局倍率 +0.02
+Game,Card.Card_Center_Base.Effect1,+4 score per center tile,每个中心格 +4 分
+Game,Card.Card_Chain_Master.Effect1,Combo gain +0.02 per chained clear,每次连续消行连击增益 +0.02
+Game,Card.Card_Combo_Shield.Effect1,Blocks one combo reset per run,每局阻止一次连击重置
+Game,Card.Card_Corner_Stone.Effect1,+3 score per corner tile,每个角落格 +3 分
+Game,Card.Card_Double_Strike.Effect1,2+ line clears score x1.5,同时消除 2 行以上分数 x1.5
+Game,Card.Card_Heavy_Load.Effect1,"Pool limit +6, global multiplier -0.10",储备 +6，全局倍率 -0.10
+Game,Card.Card_Momentum.Effect1,Combo gain +0.05 per clear,每次消行连击增益 +0.05
+Game,Card.Card_Patient.Effect1,Score x2 after 3 clear-less placements,连续 3 次未消行后分数 x2
+Game,Card.Card_Score_Multiplier.Effect1,Global score multiplier +0.10,全局分数倍率 +0.10
+Game,Card.Card_Wide_Pool.Effect1,Pool limit +6,储备 +6
+MainMenu,ShapeShop.Header.Title,Shape Shop,方块商店
+MainMenu,ShapeCard.ScoreLabel,Base Point,基础分数
+MainMenu,ShapeCard.WeightLabel,Spawn Rate,出现率
+MainMenu,ShapeCard.Unlock,UNLOCK,解锁
+MainMenu,CardView.SelectButton,SELECT,选择
+MainMenu,ComboBoard.Combo,COMBO,连击
+MainMenu,GameOver.RunEnd,Run Ended,本局结束
+MainMenu,GameOver.GameOverTxt,YOU LOSE,你输了
+MainMenu,GameOver.FinalScore,FINAL SCORE,最终得分
+MainMenu,GameOver.NewRecord,NEW RECORD,新纪录
+MainMenu,GameOver.BestScore,BEST SCORE,最高分
+MainMenu,GameOver.Lines,CLEAR,消除
+MainMenu,GameOver.Pieces,SHAPES,方块
+MainMenu,GameOver.MaxCombo,MAX COMBO,最高连击
+MainMenu,GameOver.Coin,EARNED COIN,获得金币
+MainMenu,GameOver.NewRun,NEW RUN,新的一局
+MainMenu,GameOver.MainMenu,MAIN MENU,主菜单
+MainMenu,ScoreBoard.ScoreText,SCORE,分数
+MainMenu,MainMenu.NewRun,NEW RUN,开始游戏
+MainMenu,MainMenu.Upgrades,UPGRADES,升级
+MainMenu,MainMenu.ShapeShop,SHAPE SHOP,方块商店
+MainMenu,MainMenu.Settings,SETTINGS,设置
+MainMenu,MainMenu.Quit,QUIT,退出
+MainMenu,LastRunPanel.Title,LAST RUN,上一局
+MainMenu,LastRunPanel.Countdown,0 Seconds Later..,0 秒后...
+MainMenu,UpgradePanel.Title,UPGRADES,升级
+MainMenu,UpgradePanel.Empty.Title,CHOOSE ONE,选择一项
+MainMenu,UpgradePanel.Empty.Desc,Upgrades makes your score higher.,升级可以提高你的分数。
+MainMenu,UpgradePanel.BuyTxt,BUY,购买
+MainMenu,UpgradePanel.SellTxt,SELL,出售
+MainMenu,UpgradeSlot.OwnedTxt,OWNED,已拥有
+MainMenu,Upgrade.upgrade_pool_capacity.Name,Pool Capacity,储备容量
+MainMenu,Upgrade.upgrade_pool_capacity.Desc,Each level adds 2 shapes to your pool.,每级使储备增加 2 个方块。
+MainMenu,Upgrade.upgrade_pool_reroll.Name,Pool Reroll,重抽储备
+MainMenu,Upgrade.upgrade_pool_reroll.Desc,Each level grants one pool reroll per run.,每级每局可重抽一次储备。
+MainMenu,Upgrade.upgrade_card_reroll.Name,Card Reroll,重抽卡牌
+MainMenu,Upgrade.upgrade_card_reroll.Desc,Each level grants one card reroll per run.,每级每局可重抽一次卡牌。
+MainMenu,Upgrade.upgrade_combo_gain.Name,Combo Gain,连击增益
+MainMenu,Upgrade.upgrade_combo_gain.Desc,Each level adds 0.03 to the combo gained per line clear.,每级使每次消行获得的连击提升 0.03。
+MainMenu,Upgrade.upgrade_dead_pool_revive.Name,Second Wind,东山再起
+MainMenu,Upgrade.upgrade_dead_pool_revive.Desc,Each level refills the pool once instead of ending the run.,每级可在无路可走时补充一次储备而不结束本局。
+MainMenu,Upgrade.upgrade_combo_bar.Name,Combo Bar,连击槽
+MainMenu,Upgrade.upgrade_combo_bar.Desc,Each level adds one charge slot so your combo holds longer.,每级增加一格连击槽 连击维持更久。
+MainMenu,Upgrade.upgrade_coin_gain.Name,Coin Gain,金币收益
+MainMenu,Upgrade.upgrade_coin_gain.Desc,Each level earns 4% more coins from every Milestone.,每级使每个目标的金币收益提高 4%。
+MainMenu,Upgrade.upgrade_starting_combo.Name,Combo Power,连击起点
+MainMenu,Upgrade.upgrade_starting_combo.Desc,Each level starts your run with 0.1 more combo multiplier.,每级使开局连击倍率提高 0.1。
+Settings,Language.English,English,English
+Settings,Language.Turkish,Türkçe,Türkçe
+Settings,Language.German,Deutsch,Deutsch
+Settings,Settings.Title,SETTINGS,设置
+Settings,Settings.Section.Audio,AUDIO,音频
+Settings,Settings.Section.Display,DISPLAY,显示
+Settings,Settings.Section.Gameplay,GAMEPLAY,玩法
+Settings,Settings.Section.Accessibility,ACCESSIBILITY,辅助功能
+Settings,Settings.Section.Language,LANGUAGE,语言
+Settings,Settings.Section.Data,DATA,数据
+Settings,Settings.Audio.Master,Master Volume,主音量
+Settings,Settings.Audio.Music,Music,音乐
+Settings,Settings.Audio.Sfx,Sound Effects,音效
+Settings,Settings.Audio.Mute,Mute All,全部静音
+Settings,Settings.Audio.MuteUnfocused,Mute When Minimized,后台时静音
+Settings,Settings.Display.Fullscreen,Fullscreen,全屏
+Settings,Settings.Display.Resolution,Resolution,分辨率
+Settings,Settings.Display.VSync,V-Sync,垂直同步
+Settings,Settings.Display.VSync.Off,Off,关闭
+Settings,Settings.Display.VSync.Every,Every Frame,每帧
+Settings,Settings.Display.VSync.Half,Every 2nd Frame,每2帧
+Settings,Settings.Display.FpsLimit,Frame Rate Limit,帧率限制
+Settings,Settings.Display.ShowFps,Show FPS Counter,显示帧率
+Settings,Settings.Gameplay.Ghost,Placement Preview,放置预览
+Settings,Settings.Gameplay.Ghost.Tip,Shows where the shape will land.,显示方块将落在何处。
+Settings,Settings.Gameplay.Highlight,Highlight Clearing Lines,高亮将消除的行
+Settings,Settings.Gameplay.Grid,Grid Lines,网格线
+Settings,Settings.Gameplay.ConfirmQuit,Confirm Before Quitting,退出前确认
+Settings,Settings.Gameplay.Haptics,Vibration,震动
+Settings,Settings.Gameplay.DragOffset,Touch Drag Offset,触摸偏移
+Settings,Settings.Gameplay.DragOffset.Tip,Lifts the shape above your finger.,将方块抬到手指上方。
+Settings,Settings.Access.ReduceMotion,Reduce Motion,减少动态效果
+Settings,Settings.Access.ReduceMotion.Tip,Disables screen shake and heavy animation.,关闭画面震动和强烈动画。
+Settings,Settings.Access.ReduceFlashing,Reduce Flashing,减少闪烁
+Settings,Settings.Access.ScreenShake,Screen Shake,画面震动
+Settings,Settings.Access.Vfx,Effect Intensity,特效强度
+Settings,Settings.Access.Colorblind,Colorblind Mode,色盲模式
+Settings,Settings.Access.Colorblind.None,Off,关闭
+Settings,Settings.Access.Colorblind.Protanopia,Protanopia,红色盲
+Settings,Settings.Access.Colorblind.Deuteranopia,Deuteranopia,绿色盲
+Settings,Settings.Access.Colorblind.Tritanopia,Tritanopia,蓝色盲
+Settings,Settings.Access.Colorblind.HighContrast,High Contrast,高对比度
+Settings,Settings.Access.UiScale,Interface Scale,界面缩放
+Settings,Settings.Access.LargeText,Large Text,大字体
+Settings,Settings.Data.ResetSettings,RESET SETTINGS,重置设置
+Settings,Settings.Data.ResetProgress,RESET ALL PROGRESS,清除所有进度
+Settings,Settings.Data.ResetProgress.Warn,"This deletes your Blockcoins, upgrades and unlocks. This cannot be undone.",这将删除你的 Blockcoin、升级和已解锁内容，且无法撤销。
+Settings,Settings.Data.ResetDone,Progress reset.,进度已重置。
+Settings,Settings.Apply,APPLY,应用
+Settings,Settings.Cancel,CANCEL,取消
+Settings,Settings.Unlimited,Unlimited,无限制
+Settings,Dialog.QuitRun.Title,Quit this run?,要结束本局吗？
+Settings,Dialog.QuitRun.Body,Your current run will be lost.,当前进度将会丢失。
+Settings,Dialog.QuitGame.Title,Quit game?,要退出游戏吗？
+Settings,Dialog.Yes,YES,是
+Settings,Dialog.No,NO,否
+Settings,Common.ComingSoon,COMING SOON,敬请期待
+Settings,Upgrades.Empty.Title,SELECT AN ITEM,请选择一项
+Settings,Upgrades.Empty.Desc,Pick an upgrade above to see its details.,在上方选择一项升级即可查看详情。
+Settings,Upgrades.LockedStage,Stage {0},阶段 {0}
+Settings,Common.Max,MAX,满级
+Settings,Language.French,Français,Français
+Settings,Language.Castilian Spanish,Español,Español
+Settings,Language.Italian,Italiano,Italiano
+Settings,Language.Portuguese,Português,Português
+Settings,Language.Russian,Русский,Русский
+Settings,Language.Polish,Polski,Polski
+Settings,Language.Japanese,日本語,日本語
+Settings,Language.Korean,한국어,한국어
+Settings,Language.Chinese (Simplified),简体中文,简体中文
+Settings,Language.Norwegian,Norsk,Norsk
+Settings,Language.Portuguese (Brazil),Português (Brasil),Português (Brasil)
+Settings,Language.Spanish (Latin America),Español (Latinoamérica),Español (Latinoamérica)

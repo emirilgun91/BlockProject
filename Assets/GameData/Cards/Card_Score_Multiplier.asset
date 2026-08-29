@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: Card_Score_Multiplier
   CardName: Score Multiplier
   Description: All score you earn is increased by 10%.
-  Icon: {fileID: 2074192893616046810, guid: 3fca4d4cfb1ea7841a0d70c643188b31, type: 3}
+  Icon: {fileID: -7435461087444254681, guid: 396470a8321a23f43af1e175eebdae3b, type: 3}
   Rarity: 0
   Effects:
   - Type: 1

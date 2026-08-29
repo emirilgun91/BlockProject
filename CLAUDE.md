@@ -136,7 +136,11 @@ The game uses the **SimpleLocalization** asset at `Assets/SimpleLocalization/` (
 - **`ContentLocalization`** — translations for ScriptableObject content via `Card.<id>.Name` / `Card.<id>.Desc`, `Upgrade.<id>.*`, `Shape.<id>.Name`. Falls back to the asset's own text when a key is missing, so content can be translated incrementally.
 - **`LocFiller`** (editor) — bulk-writes CSV cells; preserves existing rows and never overwrites a filled cell unless `overwrite: true`.
 
-**Rule: every new player-facing string ships translated in all 16 supported languages.** Arabic is deliberately left empty until RTL layout support exists; empty cells fall back to English automatically. Key naming is `Section.Element` PascalCase.
+**Rule: every new player-facing string ships translated in all 15 supported languages.** Key naming is `Section.Element` PascalCase.
+
+Arabic and Traditional Chinese were removed from the CSVs. Arabic needs contextual glyph shaping, the Unicode bidi algorithm and a mirrored UI — TMP's `isRightToLeftText` alone does not deliver that, so shipping the column meant offering a broken option. Traditional Chinese was dropped as a product decision; those systems fall back to Simplified in `Loc.DetectSystemLanguage`.
+
+Non-Latin scripts render through a fallback chain (Exo 2 → Inter → Noto JP/KR/SC) set in TMP Settings. `CjkFontFallback` reorders the CJK part of that chain when the language changes, because TMP's fallback is global and first-match-wins while Japanese and Chinese need different regional glyph variants for shared Han characters.
 
 ### Meta / Debug
 
@@ -168,4 +172,4 @@ This keeps four displays in sync from one source: the empty-cell `+N` hint, the 
 - All upgrade effects are read once per `NewRun` from `UpgradeRegistry` and stored as local fields in `RunController` — they don't change mid-run.
 - Cards whose text says "During this Milestone" (First Picks, Diet Plan) must be turned **off** in `RunCardState.OnMilestoneReached()`, not merely reset. That method runs *before* card selection, so a card picked now survives exactly one milestone. Decaying Rift's dead zones are cleared at the same point.
 - `PauseMenuController` must not sit on the GameObject it hides — its `Update()` would stop and ESC would die.
-- Every new player-facing string goes through `Loc` / `ContentLocalization` and ships translated in all 16 languages (Arabic deferred).
+- Every new player-facing string goes through `Loc` / `ContentLocalization` and ships translated in all 15 languages. Every language also needs a `Language.<Name>` row in `Settings.csv` — without it the picker shows the raw key.

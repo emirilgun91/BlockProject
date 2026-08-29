@@ -186,10 +186,10 @@ namespace RogueBlockBlast.UI
 
             if (_scoreCostText  != null)
             {
-                // Max seviyede fiyat anlamsız — UpgradesController ile aynı
-                // anahtarı kullanır (Shop.MaxLevel), iki dükkân aynı dili konuşsun.
+                // Max seviyede fiyat anlamsız — UpgradesController ve milestone
+                // barıyla aynı anahtarı kullanır (Common.Max), hepsi aynı dili konuşsun.
                 // Renk de "yetersiz para" kırmızısına düşmemeli: max bir uyarı değil.
-                _scoreCostText.text  = canScore ? $"{sCost}" : Loc.Get("Shop.MaxLevel");
+                _scoreCostText.text  = canScore ? $"{sCost}" : Loc.Get("Common.Max");
                 _scoreCostText.color = !canScore || affordScore
                     ? _affordableColor
                     : _unaffordableColor;

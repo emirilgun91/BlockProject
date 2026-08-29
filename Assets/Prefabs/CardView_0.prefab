@@ -171,8 +171,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Squares give +2 more point per placement.
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4d69d08cb68ffa14b83a8743362aa0c6, type: 2}
-  m_sharedMaterial: {fileID: -2807485010968625792, guid: 4d69d08cb68ffa14b83a8743362aa0c6, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 83823ae1d8850334397ac8799bc6984d, type: 2}
+  m_sharedMaterial: {fileID: -1734416926067544743, guid: 83823ae1d8850334397ac8799bc6984d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -196,12 +196,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26
+  m_fontSize: 36
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 10
-  m_fontSizeMax: 26
+  m_fontSizeMax: 36
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
@@ -738,10 +738,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "KARTI SE\xC7"
+  m_text: SELECT
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}
-  m_sharedMaterial: {fileID: 2344010023159884698, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
+  m_sharedMaterial: {fileID: 331606531681114010, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -877,8 +877,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: NEW
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9ac62022f3781c94c9afafddb4883c03, type: 2}
-  m_sharedMaterial: {fileID: 3482106319416513840, guid: 9ac62022f3781c94c9afafddb4883c03, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
+  m_sharedMaterial: {fileID: 331606531681114010, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -982,7 +982,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 469.64, y: 90.59}
+  m_SizeDelta: {x: 469.64, y: 85.569}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5525544735277574539
 CanvasRenderer:
@@ -1014,8 +1014,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: SQUARE BOOST
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}
-  m_sharedMaterial: {fileID: 2344010023159884698, guid: 450a9cc11b5d9f84da3eeb79e9e211fb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
+  m_sharedMaterial: {fileID: 331606531681114010, guid: 4d4b893dc47ba3546a042dc8ca55c1b1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1047,7 +1047,7 @@ MonoBehaviour:
   m_fontSizeMax: 40
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1

@@ -19,6 +19,10 @@ namespace RogueBlockBlast.Core.Settings
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Boot()
         {
+            // Odak kaybında Unity oyunu tamamen durdurur; bazı GPU / çoklu ekran
+            // kombinasyonlarında ekran o sırada camera background rengine döner.
+            Application.runInBackground = true;
+
             GameSettings.EnsureLoaded();
             GameSettings.ApplyDisplay();
             Loc.Init();

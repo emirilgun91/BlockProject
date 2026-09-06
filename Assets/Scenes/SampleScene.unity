@@ -12647,6 +12647,7 @@ GameObject:
   - component: {fileID: 438323760}
   - component: {fileID: 438323759}
   - component: {fileID: 438323758}
+  - component: {fileID: 438323762}
   m_Layer: 5
   m_Name: CardInventoryUI
   m_TagString: Untagged
@@ -12768,6 +12769,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 438323756}
   m_CullTransparentMesh: 1
+--- !u!114 &438323762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 438323756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0ce199acab84b1478db711daa9b20cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.BoardClearanceFitter
+  _board: {fileID: 0}
+  _canvas: {fileID: 0}
+  _camera: {fileID: 0}
+  _gapPixels: 24
+  _minScale: 0.24
+  _maxScale: 0
 --- !u!1 &440688257
 GameObject:
   m_ObjectHideFlags: 0
@@ -26034,6 +26053,44 @@ MonoBehaviour:
   continueKey: 
   soundVolumeKey: 
   soundVolume: 0
+--- !u!114 &1291993597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291993592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d0de98179e05a48af4e65238ddd074, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Game.Tutorial.TutorialController
+  _alwaysShow: 0
+  _completedHold: 1.1
+  _topPadding: 40
+  _panelColor: {r: 0.05, g: 0.07, b: 0.12, a: 0.86}
+  _textColor: {r: 0.88, g: 0.92, b: 0.98, a: 1}
+  _doneColor: {r: 0.35, g: 0.92, b: 0.55, a: 1}
+  _fontSize: 30
+--- !u!114 &1291993598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291993592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43090ce9b64c6914bb05ff4f237a85a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.UI.RotateHintView
+  _padding: {x: 36, y: 32}
+  _chipColor: {r: 0.06, g: 0.08, b: 0.13, a: 0.78}
+  _capColor: {r: 0.16, g: 0.2, b: 0.3, a: 1}
+  _capFlash: {r: 0.35, g: 0.85, b: 1, a: 1}
+  _textColor: {r: 0.82, g: 0.87, b: 0.95, a: 1}
+  _fontSize: 26
+  _mentionScrollWheel: 1
 --- !u!1 &1299443211
 GameObject:
   m_ObjectHideFlags: 0
@@ -42298,6 +42355,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2933274491384363078, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1291993596}
+    - targetCorrespondingSourceObject: {fileID: 2933274491384363078, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1291993598}
+    - targetCorrespondingSourceObject: {fileID: 2933274491384363078, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1291993597}
     - targetCorrespondingSourceObject: {fileID: 1206300912644597306, guid: ffadf9bc7e83a7242baca2c32ca1c7f8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1545084394}

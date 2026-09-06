@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.Game.Tutorial;
 using RogueBlockBlast.UI;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -170,8 +171,16 @@ namespace RogueBlockBlast.Game
 
             if (Keyboard.current != null)
             {
-                if (Keyboard.current.qKey.wasPressedThisFrame && canRotate) _currentRot = PrevRot(_currentRot);
-                if (Keyboard.current.eKey.wasPressedThisFrame && canRotate) _currentRot = NextRot(_currentRot);
+                if (Keyboard.current.qKey.wasPressedThisFrame && canRotate)
+                {
+                    _currentRot = PrevRot(_currentRot);
+                    TutorialEvents.Rotated();
+                }
+                if (Keyboard.current.eKey.wasPressedThisFrame && canRotate)
+                {
+                    _currentRot = NextRot(_currentRot);
+                    TutorialEvents.Rotated();
+                }
 
                 if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectPool(0);
                 if (Keyboard.current.digit2Key.wasPressedThisFrame) SelectPool(1);
@@ -341,6 +350,11 @@ namespace RogueBlockBlast.Game
 
             // ── Combo ─────────────────────────────────────────────────────────
             _comboSystem.OnPlacement(hadClear: cleared > 0);
+
+            // Öğretici yalnızca izler — abone yoksa bu çağrılar bedava.
+            TutorialEvents.PiecePlaced(cleared);
+            if (_comboSystem.Multiplier > _comboSystem.BaseMultiplier)
+                TutorialEvents.ComboChanged(_comboSystem.Multiplier);
 
             // Chain Master: zincir ilerledi ya da kırıldı → slot değerini tazele.
             // Event tabanlı — Update() içinde polling yok.
@@ -641,13 +655,29 @@ namespace RogueBlockBlast.Game
             // İki kez tetiklenmesin: hem DoPlace hem soft-lock taraması aynı anda
             // yakalayabilir, panel iki defa açılmamalı.
             if (_gameOverFired) return;
+
+            // ── Son doğrulama: gerçekten hamlesiz miyiz? ──────────────────────
+            // "Hamle kalmadı" gerekçeleri tahtanın o anki hâline bakılarak verilir,
+            // ama tahtayı yerleştirmeden SONRA değiştiren kartlar var: Selective
+            // Blindness rastgele blok siler, Neon Cable alan patlatır, Decaying Rift
+            // hücre açıp kapatır. Bu çağrılar zincirin farklı noktalarından geldiği
+            // için araya giren bir adım tahtayı açmış olabilir. Oyuncuyu yer varken
+            // öldürmeyelim: panelden hemen önce tahtaya bir kez daha bakıp iptal
+            // ediyoruz. Pool tükenmesi tahtayla ilgili olmadığından kontrol dışında.
+            if (reason != GameOverReason.PoolExhausted &&
+                _board != null && _piecePool != null && _piecePool.Count > 0 &&
+                HasAnyValidMoveInPool())
+            {
+                _poolDirty = true;
+                return;
+            }
+
             _gameOverFired = true;
 
             FrameFeedbackController.Instance?.OnGameOver();
             AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
 
-            float maxCombo = (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f;
-            LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
+            SaveRunResults();
 
             if (GameOverAnnouncer.Instance != null)
             {
@@ -658,6 +688,18 @@ namespace RogueBlockBlast.Game
             {
                 GameOverUI.Instance?.Show(_score, _coins);
             }
+        }
+
+        /// <summary>
+        /// Run sonucunu kalıcı kayda yazar: ana menüdeki "Last run" özeti ve
+        /// en yüksek skor. Run'ın nasıl bittiğinden bağımsız çağrılır —
+        /// Game Over da demo bitişi de aynı yoldan geçer.
+        /// </summary>
+        private void SaveRunResults()
+        {
+            float maxCombo = (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f;
+            LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
+            GameOverUI.RecordBestScore(_score);
         }
 
         private void OnPoolRerollClicked()
@@ -742,6 +784,8 @@ namespace RogueBlockBlast.Game
         // ── Milestone Handlers ───────────────────────────────────────────────
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
+            TutorialEvents.MilestoneReached();
+
             // Reset per-milestone card counters for the new window
             _cardState.OnMilestoneReached();
 
@@ -792,6 +836,12 @@ namespace RogueBlockBlast.Game
                     // OnGameOver bu bayrak yüzünden sessizce geri döner —
                     // yani Game Over ekranı hiç gelmez.
                     _gameOverFired = true;
+
+                    // Run burada bitiyor ve Game Over ekranı hiç açılmıyor —
+                    // "Last run" ve "Best score" kayıtlarını bu yüzden burada
+                    // elle yazıyoruz, yoksa demo biten oyuncunun skoru kaybolur.
+                    SaveRunResults();
+
                     demoPanel.Show();
                     return;
                 }
@@ -993,6 +1043,7 @@ namespace RogueBlockBlast.Game
             UpdateBoardOverlays();
             RebuildStaticPositionBonus();   // Corner Stone / Center Base yeni alınmış olabilir
             CardInventoryUI.Instance?.AddCard(card);
+            TutorialEvents.CardPicked();
 
             // Envanter değişti → tüm slotlar yenilenir (Card Collector sayısı arttı)
             RefreshCardLiveValues();

@@ -142,6 +142,13 @@ Arabic and Traditional Chinese were removed from the CSVs. Arabic needs contextu
 
 Non-Latin scripts render through a fallback chain (Exo 2 → Inter → Noto JP/KR/SC) set in TMP Settings. `CjkFontFallback` reorders the CJK part of that chain when the language changes, because TMP's fallback is global and first-match-wins while Japanese and Chinese need different regional glyph variants for shared Han characters.
 
+### Tutorial & HUD affordances
+
+- **`TutorialEvents`** (static) — one-way hub. `RunController` reports what happened (`PiecePlaced`, `Rotated`, `ComboChanged`, `MilestoneReached`, `CardPicked`); it never references the tutorial. No subscriber → no cost.
+- **`TutorialController`** (Gameplay Canvas) — scenario-driven first-run tutorial. A single top-centre line states the next goal and advances when the real game event fires; nothing is modal and nothing pauses. Steps live in the `Scenario` array (place → rotate → clear → combo → milestone → card → dead pool). Builds its own UI, so adding the component is the whole setup. Gated by PlayerPrefs `Tutorial_Completed`; `SaveDataService.ResetProgress()` clears it with everything else.
+- **`RotateHintView`** (Gameplay Canvas) — bottom-left "Q / E · Döndür" chip; the key cap flashes on the real key press. Builds its own UI.
+- **`BoardClearanceFitter`** (CardInventoryUI) — keeps a left-anchored HUD panel out of the board's screen rect. Needed because the board is world-space (moves with `1/aspect`) while the canvas scales with `1/sqrt(aspect)`: at 16:9 the inventory ended a few pixels short of the board, so any aspect change put it on top. The panel is scaled from the board's *actual* screen edge instead of a fixed margin. Expects the panel's anchor and pivot to be left-aligned so its left edge stays put and the scale can't feed back.
+
 ### Meta / Debug
 
 - **`PauseMenuController`** (game scene) — ESC opens it: Resume / Settings / Main Menu / Quit. Sets `timeScale = 0` and locks input. **The controller must live on a GameObject that stays active** and toggle a child container — putting it on the object it disables kills its own `Update()`.
@@ -171,5 +178,6 @@ This keeps four displays in sync from one source: the empty-cell `+N` hint, the 
 - Scores are only awarded when lines clear. Tile-scaled bonuses (shape card, Corner Stone, Center Base) are written into the tile value at placement and must NOT also be added to `gainedScore` — see **Scoring rule**.
 - All upgrade effects are read once per `NewRun` from `UpgradeRegistry` and stored as local fields in `RunController` — they don't change mid-run.
 - Cards whose text says "During this Milestone" (First Picks, Diet Plan) must be turned **off** in `RunCardState.OnMilestoneReached()`, not merely reset. That method runs *before* card selection, so a card picked now survives exactly one milestone. Decaying Rift's dead zones are cleared at the same point.
+- `OnGameOver` re-checks `HasAnyValidMoveInPool()` before it fires, for every reason except `PoolExhausted`. "No moves" is decided at several points in the placement chain, and cards that change the board *after* placement (Selective Blindness removing random blocks, Neon Cable exploding an area, Decaying Rift) can open room in between — the re-check is what stops a game over on a board that still has a legal move.
 - `PauseMenuController` must not sit on the GameObject it hides — its `Update()` would stop and ESC would die.
 - Every new player-facing string goes through `Loc` / `ContentLocalization` and ships translated in all 15 languages. Every language also needs a `Language.<Name>` row in `Settings.csv` — without it the picker shows the raw key.

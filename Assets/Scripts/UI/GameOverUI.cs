@@ -44,6 +44,22 @@ namespace RogueBlockBlast.UI
         // ── PlayerPrefs key ──────────────────────────────────────────────────
         private const string BestScoreKey = "BestScore";
 
+        /// <summary>
+        /// Rekoru kaydeder; yeni rekorsa true döner.
+        /// Statik, çünkü run her zaman bu panelle bitmiyor — demo sonu paneli
+        /// Game Over ekranını hiç açmadan run'ı kapatıyor ve skorun yine de
+        /// yazılması gerekiyor.
+        /// </summary>
+        public static bool RecordBestScore(int finalScore)
+        {
+            int best = PlayerPrefs.GetInt(BestScoreKey, 0);
+            if (finalScore <= best) return false;
+
+            PlayerPrefs.SetInt(BestScoreKey, finalScore);
+            PlayerPrefs.Save();
+            return true;
+        }
+
         // ── Runtime ──────────────────────────────────────────────────────────
         private bool _fadingIn;
 
@@ -86,16 +102,9 @@ namespace RogueBlockBlast.UI
         public void Show(int finalScore, int coinsEarned = 0)
         {
             // ── Best score ──────────────────────────────────────────────────
-            int bestScore  = PlayerPrefs.GetInt(BestScoreKey, 0);
-            bool newRecord = finalScore > bestScore;
- 
-            if (newRecord)
-            {
-                bestScore = finalScore;
-                PlayerPrefs.SetInt(BestScoreKey, bestScore);
-                PlayerPrefs.Save();
-            }
- 
+            bool newRecord = RecordBestScore(finalScore);
+            int  bestScore = PlayerPrefs.GetInt(BestScoreKey, 0);
+
             // ── Score display ───────────────────────────────────────────────
             _finalScoreText.text = FormatScore(finalScore);
             _bestScoreText.text  = FormatScore(bestScore);

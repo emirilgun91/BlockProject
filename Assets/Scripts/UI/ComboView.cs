@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Core;
 using TMPro;
 using UnityEngine;
@@ -31,6 +32,8 @@ namespace RogueBlockBlast.UI
         [Header("Reset FX")]
         [SerializeField] private RectTransform _comboPanel;    // ComboBoard RectTransform — shake için
         [SerializeField] private Color _colorResetFlash = new Color(0.85f, 0.22f, 0.22f, 1f); // kırmızı
+        [SerializeField] private Color _colorShieldFlash   = new Color(0.35f, 0.85f, 1.00f, 1f); // kalkan: camgöbeği
+        [SerializeField] private Color _colorSoftLandFlash = new Color(0.45f, 0.70f, 1.00f, 1f); // fren: mavi
 
         [Header("Text")]
         [SerializeField] private TMP_Text _multiplierText;
@@ -51,6 +54,7 @@ namespace RogueBlockBlast.UI
         private int         _lastCharges    = -1;
         private float       _lastMultiplier = -1f;
         private Sequence    _glowSequence;
+        private RogueBlockBlast.UI.FX.ComboRescueFX _rescueFX;
 
         // ── Public API ───────────────────────────────────────────────────────
 
@@ -61,15 +65,21 @@ namespace RogueBlockBlast.UI
         {
             if (_system != null)
             {
-                _system.OnStateChanged -= HandleStateChanged;
-                _system.OnMaxCharge    -= HandleMaxCharge;
-                _system.OnComboReset   -= HandleReset;
+                _system.OnStateChanged    -= HandleStateChanged;
+                _system.OnMaxCharge       -= HandleMaxCharge;
+                _system.OnComboReset      -= HandleReset;
+                _system.OnComboShieldUsed -= HandleShieldUsed;
+                _system.OnSoftLanding     -= HandleSoftLanding;
             }
 
             _system = system;
-            _system.OnStateChanged += HandleStateChanged;
-            _system.OnMaxCharge    += HandleMaxCharge;
-            _system.OnComboReset   += HandleReset;
+            _system.OnStateChanged    += HandleStateChanged;
+            _system.OnMaxCharge       += HandleMaxCharge;
+            _system.OnComboReset      += HandleReset;
+            _system.OnComboShieldUsed += HandleShieldUsed;
+            _system.OnSoftLanding     += HandleSoftLanding;
+
+            EnsureRescueFX();
 
             // Orijinal scale'leri kaydet — world space canvas'ta Vector3.one değil
             if (_multiplierText != null)
@@ -130,13 +140,70 @@ namespace RogueBlockBlast.UI
             }
         }
 
+        // ── Kurtarma anları ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Combo Shield reset'i soğurdu. Bar'lar burada KIRMIZI yerine mavi
+        /// parlıyor: aynı kırmızı flash kullanılsaydı oyuncunun refleksi
+        /// "combo'm gitti" olurdu — oysa tam tersi oldu.
+        /// </summary>
+        private void HandleShieldUsed()
+        {
+            EnsureRescueFX();
+            _rescueFX?.PlayShieldSave(Loc.GetOr("Combo.ShieldHeld", "SHIELD HELD"));
+
+            if (_chargeBars == null) return;
+            foreach (var bar in _chargeBars)
+            {
+                if (bar == null) continue;
+                bar.DOKill();
+                DOTween.Sequence()
+                    .Append(bar.DOColor(_colorShieldFlash, 0.08f).SetEase(Ease.OutQuad))
+                    .Append(bar.DOColor(_colorEmpty,       0.30f).SetEase(Ease.OutQuad))
+                    .SetAutoKill(true);
+            }
+        }
+
+        /// <summary>
+        /// Soft Landing: çarpan tabana çakılmak yerine yarılandı. Sarsıntı yok —
+        /// sarsıntı "kaza" demek, buradaki jest frenleme olmalı.
+        /// </summary>
+        private void HandleSoftLanding(float before, float after)
+        {
+            EnsureRescueFX();
+            _rescueFX?.PlaySoftLanding(
+                Loc.GetOr("Combo.SoftLanding", "SOFT LANDING") + "  x" + after.ToString("0.##"),
+                _multiplierText != null ? _multiplierText.rectTransform : null);
+
+            if (_chargeBars == null) return;
+            foreach (var bar in _chargeBars)
+            {
+                if (bar == null) continue;
+                bar.DOKill();
+                DOTween.Sequence()
+                    .Append(bar.DOColor(_colorSoftLandFlash, 0.10f).SetEase(Ease.OutQuad))
+                    .Append(bar.DOColor(_colorEmpty,         0.30f).SetEase(Ease.OutQuad))
+                    .SetAutoKill(true);
+            }
+        }
+
+        private void EnsureRescueFX()
+        {
+            if (_rescueFX != null) return;
+            _rescueFX = gameObject.AddComponent<RogueBlockBlast.UI.FX.ComboRescueFX>();
+            _rescueFX.Setup(_comboPanel != null ? _comboPanel : transform as RectTransform,
+                            _multiplierText != null ? _multiplierText.font : null);
+        }
+
         private void OnDestroy()
         {
             if (_system != null)
             {
-                _system.OnStateChanged -= HandleStateChanged;
-                _system.OnMaxCharge    -= HandleMaxCharge;
-                _system.OnComboReset   -= HandleReset;
+                _system.OnStateChanged    -= HandleStateChanged;
+                _system.OnMaxCharge       -= HandleMaxCharge;
+                _system.OnComboReset      -= HandleReset;
+                _system.OnComboShieldUsed -= HandleShieldUsed;
+                _system.OnSoftLanding     -= HandleSoftLanding;
             }
             _glowSequence?.Kill();
         }

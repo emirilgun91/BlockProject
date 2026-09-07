@@ -34,6 +34,16 @@ namespace RogueBlockBlast.UI
         [SerializeField] private AudioClip ScorePopupSfx;
         // ── Public API ───────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Line Master / Tunnel Vision hangi ekseni puanlıyor.
+        /// Both = kısıtlama yok (normal oyun).
+        /// </summary>
+        public enum ScoringAxis { Both, RowsOnly, ColsOnly }
+
+        // Puanlayan eksen altın, puanlamayan eksen soluk gri temizlenir.
+        private static readonly Color AxisScoringFlash = new Color(1f,   0.82f, 0.32f, 1f);
+        private static readonly Color AxisDeadFlash    = new Color(0.42f, 0.46f, 0.55f, 1f);
+
         public void Play(
             bool[]              clearedRows,
             bool[]              clearedCols,
@@ -41,7 +51,8 @@ namespace RogueBlockBlast.UI
             BoardView           boardView,
             int                 boardWidth,
             int                 boardHeight,
-            System.Action       onAllArrived = null)
+            System.Action       onAllArrived = null,
+            ScoringAxis         scoringAxis  = ScoringAxis.Both)
         {
             if (snapshots == null || snapshots.Count == 0)
             {
@@ -73,12 +84,14 @@ namespace RogueBlockBlast.UI
                 var origin   = boardView.OriginWorld;
                 var cellSize = boardView.CellSize;
 
+                // Puan vermeyen eksende çizgi parlaması da yok: sessizlik burada
+                // bilgi taşıyor — "bu satır temizlendi ama sana bir şey vermedi".
                 for (int y = 0; y < clearedRows.Length; y++)
-                    if (clearedRows[y])
+                    if (clearedRows[y] && scoringAxis != ScoringAxis.ColsOnly)
                         _lineFlash.FlashRow(origin, y, cellSize, boardWidth, y * 0.02f);
 
                 for (int x = 0; x < clearedCols.Length; x++)
-                    if (clearedCols[x])
+                    if (clearedCols[x] && scoringAxis != ScoringAxis.RowsOnly)
                         _lineFlash.FlashColumn(origin, x, cellSize, boardHeight, x * 0.02f);
             }
 
@@ -90,14 +103,32 @@ namespace RogueBlockBlast.UI
 
                 Vector3 worldPos = boardView.GetTileWorldPosition(tile.X, tile.Y);
 
+                // Line Master / Tunnel Vision: bu hücre puan veren eksende mi?
+                // Bir hücre hem satırda hem sütunda olabilir — puanlayan eksende
+                // olması yeterli, RunController'ın toplama mantığı da böyle.
+                bool scores = scoringAxis switch
+                {
+                    ScoringAxis.RowsOnly => clearedRows[tile.Y],
+                    ScoringAxis.ColsOnly => clearedCols[tile.X],
+                    _                    => true,
+                };
+
+                // Kısıtlama varken renk kuralı anlatıyor: altın = puan, gri = boşuna.
+                Color flash = scoringAxis == ScoringAxis.Both
+                    ? tile.Color
+                    : (scores ? AxisScoringFlash : AxisDeadFlash);
+
                 // Particle burst
-                SpawnBurst(worldPos, tile.Color, delay);
+                if (scores) SpawnBurst(worldPos, flash, delay);
 
                 // TileView clear animasyonu
-                boardView.GetTile(tile.X, tile.Y)?.PlayClearFX(delay, tile.Color);
+                boardView.GetTile(tile.X, tile.Y)?.PlayClearFX(delay, flash);
 
-                // Score popup — worldPos ve RectTransform hedef geçilir
-                if (ScorePopupPool.Instance != null && tile.Value > 0f)
+                // Score popup — worldPos ve RectTransform hedef geçilir.
+                // Puan vermeyen eksende popup UÇURULMAZ: eskiden uçuyordu ve
+                // skora eklenmeyen bir sayıyı gösterdiği için doğrudan yalan
+                // söylüyordu.
+                if (ScorePopupPool.Instance != null && tile.Value > 0f && scores)
                 {
                     var popup = ScorePopupPool.Instance.Get();
                     popup.Launch(
@@ -105,7 +136,7 @@ namespace RogueBlockBlast.UI
                         _scoreboardTarget,
                         _cam,
                         tile.Value,
-                        tile.Color,
+                        flash,
                         delay,
                         onArrive: () =>
                         {

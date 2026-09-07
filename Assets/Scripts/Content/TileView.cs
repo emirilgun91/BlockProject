@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using RogueBlockBlast.UI.FX;
 using TMPro;
 using UnityEngine;
 
@@ -37,7 +38,10 @@ namespace RogueBlockBlast.UI
         private OverlayType _overlayType  = OverlayType.None;
         private string      _overlayLabel;
         private SpriteRenderer _overlayIcon;
+        private SpriteRenderer _overlayGlow;   // ikonun ALTINDA — hale / sis
+        private SpriteRenderer _overlayRing;   // ikonun ÜSTÜNDE — kalkan çerçevesi
         private float          _iconBaseSize = 1f;
+        private float          _overlayPhase;  // hücreye özel faz — tahta tek ağızdan yanıp sönmesin
         private TextMeshPro    _bonusLabel;
 
         // ── Unity ────────────────────────────────────────────────────────────
@@ -167,7 +171,7 @@ namespace RogueBlockBlast.UI
             if (mr != null)
             {
                 mr.sortingLayerID = _sr.sortingLayerID;
-                mr.sortingOrder   = _sr.sortingOrder + 3;
+                mr.sortingOrder   = _sr.sortingOrder + 5;
             }
         }
 
@@ -277,7 +281,22 @@ namespace RogueBlockBlast.UI
             // çağırıp yalnızca overlay'li olanlar için ApplyOverlayVisual çağırıyor.
             // Burada kapatmazsak eski ikon tahtada asılı kalır.
             if (_overlayIcon != null) _overlayIcon.enabled = false;
+            if (_overlayGlow != null) _overlayGlow.enabled = false;
+            if (_overlayRing != null) _overlayRing.enabled = false;
         }
+
+        // ── FX'in ihtiyaç duyduğu ölçüler ────────────────────────────────────
+        // BoardOverlayFX hücrenin üstünde dünya-uzayı efektleri çizerken tile'ın
+        // boyutunu ve sıralamasını bilmek zorunda. Renderer'ı dışarı açmak yerine
+        // yalnızca bu üç değeri veriyoruz — FX tarafı tile'ın rengiyle oynayamaz.
+
+        private SpriteRenderer Sr => _sr != null ? _sr : (_sr = GetComponent<SpriteRenderer>());
+
+        public float TileWorldSize   => Mathf.Max(Sr.bounds.size.x, 0.01f);
+        public int   FxSortingLayer  => Sr.sortingLayerID;
+        public int   FxSortingOrder  => Sr.sortingOrder;
+        public Color CurrentColor    => Sr.color;
+        public Sprite TileSprite     => Sr.sprite;
 
         /// <summary>
         /// Called by BoardView.Render() AFTER color/value are set.
@@ -293,6 +312,8 @@ namespace RogueBlockBlast.UI
             if (_overlayType == OverlayType.None)
             {
                 if (_overlayIcon != null && _overlayIcon.enabled) _overlayIcon.enabled = false;
+                if (_overlayGlow != null && _overlayGlow.enabled) _overlayGlow.enabled = false;
+                if (_overlayRing != null && _overlayRing.enabled) _overlayRing.enabled = false;
                 return;
             }
 
@@ -300,17 +321,137 @@ namespace RogueBlockBlast.UI
 
             var tint = GetOverlayTint(_overlayType);
 
+            // Her hücre kendi fazında nefes alsın — aynı anda yanıp sönen iki neon
+            // hücresi tahtayı disko ışığına çevirir, kaymış fazda ise canlı durur.
+            float t     = Time.time + _overlayPhase;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(t * PulseSpeed(_overlayType));
+
             // Zemin: boşken sadece hafif renk ipucu ver — dolu blok gibi görünmesin
-            _sr.color = Color.Lerp(_sr.color, tint, cellFilled ? 0.35f : 0.14f);
+            float baseTint = _overlayType is OverlayType.NeonCableA or OverlayType.NeonCableB
+                ? (cellFilled ? 0.48f : 0.24f) + 0.10f * pulse   // neon zemini de nabız atsın
+                : (cellFilled ? 0.35f : 0.14f);
+            _sr.color = Color.Lerp(_sr.color, tint, baseTint);
 
             _overlayIcon.sprite  = GetOverlayIcon(_overlayType);
             _overlayIcon.enabled = _overlayIcon.sprite != null;
-            _overlayIcon.color   = new Color(tint.r, tint.g, tint.b, cellFilled ? 0.55f : 1f);
 
             // Decaying Rift halkasının ortası boş — geri sayım rakamı içinden okunsun diye
             // ikonu biraz büyütüyoruz. Diğerleri hücreyi doldurmasın diye daha küçük.
             float sizeFactor = _overlayType == OverlayType.DecayingRift ? 0.88f : 0.66f;
-            _overlayIcon.transform.localScale = Vector3.one * (_iconBaseSize * sizeFactor);
+            float iconAlpha  = cellFilled ? 0.55f : 1f;
+            Color iconColor  = tint;
+            var   iconLocal  = Vector3.zero;
+
+            switch (_overlayType)
+            {
+                // ── Neon Cable ───────────────────────────────────────────────
+                // Neon tüp mantığı: sabit yüksek parlaklık + nadir, çok kısa bir
+                // sönme (Pow ile daralttığımız sinüs tepesi). Sürekli titreme göz
+                // yorar; nadir titreme "bu bir neon" der.
+                case OverlayType.NeonCableA:
+                case OverlayType.NeonCableB:
+                {
+                    float flicker = 1f - 0.30f * Mathf.Pow(
+                        Mathf.Max(0f, Mathf.Sin(t * 21f + _overlayPhase * 5f)), 14f);
+                    float bright = (0.80f + 0.20f * pulse) * flicker;
+
+                    // Beyaza doğru çekmek, alpha-blend materyalde HDR olmadan
+                    // elde edebileceğimiz en güçlü "parlıyor" sinyali.
+                    iconColor  = Color.Lerp(tint, Color.white, 0.55f * bright);
+                    iconAlpha  = (cellFilled ? 0.85f : 1f) * bright;
+                    sizeFactor = 0.68f + 0.05f * pulse;
+
+                    SetGlow(OverlayFXGraphics.SoftDisc,
+                            tint,
+                            alpha: (cellFilled ? 0.42f : 0.60f) * bright,
+                            scale: _iconBaseSize * (1.55f + 0.30f * pulse),
+                            rotation: 0f);
+                    HideRing();
+                    break;
+                }
+
+                // ── Phantom Cell ─────────────────────────────────────────────
+                // İki farklı frekansın çarpımı → düzenli bir nabız değil, düzensiz
+                // bir "var mı yok mu" nefesi. Sis halesi ters fazda çalışıyor:
+                // ikon söndükçe sis kabarıyor, ikon belirdikçe sis çekiliyor.
+                case OverlayType.PhantomCell:
+                {
+                    float breathe = 0.5f + 0.5f * Mathf.Sin(t * 1.7f);
+                    float mist    = breathe * (0.62f + 0.38f * Mathf.Sin(t * 0.73f + _overlayPhase));
+                    mist = Mathf.Clamp01(0.30f + 0.70f * mist);
+
+                    iconColor  = Color.Lerp(tint, Color.white, 0.25f * mist);
+                    iconAlpha  = (cellFilled ? 0.45f : 0.95f) * mist;
+                    sizeFactor = 0.64f + 0.04f * (1f - mist);
+                    iconLocal  = new Vector3(0f, Mathf.Sin(t * 0.9f) * _iconBaseSize * 0.045f, 0f);
+
+                    SetGlow(OverlayFXGraphics.SoftDisc,
+                            tint,
+                            alpha: (cellFilled ? 0.18f : 0.30f) + 0.26f * (1f - mist),
+                            scale: _iconBaseSize * (1.45f + 0.35f * (1f - mist)),
+                            rotation: Mathf.Sin(t * 0.4f) * 25f);
+                    HideRing();
+                    break;
+                }
+
+                // ── Safe Zone ────────────────────────────────────────────────
+                // Kalkan hücrenin DIŞINA taşmamalı — komşu hücreleri de koruyormuş
+                // gibi okunurdu. Bu yüzden hem halka hem hale tile boyutuyla
+                // sınırlı (<= _iconBaseSize) ve nabız yalnızca alt sınırdan büyütüyor.
+                case OverlayType.SafeZone:
+                {
+                    float bright = 0.75f + 0.25f * pulse;
+
+                    iconColor  = Color.Lerp(tint, Color.white, 0.30f * bright);
+                    iconAlpha  = (cellFilled ? 0.70f : 1f) * bright;
+                    sizeFactor = 0.46f;                       // ikon halkanın içinde kalsın
+
+                    SetRing(OverlayFXGraphics.HexShield,
+                            tint,
+                            alpha: (cellFilled ? 0.65f : 0.90f) * bright,
+                            scale: _iconBaseSize * (0.90f + 0.06f * pulse),   // max 0.96 tile
+                            rotation: Time.time * 9f);
+                    SetGlow(OverlayFXGraphics.SoftDisc,
+                            tint,
+                            alpha: 0.14f + 0.10f * pulse,
+                            scale: _iconBaseSize * 0.92f,
+                            rotation: 0f);
+                    break;
+                }
+
+                // ── Decaying Rift ────────────────────────────────────────────
+                // Geri sayım rakamı tek başına aciliyet taşımıyordu — oyuncu 5'ten
+                // 1'e inen bir sayıya bakıp aynı şeyi görüyordu. Son iki adımda
+                // nabız hızlanıp hale kabarıyor; rakamı okumadan da fark ediliyor.
+                case OverlayType.DecayingRift:
+                {
+                    int.TryParse(_overlayLabel, out int left);
+                    bool  urgent = left > 0 && left <= 2;
+                    float speed  = urgent ? (left == 1 ? 9f : 5.5f) : 2.2f;
+                    float p      = 0.5f + 0.5f * Mathf.Sin(Time.time * speed + _overlayPhase);
+
+                    iconColor  = Color.Lerp(tint, Color.white, (urgent ? 0.45f : 0.15f) * p);
+                    iconAlpha  = (cellFilled ? 0.70f : 1f) * (urgent ? 0.70f + 0.30f * p : 0.9f);
+                    sizeFactor = 0.88f + (urgent ? 0.06f * p : 0f);
+
+                    SetGlow(OverlayFXGraphics.SoftDisc,
+                            tint,
+                            alpha: urgent ? 0.20f + 0.40f * p : 0.16f,
+                            scale: _iconBaseSize * (1.10f + (urgent ? 0.45f : 0.15f) * p),
+                            rotation: 0f);
+                    HideRing();
+                    break;
+                }
+
+                default:
+                    HideGlow();
+                    HideRing();
+                    break;
+            }
+
+            _overlayIcon.color = new Color(iconColor.r, iconColor.g, iconColor.b, iconAlpha);
+            _overlayIcon.transform.localScale    = Vector3.one * (_iconBaseSize * sizeFactor);
+            _overlayIcon.transform.localPosition = iconLocal;
 
             // Etiket (rift geri sayımı gibi) ikonun üstünde, overlay renginde okunur
             if (_scoreText != null && !string.IsNullOrEmpty(_overlayLabel))
@@ -318,6 +459,60 @@ namespace RogueBlockBlast.UI
                 _scoreText.text  = _overlayLabel;
                 _scoreText.color = Color.Lerp(tint, Color.white, 0.55f);
             }
+        }
+
+        private static float PulseSpeed(OverlayType type) => type switch
+        {
+            OverlayType.NeonCableA or OverlayType.NeonCableB => 5.5f,
+            OverlayType.SafeZone                             => 2.6f,
+            _                                                => 1.7f,
+        };
+
+        private void SetGlow(Sprite sprite, Color tint, float alpha, float scale, float rotation)
+        {
+            EnsureGlow();
+            _overlayGlow.enabled = true;
+            _overlayGlow.sprite  = sprite;
+            _overlayGlow.color   = new Color(tint.r, tint.g, tint.b, alpha);
+            _overlayGlow.transform.localScale    = Vector3.one * scale;
+            _overlayGlow.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        private void SetRing(Sprite sprite, Color tint, float alpha, float scale, float rotation)
+        {
+            EnsureRing();
+            _overlayRing.enabled = true;
+            _overlayRing.sprite  = sprite;
+            _overlayRing.color   = new Color(tint.r, tint.g, tint.b, alpha);
+            _overlayRing.transform.localScale    = Vector3.one * scale;
+            _overlayRing.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        private void HideGlow() { if (_overlayGlow != null) _overlayGlow.enabled = false; }
+        private void HideRing() { if (_overlayRing != null) _overlayRing.enabled = false; }
+
+        private void EnsureGlow()
+        {
+            if (_overlayGlow != null) return;
+            _overlayGlow = NewOverlayLayer("OverlayGlow", _sr.sortingOrder + 1);
+        }
+
+        private void EnsureRing()
+        {
+            if (_overlayRing != null) return;
+            _overlayRing = NewOverlayLayer("OverlayRing", _sr.sortingOrder + 3);
+        }
+
+        private SpriteRenderer NewOverlayLayer(string name, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.zero;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sortingLayerID = _sr.sortingLayerID;
+            sr.sortingOrder   = order;
+            return sr;
         }
 
         /// <summary>İkon SpriteRenderer'ı yoksa çalışma zamanında oluşturur — prefab düzenlemek gerekmez.</summary>
@@ -333,11 +528,16 @@ namespace RogueBlockBlast.UI
             // Blok sprite'ının hemen üstü. Skor yazısı ayrı (daha yüksek) sorting layer'da
             // olduğu için rakam ikonun üzerinde kalmaya devam eder.
             _overlayIcon.sortingLayerID = _sr.sortingLayerID;
-            _overlayIcon.sortingOrder   = _sr.sortingOrder + 1;
+            _overlayIcon.sortingOrder   = _sr.sortingOrder + 2;
 
             float tileSize = _sr.bounds.size.x;
             if (tileSize <= 0f) tileSize = 1f;
             _iconBaseSize = tileSize;
+
+            // Faz, hücrenin konumundan türetiliyor: aynı sahnede iki neon hücresi
+            // asla senkron yanıp sönmesin, ama karede kare aynı kalsın.
+            var p = transform.position;
+            _overlayPhase = Mathf.Repeat(p.x * 1.7f + p.y * 2.3f, Mathf.PI * 2f);
         }
 
         private static Sprite GetOverlayIcon(OverlayType type)
@@ -362,6 +562,9 @@ namespace RogueBlockBlast.UI
         }
 
         private static readonly System.Collections.Generic.Dictionary<string, Sprite> _iconCache = new();
+
+        /// <summary>Overlay rengini dışarı açar — patlama/kalkan FX'i aynı paleti kullansın.</summary>
+        public static Color OverlayTint(OverlayType type) => GetOverlayTint(type);
 
         private static Color GetOverlayTint(OverlayType type) => type switch
         {

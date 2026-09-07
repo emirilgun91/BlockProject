@@ -14,10 +14,34 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _floatOffsetY = 120f;
         [SerializeField] private float _floatFontSize = 48f;
 
+        [Header("Breakdown")]
+        [Tooltip("Çarpan zincirinin skor yazısına göre dikey kayması.")]
+        [SerializeField] private float _breakdownOffsetY = -54f;
+
+        private RogueBlockBlast.UI.FX.ScoreBreakdownView _breakdown;
+
         public void SetScore(int total)
         {
             if (_scoreNumb != null)
                 _scoreNumb.text = total.ToString();
+        }
+
+        /// <summary>
+        /// Bu hamlede devreye giren çarpanları skorun altında gösterir.
+        /// Liste boşsa hiçbir şey çizilmez — nötr hamlede ekran sessiz kalır.
+        /// </summary>
+        public void ShowScoreBreakdown(
+            System.Collections.Generic.IReadOnlyList<RogueBlockBlast.UI.FX.ScoreFactor> factors)
+        {
+            if (_scoreNumb == null || factors == null || factors.Count == 0) return;
+
+            if (_breakdown == null)
+            {
+                _breakdown = gameObject.AddComponent<RogueBlockBlast.UI.FX.ScoreBreakdownView>();
+                _breakdown.Setup(_scoreNumb.rectTransform, _scoreNumb.font, _breakdownOffsetY);
+            }
+
+            _breakdown.Show(factors);
         }
         public void PunchScore()
         {

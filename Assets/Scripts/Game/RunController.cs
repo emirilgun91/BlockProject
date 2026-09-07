@@ -6,6 +6,7 @@ using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
 using RogueBlockBlast.Game.Tutorial;
 using RogueBlockBlast.UI;
+using RogueBlockBlast.UI.FX;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
@@ -96,6 +97,10 @@ namespace RogueBlockBlast.Game
         private readonly HashSet<Vector2Int> _ghost = new();
         // Ghost hücrelerinin pozisyon bonusu — her frame yeniden doldurulur (alokasyon yok)
         private readonly Dictionary<Vector2Int, float> _ghostPositionBonus = new();
+
+        /// <summary>Fare altındaki konum Ghost Drop ile bedava mı — önizleme rengi buna bakar.</summary>
+        private bool _ghostIsFreeDrop;
+        private RotateHintView _rotateHint;
         private bool _poolDirty = true;
 
         private int       _freeDeadPoolReroll = 1;
@@ -196,6 +201,7 @@ namespace RogueBlockBlast.Game
 
             _ghost.Clear();
             _ghostPositionBonus.Clear();
+            _ghostIsFreeDrop = false;
             if (BoardView.IsMouseOverBoard(MainCamera))
             {
                 var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
@@ -204,6 +210,16 @@ namespace RogueBlockBlast.Game
                 {
                     var  anchor   = cell.Value;
                     bool canPlace = PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot);
+
+                    // Ghost Drop: bu konum hiçbir şeye değmiyorsa yerleştirme
+                    // bedava. Kartın değeri böyle bir konumu ARAMAKTA — bunu
+                    // ancak tıkladıktan sonra öğrenebilmek kartı kullanılmaz
+                    // kılıyordu, o yüzden önizleme rengiyle önceden söyleniyor.
+                    _ghostIsFreeDrop =
+                        canPlace &&
+                        _cardState.HasGhostDrop &&
+                        _cardState.GhostDropUsesThisMilestone < _cardState.GhostDropMaxUses &&
+                        IsGhostDropPlacement(_board, _currentPiece, anchor, _currentRot);
 
                     var cells = _currentPiece.GetCells(_currentRot);
                     for (int i = 0; i < cells.Count; i++)
@@ -234,7 +250,20 @@ namespace RogueBlockBlast.Game
                 float bonus = ShapeCardEffectRegistry.Instance?.GetScoreBonus(_currentPiece.Id) ?? 0f;
                 ghostTileValue += bonus;
             }
-            BoardView.Render(_board, _ghost, ghostTileValue, _ghostPositionBonus, _staticPositionBonus);
+            // Bedava yerleştirme önizlemesi nabız atıyor: sabit bir renk tahtadaki
+            // diğer yeşil tonlarla karışıyordu, nabız gözü kendine çekiyor.
+            Color? ghostOverride = null;
+            if (_ghostIsFreeDrop)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 7f);
+                ghostOverride = Color.Lerp(
+                    new Color(0.35f, 1f, 0.62f, 0.75f),
+                    new Color(0.85f, 1f, 0.90f, 0.95f),
+                    pulse);
+            }
+
+            BoardView.Render(_board, _ghost, ghostTileValue, _ghostPositionBonus,
+                             _staticPositionBonus, ghostOverride);
 
             // ── Kilitlenme güvenlik ağı ───────────────────────────────────────
             // Hamle kontrolü normalde sadece parça yerleştirildiğinde yapılır. Tahtayı
@@ -308,10 +337,19 @@ namespace RogueBlockBlast.Game
                 FrameFeedbackController.Instance?.OnLineClear(cleared);
                 if (LineClearVFX != null)
                 {
+                    // Line Master / Tunnel Vision bir ekseni tamamen puansız
+                    // yapıyor. Kuralı skor 0 gelince öğrenmek çok geç — temizlik
+                    // anında renkle söyleniyor: altın = puan, gri = boşuna.
+                    var scoringAxis =
+                          _cardState.HasTunnelVision ? LineClearVFX.ScoringAxis.ColsOnly
+                        : _cardState.HasLineMaster   ? LineClearVFX.ScoringAxis.RowsOnly
+                                                     : LineClearVFX.ScoringAxis.Both;
+
                     LineClearVFX.Play(
                         clearedRows, clearedCols, snapshots,
                         BoardView, _board.Width, _board.Height,
-                        onAllArrived: () => ScoreView?.PunchScore()
+                        onAllArrived: () => ScoreView?.PunchScore(),
+                        scoringAxis: scoringAxis
                     );
                 }
                 else
@@ -329,6 +367,12 @@ namespace RogueBlockBlast.Game
                     int bountyCoins = cleared * _cardState.BountyHunterCoinPerClear;
                     CoinWallet.Instance?.Earn(bountyCoins);
                     _coins += bountyCoins;
+
+                    // Coin sayacının tek başına artması tahtaya bakan oyuncunun
+                    // gözünden kaçıyordu — para temizlenen satırdan çıkmalı.
+                    BoardOverlayFX.Instance.PlayCoinBurst(
+                        BoardView, clearedRows, clearedCols,
+                        _board.Width, _board.Height, bountyCoins);
                 }
 
                 // Phantom Cell: relocate if its row/col was cleared
@@ -365,7 +409,14 @@ namespace RogueBlockBlast.Game
                 _maxComboReached = _comboSystem.Multiplier;
 
             // ── Per-milestone counters: increment BEFORE milestone may reset them ──
-            if (isGhostDrop) _cardState.GhostDropUsesThisMilestone++;
+            if (isGhostDrop)
+            {
+                _cardState.GhostDropUsesThisMilestone++;
+                int left = _cardState.GhostDropMaxUses - _cardState.GhostDropUsesThisMilestone;
+                ShowTriggerPopup(anchor,
+                    Loc.Get("Popup.FreeDrop", left),
+                    new Color(0.45f, 1f, 0.68f));
+            }
             if (isFirstPick) _cardState.FirstPicksUsedThisMilestone++;
 
             // ── Card Collector: envanter büyüklüğü global çarpana eklenir ──────
@@ -379,6 +430,12 @@ namespace RogueBlockBlast.Game
             // ── Score modifiers ───────────────────────────────────────────────
             float effectiveTileValueSum = tileValueSum;
 
+            // Çarpan zinciri: bu hamlede GERÇEKTEN devreye giren çarpanlar burada
+            // toplanıyor ve skorun altında tek satır olarak gösteriliyor. Nötr olan
+            // (x1) hiç eklenmiyor — yoksa her hamlede aynı satır yanıp söner ve
+            // bilgi taşımaz hale gelirdi. Liste yeniden kullanılıyor, alloc yok.
+            _scoreFactors.Clear();
+
             if (cleared > 0)
             {
                 // Tunnel Vision: only column clears score (takes priority over Line Master)
@@ -388,6 +445,8 @@ namespace RogueBlockBlast.Game
                     foreach (var snap in snapshots)
                         if (clearedCols[snap.X]) colSum += snap.Value;
                     effectiveTileValueSum = colSum * _cardState.TunnelVisionMultiplier;
+                    AddScoreFactor("Card.Cart_Tunnel_Vision.Name", "Tunnel Vision",
+                                   _cardState.TunnelVisionMultiplier);
                 }
                 // Line Master: only row clears score
                 else if (_cardState.HasLineMaster)
@@ -396,11 +455,17 @@ namespace RogueBlockBlast.Game
                     foreach (var snap in snapshots)
                         if (clearedRows[snap.Y]) rowSum += snap.Value;
                     effectiveTileValueSum = rowSum * _cardState.LineMasterMultiplier;
+                    AddScoreFactor("Card.Cart_Line_Master.Name", "Line Master",
+                                   _cardState.LineMasterMultiplier);
                 }
 
                 // Diet Plan: global tile score reduction
                 if (_cardState.HasDietPlan)
+                {
                     effectiveTileValueSum *= _cardState.DietPlanScoreFactor;
+                    AddScoreFactor("Card.Diet_plan.Name", "Diet Plan",
+                                   _cardState.DietPlanScoreFactor);
+                }
 
                 // Slow Burn: early penalty / late bonus
                 if (_cardState.HasSlowBurn)
@@ -408,17 +473,38 @@ namespace RogueBlockBlast.Game
                     int placed    = _milestoneSystem?.PiecesPlacedInWindow ?? 0;
                     int piecesLeft = _milestoneSystem?.PiecesRemaining     ?? int.MaxValue;
                     if (placed < _cardState.SlowBurnEarlyCount)
+                    {
                         effectiveTileValueSum *= _cardState.SlowBurnEarlyFactor;
+                        AddScoreFactor("Card.Card_Slow_Burn.Name", "Slow Burn",
+                                       _cardState.SlowBurnEarlyFactor);
+                    }
                     else if (piecesLeft <= _cardState.SlowBurnLateCount)
+                    {
                         effectiveTileValueSum *= _cardState.SlowBurnLateFactor;
+                        AddScoreFactor("Card.Card_Slow_Burn.Name", "Slow Burn",
+                                       _cardState.SlowBurnLateFactor);
+                    }
                 }
 
                 // Selective Blindness: 2+ lines → 0 score; 1 line → ×factor
                 if (_cardState.HasSelectiveBlindness)
                 {
-                    if (cleared >= 2) effectiveTileValueSum = 0f;
-                    else effectiveTileValueSum *= _cardState.SelectiveBlindnessSingleFactor;
+                    if (cleared >= 2)
+                    {
+                        effectiveTileValueSum = 0f;
+                        AddScoreFactor("Card.Card_Selective_Blindness.Name", "Selective Blindness", 0f);
+                    }
+                    else
+                    {
+                        effectiveTileValueSum *= _cardState.SelectiveBlindnessSingleFactor;
+                        AddScoreFactor("Card.Card_Selective_Blindness.Name", "Selective Blindness",
+                                       _cardState.SelectiveBlindnessSingleFactor);
+                    }
                 }
+
+                // Combo ve global çarpan zincirin belkemiği — kart olmasa da varlar.
+                AddScoreFactor("Score.Combo", "COMBO", _comboSystem.Multiplier);
+                AddScoreFactor("Score.Bonus", "BONUS", effectiveGlobalMultiplier);
             }
 
             // ── Score ─────────────────────────────────────────────────────────
@@ -449,6 +535,8 @@ namespace RogueBlockBlast.Game
             if (_cardState.HasDoubleStrike && cleared >= _cardState.DoubleStrikeMinLines)
             {
                 gainedScore = Mathf.RoundToInt(gainedScore * _cardState.DoubleStrikeFactor);
+                AddScoreFactor("Card.Card_Double_Strike.Name", "Double Strike",
+                               _cardState.DoubleStrikeFactor);
                 ShowTriggerPopup(anchor,
                     Loc.Get("Popup.DoubleStrike", _cardState.DoubleStrikeFactor.ToString("0.##")),
                     new Color(1f, 0.55f, 0.15f));
@@ -460,6 +548,8 @@ namespace RogueBlockBlast.Game
                 bool won = UnityEngine.Random.value < 0.5f;
                 gainedScore = Mathf.RoundToInt(
                     gainedScore * (won ? _cardState.GamblerWinFactor : _cardState.GamblerLoseFactor));
+                AddScoreFactor("Card.Card_Gambler.Name", "Gambler",
+                               won ? _cardState.GamblerWinFactor : _cardState.GamblerLoseFactor);
 
                 ShowTriggerPopup(anchor,
                     won ? Loc.Get("Popup.GambleWon",  _cardState.GamblerWinFactor.ToString("0.##"))
@@ -478,6 +568,7 @@ namespace RogueBlockBlast.Game
                     _cardState.PlacementsWithoutClear >= _cardState.PatientMinPlacements)
                 {
                     gainedScore = Mathf.RoundToInt(gainedScore * _cardState.PatientFactor);
+                    AddScoreFactor("Card.Card_Patient.Name", "Patient", _cardState.PatientFactor);
                     ShowTriggerPopup(anchor,
                         Loc.Get("Popup.Patience", _cardState.PatientFactor.ToString("0.##")),
                         new Color(0.55f, 0.8f, 1f));
@@ -493,9 +584,14 @@ namespace RogueBlockBlast.Game
             RunStatsTracker.Instance?.RecordCombo(_comboSystem.Multiplier);
 
             if (gainedScore != 0)
+            {
                 ScoreView?.AddScoreGain(_score, gainedScore);
+                ScoreView?.ShowScoreBreakdown(_scoreFactors);
+            }
             else
+            {
                 ScoreView?.SetScore(_score);
+            }
 
             // ── Pool management ───────────────────────────────────────────────
             _piecePool.RemoveAt(_selectedPoolIndex);
@@ -531,7 +627,23 @@ namespace RogueBlockBlast.Game
                 _milestoneSystem?.OnPiecePlaced();
 
             UpdateBoardOverlays();
+            RefreshRotateHint();
             _poolDirty = true;
+        }
+
+        /// <summary>
+        /// Döndürme kilidi ipucunu tazeler. First Picks döndürmeyi kapatıyor ve
+        /// bunu yalnızca kart metni söylüyordu — oyuncu Q/E'ye basıp hiçbir şey
+        /// olmayınca kilidi değil, bir hatayı görüyordu.
+        /// </summary>
+        private void RefreshRotateHint()
+        {
+            if (_rotateHint == null)
+                _rotateHint = FindObjectOfType<RotateHintView>();
+
+            _rotateHint?.SetRotationLocked(
+                IsRotationLocked,
+                Mathf.Max(0, _cardState.FirstPicksFreeCount - _cardState.FirstPicksUsedThisMilestone));
         }
 
         // ── Run ──────────────────────────────────────────────────────────────
@@ -766,6 +878,14 @@ namespace RogueBlockBlast.Game
             if (_cardState.HasMomentumShield &&
                 _comboSystem.Multiplier >= _cardState.MomentumShieldMinMultiplier)
             {
+                // Bu kart oyunu bitmekten kurtarıyor ama tek yaptığı sessizce yeni
+                // havuz vermekti — oyuncu şeklinin neden kaybolduğunu anlamıyordu.
+                // Kaybın eşiğinden döndüğü an artık ekranda söyleniyor.
+                ScreenEventFX.Instance.PlayRunSaved(
+                    Loc.GetOr("Event.RunSaved", "RUN SAVED"),
+                    Loc.GetOr("Event.RunSavedSub", "Momentum Shield"));
+                FrameFeedbackController.Instance?.OnLineClear(3);
+
                 _comboSystem.ForceResetToBase();
                 _milestoneSystem?.EnsureMinimumRemaining(6);
                 GenerateNewPool();
@@ -1118,16 +1238,33 @@ namespace RogueBlockBlast.Game
             if (!aHit && !bHit) return 0;
 
             int bonus = 0;
-            if (aHit && !bHit) bonus = ExplodeNeonArea(pB);
-            else if (bHit && !aHit) bonus = ExplodeNeonArea(pA);
+            // Patlama hangi kablodan hangisine sıçradı — FX'teki elektrik yayı
+            // bu yönü gösteriyor, oyuncu iki kablo arasındaki bağı görsün.
+            if (aHit && !bHit) bonus = ExplodeNeonArea(center: pB, from: pA,
+                                                       fromType: OverlayType.NeonCableA,
+                                                       centerType: OverlayType.NeonCableB);
+            else if (bHit && !aHit) bonus = ExplodeNeonArea(center: pA, from: pB,
+                                                       fromType: OverlayType.NeonCableB,
+                                                       centerType: OverlayType.NeonCableA);
             // both hit simultaneously: no explosion, just reset
 
             ResetNeonCablePositions();
             return bonus;
         }
 
-        private int ExplodeNeonArea(Vector2Int center)
+        private int ExplodeNeonArea(
+            Vector2Int center, Vector2Int from, OverlayType fromType, OverlayType centerType)
         {
+            // FX önce kurulur: hücreler boşalmadan önce tetiklenirse 3x3 dalgası
+            // hâlâ blok renklerinin üstünde patlar ve çok daha okunur olur.
+            BoardOverlayFX.Instance.PlayNeonExplosion(
+                BoardView, from, center,
+                TileView.OverlayTint(fromType),
+                TileView.OverlayTint(centerType));
+
+            AudioManager.Instance?.PlaySFX(LineClearSFX);
+            FrameFeedbackController.Instance?.OnLineClear(2);
+
             float sum = 0f;
             for (int dy = -1; dy <= 1; dy++)
             for (int dx = -1; dx <= 1; dx++)
@@ -1137,7 +1274,8 @@ namespace RogueBlockBlast.Game
                 if (_board.IsDeadZone(ex, ey)) continue;
                 sum += _board.GetTileValue(ex, ey);
                 _board.SetFilled(ex, ey, false);
-                BoardView.GetTile(ex, ey)?.PlayClearFX(0f);
+                // Hücre sönme animasyonu artık FX tarafında, merkezden dışa
+                // gecikmeli olarak tetikleniyor — burada tekrar çağırmıyoruz.
             }
             return Mathf.RoundToInt(sum * _cardState.NeonCableExplosionScore
                                        * _comboSystem.Multiplier
@@ -1173,8 +1311,20 @@ namespace RogueBlockBlast.Game
                 _comboSystem.SetComboFloor(0f);
                 _milestoneSystem?.DeductPieces(_cardState.SafeZonePenalty);
 
-                // Ceza görünür olmalı: oyuncu 8 şeklin neden gittiğini anlamalı
-                BoardView?.GetTile(sp.x, sp.y)?.PlayClearFX(0f);
+                // Ceza görünür olmalı: oyuncu 8 şeklin neden gittiğini anlamalı.
+                // Kalkan kırılır + kaybedilen şekil sayısı hücrenin üstünde yükselir;
+                // üstteki milestone bandı tek başına gözden kaçıyordu.
+                BoardOverlayFX.Instance.PlaySafeZoneBreak(
+                    BoardView, sp, TileView.OverlayTint(OverlayType.SafeZone));
+                BoardView?.GetTile(sp.x, sp.y)?.PlayClearFX(0.08f);
+
+                if (LineClearVFX != null)
+                    LineClearVFX.PlayTriggerPopup(
+                        BoardView.GetTileWorldPosition(sp.x, sp.y),
+                        RogueBlockBlast.Core.Localization.Loc.Get(
+                            "Popup.SafeZoneBroken", _cardState.SafeZonePenalty),
+                        new Color(1f, 0.32f, 0.30f));
+
                 FrameFeedbackController.Instance?.OnCritical(0);
                 MilestoneView?.ShowNewCardEarned(
                     RogueBlockBlast.Core.Localization.Loc.Get("Card.Card_Safe_Zone.Broken",
@@ -1205,6 +1355,11 @@ namespace RogueBlockBlast.Game
                 {
                     // Countdown reached 0 — create dead zone
                     var rp = _cardState.RiftTilePosition;
+
+                    // Tahtada kalıcı hasar bırakan tek olay bu ve sessizce oluyordu.
+                    BoardOverlayFX.Instance.PlayRiftCollapse(BoardView, rp);
+                    FrameFeedbackController.Instance?.OnCritical(0);
+
                     _board.AddDeadZone(rp.x, rp.y);
                     _cardState.RiftTilePosition = new Vector2Int(-1, -1);
                     _cardState.RiftCurrentCount = 0;
@@ -1249,6 +1404,12 @@ namespace RogueBlockBlast.Game
             {
                 _cardState.PhantomCellPosition = pos;
                 _board.AddPhantom(pos.x, pos.y);
+
+                // Işınlanma görünür olmalı: hücre sessizce yer değiştirirse oyuncu
+                // hayaletin taşındığını değil, kaybolup başka yerde doğduğunu sanır
+                // ve tahtayı yeniden taramak zorunda kalır.
+                BoardOverlayFX.Instance.PlayPhantomTeleport(
+                    BoardView, pp, pos, TileView.OverlayTint(OverlayType.PhantomCell));
             }
             else
             {
@@ -1267,9 +1428,41 @@ namespace RogueBlockBlast.Game
             _comboSystem.ForceMaxCharge();
             if (_cardState.PerfectClearComboBoost > 0f)
                 _comboSystem.AddMultiplier(_cardState.PerfectClearComboBoost);
+
+            // Oyunun en büyük anı tamamen sessizdi. Tahta zaten boş olduğu için
+            // ekranda hiçbir hareket kalmıyordu — ödül tam ekran verilmeli.
+            ScreenEventFX.Instance.PlayPerfectClear(
+                Loc.GetOr("Event.PerfectClear", "PERFECT CLEAR"),
+                Loc.Get("Event.PerfectClearSub",
+                        _cardState.PerfectClearCoinReward,
+                        _cardState.PerfectClearComboBoost.ToString("0.##")));
+
+            BoardOverlayFX.Instance.PlayPerfectClearWave(BoardView, _board.Width, _board.Height);
+            FrameFeedbackController.Instance?.OnLineClear(4);
+            AudioManager.Instance?.PlaySFX(LineClearSFX);
         }
 
         // ── Card live values (in-run kart slotları) ──────────────────────────
+
+        // ── Skor çarpan zinciri ──────────────────────────────────────────────
+
+        /// <summary>Bu hamlenin çarpanları. Liste yeniden kullanılıyor — hamle başına alloc yok.</summary>
+        private readonly List<RogueBlockBlast.UI.FX.ScoreFactor> _scoreFactors = new();
+
+        /// <summary>
+        /// Zincire bir çarpan ekler. Nötr (x1) çarpanlar atlanır: her hamlede
+        /// "x1 BONUS" yazmak zinciri gürültüye çevirir ve gerçekten değişen
+        /// çarpanın fark edilmesini zorlaştırırdı.
+        ///
+        /// Etiket kart adının kendi lokalizasyon anahtarından geliyor — kartlar
+        /// zaten 15 dilde çevrili, ikinci bir metin seti tutmaya gerek yok.
+        /// </summary>
+        private void AddScoreFactor(string locKey, string fallback, float value)
+        {
+            if (Mathf.Abs(value - 1f) < 0.001f) return;
+            _scoreFactors.Add(new RogueBlockBlast.UI.FX.ScoreFactor(
+                Loc.GetOr(locKey, fallback), value));
+        }
 
         /// <summary>Tetikleme popup'ını yerleştirilen şeklin üzerinde gösterir.</summary>
         private void ShowTriggerPopup(Vector2Int anchor, string text, Color color)
@@ -1408,17 +1601,40 @@ namespace RogueBlockBlast.Game
         }
 
         // ── Card: Selective Blindness ────────────────────────────────────────
+        /// <summary>
+        /// Selective Blindness'ın bedeli: rastgele bloklar silinir.
+        ///
+        /// Tahta modeli BURADA, anında güncellenir — ölü havuz kontrolü ve game
+        /// over kararı bu çağrıdan hemen sonra çalışıyor, silmeyi geciktirmek
+        /// oyuncuyu hâlâ hamlesi varken kaybettirebilirdi.
+        ///
+        /// Gecikmeli olan yalnızca GÖSTERİM: silinen blokların birer kopyası
+        /// tahtanın üstünde bırakılır, satır temizliği bittikten yarım saniye
+        /// sonra sırayla içe çökerler. Böylece "iki blok gitti" bilgisi clear
+        /// gürültüsünün içinde kaybolmuyor.
+        /// </summary>
         private void RemoveRandomFilledBlocks(int count)
         {
-            var filled = _board.GetFilledCells();
+            var filled  = _board.GetFilledCells();
+            var removed = new System.Collections.Generic.List<(Vector2Int cell, Color color)>(count);
+
             for (int i = 0; i < count && filled.Count > 0; i++)
             {
                 int idx = UnityEngine.Random.Range(0, filled.Count);
                 var cell = filled[idx];
                 filled.RemoveAt(idx);
+
+                removed.Add((cell, _board.GetCellColor(cell.x, cell.y)));
                 _board.SetFilled(cell.x, cell.y, false);
-                BoardView.GetTile(cell.x, cell.y)?.PlayClearFX(0f);
             }
+
+            if (removed.Count == 0) return;
+
+            BoardOverlayFX.Instance.PlayBlindnessRemoval(
+                BoardView, removed,
+                inkColor: new Color(0.55f, 0.20f, 0.85f),
+                startDelay: 0.5f,
+                stagger: 0.28f);
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

@@ -59,6 +59,12 @@ namespace RogueBlockBlast.Core
         /// <summary>Max charge'a ulaşıldığında tetiklenir.</summary>
         public event Action OnMaxCharge;
 
+        /// <summary>Combo Shield reset'i soğurdu — run başına bir kez.</summary>
+        public event Action OnComboShieldUsed;
+
+        /// <summary>Soft Landing devreye girdi: (öncesi, sonrası) çarpan.</summary>
+        public event Action<float, float> OnSoftLanding;
+
         // ── Public API ───────────────────────────────────────────────────────
 
         /// <summary>
@@ -109,6 +115,7 @@ namespace RogueBlockBlast.Core
                 if (Charges == 1 && HasComboShield && !_shieldUsedThisRun)
                 {
                     _shieldUsedThisRun = true;
+                    OnComboShieldUsed?.Invoke();
                     FireStateChanged();
                     return;
                 }
@@ -117,11 +124,20 @@ namespace RogueBlockBlast.Core
 
                 if (Charges == 0)
                 {
-                    float floor = Mathf.Max(BaseMultiplier, _comboFloor);
+                    float floor  = Mathf.Max(BaseMultiplier, _comboFloor);
+                    float before = Multiplier;
+
                     Multiplier = _softLandingActive
                         ? Mathf.Max(floor, Multiplier * _softLandingFactor)
                         : floor;
-                    OnComboReset?.Invoke();
+
+                    // Soft Landing devredeyse bu bir çöküş değil, frenleme. UI'ın
+                    // ikisini aynı kırmızı sarsıntıyla göstermesi kartı görünmez
+                    // kılıyordu — bu yüzden ayrı bir olay olarak bildiriliyor.
+                    if (_softLandingActive && Multiplier > floor)
+                        OnSoftLanding?.Invoke(before, Multiplier);
+                    else
+                        OnComboReset?.Invoke();
                 }
             }
 

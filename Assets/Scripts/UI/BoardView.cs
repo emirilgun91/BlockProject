@@ -206,12 +206,16 @@ namespace RogueBlockBlast.UI
             ISet<Vector2Int> ghostCells,
             float ghostTileValue = 0f,
             IReadOnlyDictionary<Vector2Int, float> ghostPositionBonus = null,
-            IReadOnlyDictionary<Vector2Int, float> staticPositionBonus = null)
+            IReadOnlyDictionary<Vector2Int, float> staticPositionBonus = null,
+            Color? ghostValidOverride = null)
         {
             if (_tiles == null) return;
 
             Color deadZoneTint = new Color(0.28f, 0.05f, 0.05f, 1f);
-            Color ghostOk     = BlockColorPalette.GhostValid;
+            // Ghost Drop gibi kartlar geçerli önizlemeyi kendi rengiyle boyayabilir:
+            // oyuncu bedava yerleştirmeyi TIKLAMADAN ÖNCE görmeli, sonrasında
+            // öğrenmesi kartı oynanamaz kılıyordu.
+            Color ghostOk     = ghostValidOverride ?? BlockColorPalette.GhostValid;
             Color ghostBad    = BlockColorPalette.GhostInvalid;
 
             for (int y = 0; y < board.Height; y++)

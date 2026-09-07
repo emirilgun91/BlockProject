@@ -38,13 +38,24 @@ namespace RogueBlockBlast.UI
         private const float CapSize   = 40f;
         private const float FlashTime = 0.18f;
 
+        [SerializeField] private Color _capLockedColor = new Color(1f, 0.42f, 0.40f, 1f);
+
         private Image     _capQ, _capE;
+        private Image     _slashQ, _slashE;
+        private bool      _locked;
+        private int       _freeLeft = -1;
         private TMP_Text  _label;
         private float     _flashQ, _flashE;
 
         private void Start()
         {
             Build();
+
+            // Kilit durumu Build()'den önce gelmiş olabilir (RunController'ın ilk
+            // yerleştirmesi bu Start'tan önce çalışabiliyor) — kapaklar yeni
+            // oluştuğu için görseli burada bir kez daha uygula.
+            if (_locked) ApplyLockVisual();
+
             Refresh();
             Loc.OnChanged += Refresh;
         }
@@ -148,9 +159,72 @@ namespace RogueBlockBlast.UI
         private void Refresh()
         {
             if (_label == null) return;
+
+            // First Picks döndürmeyi kapatıyor. İpucu chip'i normal görünmeye devam
+            // ederse oyuncu Q/E'ye basıp hiçbir şey olmamasını bug sanıyor — kilit
+            // tuşların üstünde gösterilmeli, kart metninde değil.
+            if (_locked)
+            {
+                _label.text = _freeLeft > 0
+                    ? Loc.Get("Hud.RotateLockedFree", _freeLeft)
+                    : Loc.GetOr("Hud.RotateLocked", "Rotation locked");
+                return;
+            }
+
             _label.text = _mentionScrollWheel
                 ? Loc.GetOr("Hud.RotateHintWheel", "Rotate  ·  mouse wheel")
                 : Loc.GetOr("Hud.RotateHint",      "Rotate");
+        }
+
+        // ── Döndürme kilidi (First Picks) ────────────────────────────────────
+
+        /// <summary>
+        /// Döndürme kilidini ve kalan bedava şekil sayısını gösterir.
+        /// RunController her yerleştirmeden sonra çağırır; durum değişmediyse
+        /// hiçbir iş yapılmaz.
+        /// </summary>
+        public void SetRotationLocked(bool locked, int freeRemaining)
+        {
+            if (_locked == locked && _freeLeft == freeRemaining) return;
+
+            _locked   = locked;
+            _freeLeft = freeRemaining;
+
+            ApplyLockVisual();
+            Refresh();
+        }
+
+        private void ApplyLockVisual()
+        {
+            EnsureSlash(ref _slashQ, _capQ);
+            EnsureSlash(ref _slashE, _capE);
+
+            if (_slashQ != null) _slashQ.enabled = _locked;
+            if (_slashE != null) _slashE.enabled = _locked;
+
+            var capTint = _locked ? _capLockedColor : _capColor;
+            if (_capQ != null) _capQ.color = capTint;
+            if (_capE != null) _capE.color = capTint;
+            if (_label != null) _label.color = _locked ? _capLockedColor : _textColor;
+        }
+
+        /// <summary>Tuş kapağının üzerine çapraz bir çizgi koyar — "bu tuş çalışmıyor".</summary>
+        private void EnsureSlash(ref Image slash, Image cap)
+        {
+            if (slash != null || cap == null) return;
+
+            var go = new GameObject("Slash", typeof(RectTransform));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(cap.rectTransform, false);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(CapSize * 1.15f, 3.5f);
+            rt.localRotation = Quaternion.Euler(0f, 0f, -45f);
+
+            slash = go.AddComponent<Image>();
+            slash.sprite        = RogueBlockBlast.UI.FX.OverlayFXGraphics.Pixel;
+            slash.color         = _capLockedColor;
+            slash.raycastTarget = false;
+            slash.enabled       = false;
         }
 
         // ── Basış geri bildirimi ─────────────────────────────────────────────
@@ -162,6 +236,8 @@ namespace RogueBlockBlast.UI
                 if (kb.qKey.wasPressedThisFrame) _flashQ = FlashTime;
                 if (kb.eKey.wasPressedThisFrame) _flashE = FlashTime;
             }
+
+            if (_locked) return;   // kilitliyken tuşa basmak parlamamalı
 
             Tick(ref _flashQ, _capQ);
             Tick(ref _flashE, _capE);

@@ -241,5 +241,20 @@ namespace RogueBlockBlast.UI
 
         /// <summary>Seçilmiş kart ID'lerini döndürür — unique filtre için.</summary>
         public IEnumerable<string> GetSelectedCardIds() => _inventory.Keys;
+
+        /// <summary>
+        /// Bir kartın slot RectTransform'u — kart tetiklendiğinde efektin nereye
+        /// uçacağını bilmesi için. Kart envanterde yoksa null döner.
+        ///
+        /// Neden efektin hedefi slot: kazanılan şeyin nereden geldiğini gösteren
+        /// en doğrudan sinyal, o şeyi veren kartın üstünde bitmesi.
+        /// </summary>
+        public RectTransform GetSlotRect(string cardId)
+        {
+            if (string.IsNullOrEmpty(cardId)) return null;
+            if (!_inventory.TryGetValue(cardId, out var entry)) return null;
+            if (entry.slot == null) return null;
+            return entry.slot.transform as RectTransform;
+        }
     }
 }

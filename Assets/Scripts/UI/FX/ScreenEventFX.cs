@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Core.Settings;
 using RogueBlockBlast.UI.Juice;
@@ -130,6 +131,86 @@ namespace RogueBlockBlast.UI.FX
             Shake(0.7f);
             RingPulse(gold, delay: 0.05f, count: 3);
             ShowText(title, subtitle, gold, delay: 0.10f);
+        }
+
+        // ── Coin uçuşu (Bounty Hunter) ───────────────────────────────────────
+
+        /// <summary>
+        /// Tahtadaki noktalardan çıkıp bir UI hedefine (kart slotu) uçan sikkeler.
+        ///
+        /// İlk sürüm sikkeleri dünya uzayında çiziyordu: tile boyutuna bağlı
+        /// oldukları için ekranda nokta kadar kalıyor ve hiçbir yere gitmiyorlardı.
+        /// Burada sikkeler UI katmanında, piksel boyutlu ve hedefe kilitli —
+        /// "bu para o kartın kazandırdığı para" cümlesini hareketin kendisi kuruyor.
+        /// </summary>
+        public void PlayCoinFlight(
+            IReadOnlyList<Vector3> worldOrigins, Camera cam, RectTransform target, int coinCount)
+        {
+            if (_root == null || cam == null || worldOrigins == null || worldOrigins.Count == 0) return;
+            if (coinCount <= 0) return;
+
+            Vector2 targetLocal;
+            if (target != null)
+            {
+                Vector2 targetScreen = RectTransformUtility.WorldToScreenPoint(null, target.position);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _root, targetScreen, null, out targetLocal);
+            }
+            else
+            {
+                // Kart henüz envanterde değilse (ilk tetikleme) yukarı doğru savrulsun.
+                targetLocal = new Vector2(0f, _root.rect.height * 0.45f);
+            }
+
+            int coins = Mathf.Clamp(coinCount, 1, 12);
+            for (int i = 0; i < coins; i++)
+            {
+                Vector3 origin = worldOrigins[i % worldOrigins.Count];
+                Vector2 screen = cam.WorldToScreenPoint(origin);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _root, screen, null, out Vector2 startLocal);
+
+                startLocal += Random.insideUnitCircle * 28f;
+
+                var coin = CenterImage("Coin", JuiceGraphics.RadialGlow, 34f);
+                var core = CenterImage("CoinCore", OverlayFXGraphics.Ring, 26f);
+                core.rectTransform.SetParent(coin.rectTransform, false);
+                core.rectTransform.anchoredPosition = Vector2.zero;
+                core.color = new Color(1f, 0.98f, 0.85f, 0.95f);
+
+                coin.color = new Color(1f, 0.82f, 0.28f, 1f);
+                var rt = coin.rectTransform;
+                rt.anchoredPosition = startLocal;
+                rt.localScale       = Vector3.zero;
+
+                // Yol iki aşamalı: önce yukarı doğru serbest bir sıçrama, sonra
+                // hedefe hızlanan bir çekiliş. Tek düz çizgi "ışınlandı" gibi
+                // duruyordu; sıçrama sikkeye ağırlık veriyor.
+                Vector2 hop = startLocal + new Vector2(Random.Range(-70f, 70f), Random.Range(90f, 150f));
+
+                float delay = i * 0.05f;
+                DOTween.Sequence()
+                    .AppendInterval(delay)
+                    .Append(rt.DOScale(1f, 0.14f).SetEase(Ease.OutBack))
+                    .Join(rt.DOAnchorPos(hop, 0.26f).SetEase(Ease.OutQuad))
+                    .Append(rt.DOAnchorPos(targetLocal, 0.42f).SetEase(Ease.InCubic))
+                    .Join(rt.DOScale(0.45f, 0.42f).SetEase(Ease.InQuad))
+                    .Append(coin.DOFade(0f, 0.10f))
+                    .OnComplete(() =>
+                    {
+                        if (coin == null) return;
+                        // Varış darbesi: slot bir an parlasın ki sikkelerin
+                        // nereye gittiği gözden kaçmasın.
+                        if (target != null)
+                        {
+                            target.DOKill();
+                            target.localScale = Vector3.one;
+                            target.DOPunchScale(Vector3.one * 0.16f, 0.24f, 8, 0.7f)
+                                  .OnKill(() => { if (target != null) target.localScale = Vector3.one; });
+                        }
+                        Destroy(coin.gameObject);
+                    });
+            }
         }
 
         // ── Ortak parçalar ───────────────────────────────────────────────────

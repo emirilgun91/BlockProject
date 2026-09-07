@@ -368,68 +368,6 @@ namespace RogueBlockBlast.UI.FX
             }
         }
 
-        // ── Bounty Hunter ────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Temizlenen satır/sütunlardan fırlayan altın sikkeler.
-        ///
-        /// Sikkeler yukarı doğru bir yay çizip söner — coin sayacı ekranın üst
-        /// tarafında olduğu için hareket yönü tek başına "bu para oraya gidiyor"
-        /// diyor; sayacın ekran konumunu bilmeye gerek kalmıyor.
-        /// </summary>
-        public void PlayCoinBurst(
-            BoardView board, bool[] clearedRows, bool[] clearedCols,
-            int width, int height, int coinCount)
-        {
-            if (board == null || coinCount <= 0) return;
-
-            _layerId = SortingLayer(board);
-            float tile  = TileSize(board);
-            int   order = SortingOrder(board) + 5;
-            var   gold  = new Color(1f, 0.82f, 0.28f);
-
-            // Temizlenen her hattın ortasından çıksınlar — sikkeler tahtaya
-            // rastgele saçılsaydı hangi satırın ödediği okunmazdı.
-            var origins = new List<Vector3>();
-            if (clearedRows != null)
-                for (int y = 0; y < clearedRows.Length; y++)
-                    if (clearedRows[y]) origins.Add(board.GetTileWorldPosition(width / 2, y));
-            if (clearedCols != null)
-                for (int x = 0; x < clearedCols.Length; x++)
-                    if (clearedCols[x]) origins.Add(board.GetTileWorldPosition(x, height / 2));
-
-            if (origins.Count == 0) return;
-
-            // Çok fazla sikke ekranı kilitler; hat başına en fazla 4 tane.
-            int perOrigin = Mathf.Clamp(Mathf.CeilToInt(coinCount / (float)origins.Count), 1, 4);
-
-            for (int o = 0; o < origins.Count; o++)
-            for (int i = 0; i < perOrigin;      i++)
-            {
-                Vector3 start = origins[o] + (Vector3)(Random.insideUnitCircle * tile * 0.5f);
-
-                var coin = Spawn(OverlayFXGraphics.SoftDisc, start, gold, tile * 0.34f, order);
-                var ring = Spawn(OverlayFXGraphics.Ring, start, Color.white, tile * 0.34f, order + 1);
-                ring.color = new Color(1f, 0.95f, 0.75f, 0.9f);
-                ring.transform.SetParent(coin.transform, worldPositionStays: true);
-
-                float dur  = Random.Range(0.55f, 0.75f);
-                float rise = tile * Random.Range(2.2f, 3.4f);
-                float side = Random.Range(-tile * 0.9f, tile * 0.9f);
-
-                DOTween.Sequence()
-                    .AppendInterval(0.10f + (o * perOrigin + i) * 0.045f)
-                    // Yükseliş yavaşlayarak, yana kayış sabit hızda: ikisinin
-                    // farkı düz bir çizgi yerine gerçek bir atış yayı veriyor.
-                    .Join(coin.transform.DOMoveY(start.y + rise, dur).SetEase(Ease.OutQuad))
-                    .Join(coin.transform.DOMoveX(start.x + side, dur).SetEase(Ease.Linear))
-                    .Join(coin.transform.DOScale(tile * 0.12f, dur).SetEase(Ease.InQuad))
-                    .Join(coin.DOFade(0f, dur).SetEase(Ease.InQuad))
-                    .Join(ring.DOFade(0f, dur * 0.7f))
-                    .OnComplete(() => { if (coin != null) Destroy(coin.gameObject); });
-            }
-        }
-
         // ── Decaying Rift ────────────────────────────────────────────────────
 
         /// <summary>

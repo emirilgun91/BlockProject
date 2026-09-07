@@ -367,12 +367,15 @@ namespace RogueBlockBlast.Game
                     int bountyCoins = cleared * _cardState.BountyHunterCoinPerClear;
                     CoinWallet.Instance?.Earn(bountyCoins);
                     _coins += bountyCoins;
+                    _cardState.BountyHunterCoinsEarned += bountyCoins;
 
-                    // Coin sayacının tek başına artması tahtaya bakan oyuncunun
-                    // gözünden kaçıyordu — para temizlenen satırdan çıkmalı.
-                    BoardOverlayFX.Instance.PlayCoinBurst(
-                        BoardView, clearedRows, clearedCols,
-                        _board.Width, _board.Height, bountyCoins);
+                    // Sikkeler temizlenen hatlardan çıkıp Bounty Hunter'ın kendi
+                    // envanter slotuna uçuyor: paranın hangi karttan geldiği
+                    // hareketin varış noktasıyla söyleniyor.
+                    PlayBountyCoinFlight(clearedRows, clearedCols, bountyCoins);
+
+                    // Slot altındaki canlı değer satırı toplamı gösteriyor.
+                    RefreshCardLiveValues();
                 }
 
                 // Phantom Cell: relocate if its row/col was cleared
@@ -639,7 +642,7 @@ namespace RogueBlockBlast.Game
         private void RefreshRotateHint()
         {
             if (_rotateHint == null)
-                _rotateHint = FindObjectOfType<RotateHintView>();
+                _rotateHint = FindFirstObjectByType<RotateHintView>();
 
             _rotateHint?.SetRotationLocked(
                 IsRotationLocked,
@@ -703,6 +706,7 @@ namespace RogueBlockBlast.Game
 
             ScoreView?.SetScore(0);
             BoardView.Build(_board);
+            RefreshRotateHint();   // yeni run: kilit yok, ipucu normale dönsün
             _poolRerollsRemaining = Mathf.RoundToInt(
                 UpgradeRegistry.Instance?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_pool_reroll")) ?? 0f
@@ -754,8 +758,13 @@ namespace RogueBlockBlast.Game
             if (_cardState.HasNeonCable)
                 ResetNeonCablePositions();
 
+            // Gerekçe önemli: bu dal "yeni havuz geldi ama hiçbiri sığmıyor"
+            // demek. Gerekçesiz bırakıldığında panel "OYUN BİTTİ" yazıyor ve
+            // oyuncu neden kaybettiğini öğrenemiyordu.
             if (!skipValidCheck && !HasAnyValidMoveInPool())
-                OnGameOver();
+                OnGameOver(IsRotationLocked
+                    ? GameOverReason.CannotPlace   // First Picks: geldiği haliyle sığmıyor
+                    : GameOverReason.NoMoves);
 
             UpdateBoardOverlays();
             _poolDirty = true;
@@ -898,7 +907,10 @@ namespace RogueBlockBlast.Game
                 return;
             }
 
-            OnGameOver();
+            // Buraya gelindiyse reroll/revive/kalkan hakkı kalmadı ve elindeki
+            // hiçbir şekil tahtaya sığmıyor. Kilit dalı yukarıda ayrıldığı için
+            // burada gerekçe her zaman NoMoves.
+            OnGameOver(GameOverReason.NoMoves);
         }
 
         // ── Milestone Handlers ───────────────────────────────────────────────
@@ -908,6 +920,9 @@ namespace RogueBlockBlast.Game
 
             // Reset per-milestone card counters for the new window
             _cardState.OnMilestoneReached();
+
+            // First Picks bu noktada kapanıyor — kilit ipucu da hemen normale dönmeli.
+            RefreshRotateHint();
 
             // Decaying Rift'in kapattığı hücreler yalnızca o milestone boyunca ölü kalır
             // ("for the remainder of the current milestone") — yeni pencerede tahta temizlenir.
@@ -1165,6 +1180,12 @@ namespace RogueBlockBlast.Game
             CardInventoryUI.Instance?.AddCard(card);
             TutorialEvents.CardPicked();
 
+            // Döndürme kilidi kart SEÇİLİR SEÇİLMEZ geçerli oluyor. İpucu yalnızca
+            // yerleştirmeden sonra tazelenseydi (eskiden öyleydi) oyuncu ilk şekli
+            // kilidi görmeden oynardı — yani kilidi tam da en çok gerektiği anda,
+            // ilk hamlede, öğrenemezdi.
+            RefreshRotateHint();
+
             // Envanter değişti → tüm slotlar yenilenir (Card Collector sayısı arttı)
             RefreshCardLiveValues();
         }
@@ -1356,11 +1377,27 @@ namespace RogueBlockBlast.Game
                     // Countdown reached 0 — create dead zone
                     var rp = _cardState.RiftTilePosition;
 
+                    // Yarık hücreyi kapatıyor ve bu, oyuncunun kalan SON hamlesini
+                    // yok edebiliyordu: satırını temizleyip yer açan oyuncu aynı
+                    // karede "hamle yok" ile karşılaşıyordu. Kaybın sebebi kendi
+                    // hamlesi değil, arka planda işleyen bir sayaç oluyordu.
+                    //
+                    // Bu yüzden kapatma önce denenir: tahtayı hamlesiz bırakıyorsa
+                    // geri alınır ve geri sayım 1'de bekletilir. Yarık kaybolmaz,
+                    // oyuncu bir hamle daha oynayıp yer açtığında kapanır.
+                    _board.AddDeadZone(rp.x, rp.y);
+
+                    if (!HasAnyValidMoveInPool())
+                    {
+                        _board.RemoveDeadZone(rp.x, rp.y);
+                        _cardState.RiftCurrentCount = 1;
+                        return;
+                    }
+
                     // Tahtada kalıcı hasar bırakan tek olay bu ve sessizce oluyordu.
                     BoardOverlayFX.Instance.PlayRiftCollapse(BoardView, rp);
                     FrameFeedbackController.Instance?.OnCritical(0);
 
-                    _board.AddDeadZone(rp.x, rp.y);
                     _cardState.RiftTilePosition = new Vector2Int(-1, -1);
                     _cardState.RiftCurrentCount = 0;
                 }
@@ -1444,6 +1481,39 @@ namespace RogueBlockBlast.Game
 
         // ── Card live values (in-run kart slotları) ──────────────────────────
 
+        // ── Bounty Hunter ────────────────────────────────────────────────────
+
+        /// <summary>Temizlenen hatların orta noktalarından Bounty Hunter slotuna sikke uçurur.</summary>
+        private void PlayBountyCoinFlight(bool[] clearedRows, bool[] clearedCols, int coins)
+        {
+            if (BoardView == null || MainCamera == null || coins <= 0) return;
+
+            // Sikkeler temizlenen her hattın ortasından çıksın — tahtaya rastgele
+            // saçılsalardı hangi satırın ödediği okunmazdı.
+            _bountyOrigins.Clear();
+            if (clearedRows != null)
+                for (int y = 0; y < clearedRows.Length; y++)
+                    if (clearedRows[y])
+                        _bountyOrigins.Add(BoardView.GetTileWorldPosition(_board.Width / 2, y));
+            if (clearedCols != null)
+                for (int x = 0; x < clearedCols.Length; x++)
+                    if (clearedCols[x])
+                        _bountyOrigins.Add(BoardView.GetTileWorldPosition(x, _board.Height / 2));
+
+            if (_bountyOrigins.Count == 0) return;
+
+            ScreenEventFX.Instance.PlayCoinFlight(
+                _bountyOrigins,
+                MainCamera,
+                CardInventoryUI.Instance?.GetSlotRect(BountyHunterCardId),
+                coins);
+        }
+
+        /// <summary>Sikkelerin uçacağı kart slotunu bulmak için — asset Id'si ile aynı.</summary>
+        private const string BountyHunterCardId = "Card_Bounty_Hunter";
+
+        private readonly List<Vector3> _bountyOrigins = new();
+
         // ── Skor çarpan zinciri ──────────────────────────────────────────────
 
         /// <summary>Bu hamlenin çarpanları. Liste yeniden kullanılıyor — hamle başına alloc yok.</summary>
@@ -1506,6 +1576,12 @@ namespace RogueBlockBlast.Game
                         float pct = _cardState.CardCollectorPerCard * count * 100f;
                         return $"+{pct:0.#}% ({count} cards)";
                     }
+
+                    // Run boyunca biriken kazanç — kartın gerçekten ne kazandırdığı
+                    // yalnızca burada görünüyor: coin sayacı tüm kaynakları
+                    // topladığı için Bounty Hunter'ın payı orada okunamıyordu.
+                    case CardEffectType.BountyHunterCoinPerClear:
+                        return Loc.Get("Card.BountyHunter.Earned", _cardState.BountyHunterCoinsEarned);
 
                     // Zincir ilerledikçe değişir
                     case CardEffectType.ChainMaster:

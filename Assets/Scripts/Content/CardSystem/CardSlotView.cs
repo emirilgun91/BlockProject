@@ -115,6 +115,9 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public void SetLiveValue(string text)
         {
+            // Tooltip de aynı metni gösteriyor — tek kaynak, iki görünüm.
+            _liveValue = text;
+
             EnsureLiveValueText();
             if (_liveValueText == null) return;
 
@@ -162,11 +165,12 @@ namespace RogueBlockBlast.UI
         public const float LiveValueBandHeight = 22f;
 
         private bool _liveValueCreated;
+        private string _liveValue;
 
         // ── Hover ────────────────────────────────────────────────────────────
         public void OnPointerEnter(PointerEventData e)
         {
-            CardTooltip.Instance?.Show(_card, _stackCount, GetScreenPos());
+            CardTooltip.Instance?.Show(_card, _stackCount, GetScreenPos(), _liveValue);
         }
 
         public void OnPointerExit(PointerEventData e)

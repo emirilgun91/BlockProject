@@ -53,7 +53,12 @@ namespace RogueBlockBlast.UI
 
         // ── Public API ───────────────────────────────────────────────────────
 
-        public void Show(CardSO card, int stackCount, Vector2 screenPos)
+        /// <param name="liveValue">
+        /// Kartın bu run içindeki anlık katkısı (slot altındaki satırın aynısı).
+        /// Boşsa hiç yazılmaz. Tooltip kartın NE YAPTIĞINI anlatıyordu ama
+        /// NE KAZANDIRDIĞINI anlatmıyordu — oyuncunun asıl merak ettiği ikincisi.
+        /// </param>
+        public void Show(CardSO card, int stackCount, Vector2 screenPos, string liveValue = null)
         {
             if (card == null) return;
 
@@ -89,6 +94,14 @@ namespace RogueBlockBlast.UI
                 // kartlarda öyle. Eskiden bu durumda boş bir yazı nesnesi açık
                 // kalıyor ve tooltip'te yer kaplıyordu; ölçüte metnin kendisi
                 // alınmalı, efekt sayısı değil.
+                // Anlık katkı en alta, vurgulu renkte: efekt açıklamaları kuralı
+                // anlatır, bu satır o kuralın bu run'daki sonucunu söyler.
+                if (!string.IsNullOrWhiteSpace(liveValue))
+                {
+                    if (sb.Length > 0) sb.AppendLine();
+                    sb.Append($"<color=#e8c26a>{liveValue}</color>");
+                }
+
                 string effects = sb.ToString().TrimEnd();
 
                 _effectText.text = effects;

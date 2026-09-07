@@ -22,18 +22,15 @@ namespace RogueBlockBlast.Game
     /// </summary>
     public sealed class DebugPanel : MonoBehaviour
     {
-        // Panel AÇIK. Kapatmak için NO_DEBUG_PANEL define'ini ekle.
+        // Panel KAPALI. Açmak için DEBUG_PANEL define'ini ekle — ya da test
+        // ederken aşağıdaki varsayılanı geçici olarak true yap.
         //
-        // Varsayılan "açık" tarafta: bu dosyanın tamamı zaten
-        // UNITY_EDITOR || DEVELOPMENT_BUILD içinde derleniyor, yani release
-        // build'e hiçbir koşulda sızmıyor. Define'i platform başına ayarlamak
-        // yerine varsayılanı çevirmek, test ederken tek sürtünmesiz yol.
         // static readonly, const değil: const olsaydı derleyici aşağıdaki
         // "if (!Enabled) return;" satırını ölü kod sayıp CS0162 uyarısı verirdi.
-#if NO_DEBUG_PANEL
-        private static readonly bool Enabled = false;
-#else
+#if DEBUG_PANEL
         private static readonly bool Enabled = true;
+#else
+        private static readonly bool Enabled = false;
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

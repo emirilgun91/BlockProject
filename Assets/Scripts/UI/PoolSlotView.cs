@@ -18,6 +18,11 @@ namespace RogueBlockBlast.UI
         [Tooltip("Hücrelerin container'a oranı. Küçültmek padding ekler.")]
         [SerializeField] [Range(0.5f, 1f)] private float _fitPadding = 0.80f;
 
+        [Tooltip("Hücre boyu en az bu kadar hücre sığacak şekilde hesaplanır. " +
+                 "Küçük şekiller (2x2, 1x1) slotu doldurmak için büyümez; " +
+                 "havuzdaki tüm şekiller aynı hücre boyunda görünür.")]
+        [SerializeField] [Range(1, 5)] private int _minCellsPerAxis = 3;
+
         [Header("Entrance Animation")]
         [SerializeField] private float _entranceDuration = 0.3f;
 
@@ -135,10 +140,25 @@ namespace RogueBlockBlast.UI
             int shapeH = maxY - minY + 1;
 
             // ── Cell size — her iki ekseni ayrı kısıtla, küçük olanı al ──────
-            // Böylece 4x1 yatay çubuk da 1x4 dikey çubuk da container'a sığar
-            float maxCellByWidth  = _container.rect.width  / shapeW;
-            float maxCellByHeight = _container.rect.height / shapeH;
+            // Böylece 4x1 yatay çubuk da 1x4 dikey çubuk da container'a sığar.
+            // En az _minCellsPerAxis hücre sığacak kadar küçük tutulur: 2x2 kare
+            // gibi küçük şekiller slotu doldurmak için şişmez, havuzdaki tüm
+            // şekiller aynı hücre boyuyla çizilir ve boyları karşılaştırılabilir.
+            int   fitW = Mathf.Max(shapeW, _minCellsPerAxis);
+            int   fitH = Mathf.Max(shapeH, _minCellsPerAxis);
+            float maxCellByWidth  = _container.rect.width  / fitW;
+            float maxCellByHeight = _container.rect.height / fitH;
             float cellSize = Mathf.Min(maxCellByWidth, maxCellByHeight) * _fitPadding;
+
+            // Hücre prefabının çocukları (image, GlowOutline) sabit boyutlu ve
+            // merkeze anchor'lı — kökün sizeDelta'sını büyütmek onları büyütmez,
+            // yalnızca aralarını açar (2x2 kare ayrık 4 blok gibi görünüyordu).
+            // Bu yüzden hücre bütün olarak ölçeklenir; iç oranlar prefabdaki gibi kalır.
+            var   prefabRect = _cellPrefab.GetComponent<RectTransform>();
+            float baseSize   = prefabRect != null && prefabRect.sizeDelta.x > 0.01f
+                ? prefabRect.sizeDelta.x
+                : cellSize;
+            float cellScale  = cellSize / baseSize;
 
             // ── Merkeze hizala ───────────────────────────────────────────────
             float offsetX = (shapeW - 1) * cellSize * 0.5f;
@@ -150,7 +170,8 @@ namespace RogueBlockBlast.UI
                 var go   = Instantiate(_cellPrefab, _container);
                 var rect = go.GetComponent<RectTransform>();
 
-                rect.sizeDelta       = new Vector2(cellSize, cellSize);
+                rect.sizeDelta        = new Vector2(baseSize, baseSize);
+                rect.localScale       = new Vector3(cellScale, cellScale, 1f);
                 rect.anchoredPosition = new Vector2(
                     (c.x - minX) * cellSize - offsetX,
                     (c.y - minY) * cellSize - offsetY

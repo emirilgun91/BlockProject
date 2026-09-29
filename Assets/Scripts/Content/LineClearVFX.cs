@@ -29,7 +29,10 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _popupWaveDelay  = 0.025f;  // popup'lar arası gecikme
 
         [Header("Particle")]
-        [SerializeField] private ParticleSystem _tileBurstPrefab;  // tile patlama prefabı
+        [SerializeField] private ParticleSystem _tileBurstPrefab;  // tile patlama prefabı (eski — partikül katmanı kapalıyken)
+        [Tooltip("LineClearParticles katmanı: ışın, şok dalgası, kırılan parçalar, kıvılcım, kamera sarsıntısı. " +
+                 "Kapatılırsa eski _tileBurstPrefab kullanılır.")]
+        [SerializeField] private bool _useParticleLayer = true;
         [SerializeField] private AudioClip lineCountsfx;
         [SerializeField] private AudioClip ScorePopupSfx;
         // ── Public API ───────────────────────────────────────────────────────
@@ -95,6 +98,19 @@ namespace RogueBlockBlast.UI
                         _lineFlash.FlashColumn(origin, x, cellSize, boardHeight, x * 0.02f);
             }
 
+            // Partikül + shader katmanı: ışınlar, halka, sarsıntı
+            var particles = _useParticleLayer ? LineClearParticles.Instance : null;
+            if (particles != null)
+            {
+                var rowScores = new bool[clearedRows.Length];
+                var colScores = new bool[clearedCols.Length];
+                for (int y = 0; y < rowScores.Length; y++) rowScores[y] = clearedRows[y] && scoringAxis != ScoringAxis.ColsOnly;
+                for (int x = 0; x < colScores.Length; x++) colScores[x] = clearedCols[x] && scoringAxis != ScoringAxis.RowsOnly;
+
+                particles.PlayLines(clearedRows, clearedCols, rowScores, colScores,
+                                    snapshots, boardView, boardWidth, boardHeight);
+            }
+
             // Her tile için efekt
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -119,7 +135,14 @@ namespace RogueBlockBlast.UI
                     : (scores ? AxisScoringFlash : AxisDeadFlash);
 
                 // Particle burst
-                if (scores) SpawnBurst(worldPos, flash, delay);
+                if (particles != null)
+                {
+                    // Parçalar hattın dik yönünde fırlar. Hem satırda hem sütunda
+                    // olan hücre (kesişim) için yön satırdan alınır.
+                    Vector2 axis = clearedRows[tile.Y] ? Vector2.right : Vector2.up;
+                    particles.PlayTile(worldPos, flash, delay, scores, lineCount, axis);
+                }
+                else if (scores) SpawnBurst(worldPos, flash, delay);
 
                 // TileView clear animasyonu
                 boardView.GetTile(tile.X, tile.Y)?.PlayClearFX(delay, flash);

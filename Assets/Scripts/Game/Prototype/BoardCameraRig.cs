@@ -58,9 +58,19 @@ namespace RogueBlockBlast.Game.Prototype
         [SerializeField] private float _parallaxStrength = 0.22f;
         [SerializeField] private float _parallaxDamping  = 6f;
 
+        [Header("Impact Shake")]
+        [Tooltip("AddTrauma(1) ile ulaşılan en büyük kayma (dünya birimi). Sarsıntı trauma² ile ölçeklenir: küçük darbeler hafif, büyükler sert.")]
+        [SerializeField] private float _shakeMaxOffset   = 0.16f;
+        [Tooltip("AddTrauma(1) ile ulaşılan en büyük yuvarlanma (derece).")]
+        [SerializeField] private float _shakeMaxRoll     = 1.4f;
+        [SerializeField] private float _shakeFrequency   = 24f;
+        [Tooltip("Saniyede sönen trauma miktarı.")]
+        [SerializeField] private float _traumaDecay      = 2.2f;
+
         private Camera  _cam;
         private Vector2 _parallaxOffset;
         private float   _noiseSeed;
+        private float   _trauma;
 
         // ── Public ───────────────────────────────────────────────────────────
 
@@ -69,6 +79,18 @@ namespace RogueBlockBlast.Game.Prototype
         {
             get => _tiltDegrees;
             set => _tiltDegrees = Mathf.Clamp(value, -25f, 55f);
+        }
+
+        /// <summary>
+        /// Darbe sarsıntısı ekler (0..1, birikir, 1'de kırpılır). Rig kamerayı her
+        /// karede kendisi yazdığı için sarsıntı dışarıdan transform'a uygulanamaz —
+        /// buradan verilmeli. <see cref="GameSettings.ScreenShake"/> ile ölçeklenir;
+        /// ReduceMotion açıkken o 0 döndüğü için sarsıntı hiç oluşmaz.
+        /// </summary>
+        public void AddTrauma(float amount)
+        {
+            if (!Application.isPlaying) return;
+            _trauma = Mathf.Clamp01(_trauma + amount * GameSettings.ScreenShake);
         }
 
         /// <summary>Odak noktasının dünya konumu (z = 0 düzleminde).</summary>
@@ -156,7 +178,12 @@ namespace RogueBlockBlast.Game.Prototype
 
             Vector3 aim = AimWorld + SwayOffset() + (Vector3)_parallaxOffset;
 
-            transform.SetPositionAndRotation(aim + offset, rotation);
+            // Darbe sarsıntısı: odak noktası kaydırılır ve kamera kendi ekseninde
+            // hafif yuvarlanır. Kadraj hesabının kendisine dokunulmaz.
+            ShakeOffsets(out Vector3 shakePos, out float shakeRoll);
+            rotation *= Quaternion.Euler(0f, 0f, shakeRoll);
+
+            transform.SetPositionAndRotation(aim + offset + shakePos, rotation);
 
             // Eğim arttıkça tahtanın uzak kenarı geriye gider — near/far clip
             // güvenli aralıkta kalsın diye mesafeye göre ayarlanır.
@@ -174,6 +201,25 @@ namespace RogueBlockBlast.Game.Prototype
             float tan        = Mathf.Tan(halfFovRad);
             if (tan < 0.0001f) return 10f;
             return _matchOrthographicSize / tan;
+        }
+
+        private void ShakeOffsets(out Vector3 pos, out float roll)
+        {
+            pos  = Vector3.zero;
+            roll = 0f;
+            if (!Application.isPlaying || _trauma <= 0f) return;
+
+            // unscaled: kart seçiminde timeScale = 0 olsa da sarsıntı donup kalmasın
+            _trauma = Mathf.Max(0f, _trauma - _traumaDecay * Time.unscaledDeltaTime);
+
+            float k = _trauma * _trauma;
+            float t = Time.unscaledTime * _shakeFrequency;
+            float nx = (Mathf.PerlinNoise(_noiseSeed + 11f, t) - 0.5f) * 2f;
+            float ny = (Mathf.PerlinNoise(_noiseSeed + 23f, t) - 0.5f) * 2f;
+            float nr = (Mathf.PerlinNoise(_noiseSeed + 37f, t) - 0.5f) * 2f;
+
+            pos  = new Vector3(nx, ny, 0f) * (_shakeMaxOffset * k);
+            roll = nr * _shakeMaxRoll * k;
         }
 
         private Vector3 SwayOffset()

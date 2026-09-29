@@ -45,11 +45,13 @@ namespace RogueBlockBlast.Game.Prototype
 
         private SpriteRenderer _top;
         private SpriteRenderer _side;
+        private RogueBlockBlast.UI.TileView _tileView;
         private bool           _lifted;
 
         private void Awake()
         {
-            _top = GetComponent<SpriteRenderer>();
+            _top      = GetComponent<SpriteRenderer>();
+            _tileView = GetComponent<RogueBlockBlast.UI.TileView>();
         }
 
         private void LateUpdate()
@@ -104,6 +106,7 @@ namespace RogueBlockBlast.Game.Prototype
             Color c = _top.color;
 
             bool visible = _top.enabled
+                           && (_tileView == null || !_tileView.IsGhostPreview)
                            && c.a >= _minAlpha
                            && Luminance(c) >= _emptyLuminanceThreshold;
 

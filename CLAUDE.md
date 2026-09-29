@@ -76,6 +76,16 @@ ShapeSpawnService.GetRandomWeighted(library)
   → weighted random pick → PieceFactory.Create(shapeSO) → PieceDefinition
 ```
 
+### Mouse → placement anchor
+
+`RunController.ResolvePlacementAnchor()` puts the centre of the piece's bounding box under the cursor. Before this, the piece's `(0,0)` cell sat under the cursor, so pieces landed up and to the right of where the player aimed, and rotating around `(0,0)` made them jump away. It works from `BoardView.TryGetMouseCellPoint`, which gives the cursor position in continuous cell units. The ray hits the *visible* tile surface (`SurfaceZ`, which includes the TileSkirt lift), not `z = 0`. If the centred spot is blocked, the anchor snaps to the nearest valid anchor within `_placementSnapRadius` (default 1.05 cells). `_placementHysteresis` stops the preview flickering at cell borders. `BoardView.TryGetClampedCellUnderMouse` is no longer used by gameplay.
+
+### Ghost preview & line-clear hint
+
+The ghost is drawn in the piece's own colour, opaque and blended toward the empty-cell colour (`BoardView._ghostStrength`). It is flat: `TileView.IsGhostPreview` tells `TileSkirt` not to draw a side face, so it never reads as a placed block. An invalid placement turns the empty ghost cells grey and makes the overlapping cells blink red. Grey is used because a red warning would be indistinguishable from a red piece.
+
+`RunController.UpdateLinePreview` highlights the rows and columns the current ghost would complete, but only after `_linePreviewDelay` seconds (default 4) have passed since the last placement. The delay is deliberate: the hint should help a player who hesitates, not play the game for them. It never suggests a spot. It only reports what happens at the spot the cursor is on. It uses the same rule as `LineClearSystem` (`IsFilled` or covered by the ghost), and `DoPlace` changes nothing about fill state between `Place` and `ClearLines`, so the preview always matches the real clear. The timer runs on `Time.time`, so it stops while the game is paused or a card is being picked.
+
 ### Data Flow on Piece Placement
 
 ```
@@ -91,6 +101,10 @@ RunController.DoPlace(anchor)
   pool.RemoveAt(selectedIndex) → GenerateNewPool or SpawnNextFromPool
   HasAnyValidMoveInPool() → HandleDeadPool or milestoneSystem.OnPiecePlaced()
 ```
+
+### Line Clear VFX
+
+`LineClearVFX.Play` drives the per-tile flash and score popups, and hands the particle/shader layer to **`LineClearParticles`** (`UI/FX/`). That component needs no scene setup: `Instance` creates it on first use, loads its shaders from `Resources/FX/` (`LineClearParticle`, `LineClearBeam`, `LineClearRing`) and generates its textures in code. It holds five pre-built `ParticleSystem`s (shards, glow, embers, sparks, flares) fed through `Emit`, so a clear never instantiates anything. Beams and shockwave rings are pooled quads driven by `MaterialPropertyBlock`. Everything draws on the `Board` sorting layer at order ~400 and `z = -0.35` (in front of the TileSkirt-lifted tiles). Particle vertex colour is 8-bit, so the HDR brightness that feeds bloom comes from each material's `_Intensity`. Particle counts scale with `GameSettings.VfxIntensity`. Camera shake goes through `BoardCameraRig.AddTrauma`, because the rig rewrites the camera transform every frame; it scales with `GameSettings.ScreenShake`. `LineClearVFX._useParticleLayer = false` brings back the old `_tileBurstPrefab`.
 
 ### Milestone → Card Selection Flow
 

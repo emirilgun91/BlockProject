@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.Core.Settings;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -46,6 +47,25 @@ namespace RogueBlockBlast.UI
 
         /// <summary>Dalga hızı.</summary>
         public float EmptyPulseSpeed { get => _emptyPulseSpeed; set => _emptyPulseSpeed = value; }
+
+        [Header("Ghost Preview")]
+        [Tooltip("Önizlemenin parça rengine ne kadar yaklaştığı (0 = boş hücre, 1 = yerleşmiş blok). " +
+                 "1'in altında kalmalı ki önizleme gerçek bloklarla karışmasın.")]
+        [Range(0.2f, 0.95f)]
+        [SerializeField] private float _ghostStrength    = 0.62f;
+        [Tooltip("Nefes alma genliği. ReduceMotion açıkken nabız durur.")]
+        [Range(0f, 0.4f)]
+        [SerializeField] private float _ghostPulseAmount = 0.16f;
+        [SerializeField] private float _ghostPulseSpeed  = 5f;
+        [Tooltip("Geçersiz yerleşimde çakışan (dolu) hücrenin rengi.")]
+        [SerializeField] private Color _ghostInvalidColor      = new Color(1.00f, 0.18f, 0.16f, 1f);
+        [Tooltip("Geçersiz yerleşimde boş hücrelerin rengi — parça renginden bağımsız gri.")]
+        [SerializeField] private Color _ghostInvalidEmptyColor = new Color(0.52f, 0.55f, 0.62f, 1f);
+
+        [Tooltip("Satır tamamlama ipucunda, temizlenecek hatlardaki blokların parça rengine " +
+                 "ne kadar döndüğü.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _linePreviewAmount = 0.6f;
 
         [Header("Intro Animation")]
         [SerializeField] private bool  _playIntroOnBuild  = true;
@@ -207,16 +227,50 @@ namespace RogueBlockBlast.UI
             float ghostTileValue = 0f,
             IReadOnlyDictionary<Vector2Int, float> ghostPositionBonus = null,
             IReadOnlyDictionary<Vector2Int, float> staticPositionBonus = null,
-            Color? ghostValidOverride = null)
+            Color? ghostValidOverride = null,
+            Color? ghostPieceColor    = null,
+            bool   ghostPlaceable     = true,
+            ISet<Vector2Int> linePreviewCells = null,
+            float  linePreviewStrength = 0f)
         {
             if (_tiles == null) return;
 
             Color deadZoneTint = new Color(0.28f, 0.05f, 0.05f, 1f);
+
+            // ── Ghost renkleri ───────────────────────────────────────────────
+            // Eskiden sabit camgöbeği, %10 alfa: koyu hücrenin üstünde neredeyse
+            // görünmüyordu. Artık önizleme parçanın KENDİ renginde ve opak —
+            // oyuncu tam olarak neyin nereye ineceğini görür. Dolu bloklardan
+            // ayrılsın diye boş hücre rengiyle karıştırılır ve hafifçe nefes alır.
+            //
+            // Yerleşim geçersizse TÜM önizleme kırmızıya döner (eskiden yalnızca
+            // çakışan hücre kırmızıydı, gerisi "geçerli" görünüyordu).
+            //
             // Ghost Drop gibi kartlar geçerli önizlemeyi kendi rengiyle boyayabilir:
             // oyuncu bedava yerleştirmeyi TIKLAMADAN ÖNCE görmeli, sonrasında
             // öğrenmesi kartı oynanamaz kılıyordu.
-            Color ghostOk     = ghostValidOverride ?? BlockColorPalette.GhostValid;
-            Color ghostBad    = BlockColorPalette.GhostInvalid;
+            float pulse = GameSettings.ReduceMotion
+                ? 0.5f
+                : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _ghostPulseSpeed);
+            float ghostMix = _ghostStrength + (pulse - 0.5f) * _ghostPulseAmount;
+            float conflictBlink = GameSettings.ReduceMotion
+                ? 1f
+                : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _ghostPulseSpeed * 2.2f);
+
+            Color pieceCol = ghostPieceColor ?? BlockColorPalette.GhostValid;
+            pieceCol.a = 1f;
+            Color overrideCol = ghostValidOverride ?? default;
+            overrideCol.a = 1f;
+
+            // ── Satır tamamlama ipucu ────────────────────────────────────────
+            // Bu yerleşim hangi hatları temizleyecek: o hatlardaki bloklar parçanın
+            // rengine doğru parlar, ghost hücreleri de tam renge yaklaşır.
+            // RunController bekleme süresinden sonra doldurur (0 = kapalı).
+            bool  previewOn   = linePreviewCells != null && linePreviewCells.Count > 0 && linePreviewStrength > 0.001f;
+            float previewWave = GameSettings.ReduceMotion
+                ? 1f
+                : 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * _ghostPulseSpeed * 1.4f);
+            Color previewTint = Color.Lerp(pieceCol, Color.white, 0.35f);
 
             for (int y = 0; y < board.Height; y++)
             for (int x = 0; x < board.Width; x++)
@@ -228,7 +282,36 @@ namespace RogueBlockBlast.UI
 
                 Color color;
                 if (isGhost)
-                    color = filled ? ghostBad : ghostOk;
+                {
+                    Color under = filled ? board.GetCellColor(x, y) : EmptyCellAt(x, y);
+                    under.a = 1f;
+
+                    if (!ghostPlaceable)
+                        // Geçersiz: boş hücreler GRİ (renkten bağımsız "sığmıyor" —
+                        // kırmızı parçada kırmızı uyarı parçanın kendi rengiyle
+                        // karışıyordu), yalnızca çakışan hücreler parlak kırmızı:
+                        // sorunun tam olarak nerede olduğu okunur.
+                        // Çakışma hücresi yanıp söner: palette kırmızı blok da var,
+                        // sabit kırmızı yerleşmiş bir bloğa benziyordu.
+                        color = filled
+                            ? Color.Lerp(under, _ghostInvalidColor, Mathf.Lerp(0.55f, 0.95f, conflictBlink))
+                            : Color.Lerp(under, _ghostInvalidEmptyColor, 0.5f);
+                    else if (ghostValidOverride.HasValue)
+                        color = Color.Lerp(under, overrideCol, 0.8f);
+                    else
+                    {
+                        float mix = ghostMix;
+                        if (previewOn && linePreviewCells.Contains(new Vector2Int(x, y)))
+                            mix = Mathf.Lerp(mix, 0.95f, linePreviewStrength);
+                        color = Color.Lerp(under, pieceCol, mix);
+                    }
+                }
+                else if (previewOn && filled && !deadZone && !phantom &&
+                         linePreviewCells.Contains(new Vector2Int(x, y)))
+                {
+                    color = Color.Lerp(board.GetCellColor(x, y), previewTint,
+                                       _linePreviewAmount * linePreviewStrength * previewWave);
+                }
                 else if (deadZone)
                     color = deadZoneTint;
                 else if (phantom)
@@ -237,6 +320,7 @@ namespace RogueBlockBlast.UI
                     color = filled ? board.GetCellColor(x, y) : EmptyCellAt(x, y);
 
                 _tiles[x, y].SetColor(color);
+                _tiles[x, y].IsGhostPreview = isGhost && !filled;
 
                 if (filled && !isGhost && !phantom && !deadZone)
                 {
@@ -315,6 +399,31 @@ namespace RogueBlockBlast.UI
             return Color.Lerp(_emptyCellColor, _emptyPulseColor, wave * _emptyPulseAmount);
         }
 
+        /// <summary>
+        /// Farenin tahta üzerindeki SÜREKLİ konumu, hücre biriminde
+        /// (0,0 = sol-alt hücrenin sol-alt köşesi; 1.5 = ikinci hücrenin ortası).
+        /// Parçayı imlece ortalamak için tamsayı hücre yetmez — parçanın merkezi
+        /// yarım hücrelerde de olabilir.
+        /// </summary>
+        public bool TryGetMouseCellPoint(Camera cam, out Vector2 cellPoint)
+        {
+            cellPoint = default;
+            if (_tiles == null || CellSize <= 0f) return false;
+            if (!TryGetBoardPoint(cam, out Vector2 local)) return false;
+            cellPoint = local / CellSize;
+            return true;
+        }
+
+        /// <summary>Tile'ların görünen yüzeyinin dünya z'si (TileSkirt kaldırması dahil).</summary>
+        private float SurfaceZ
+        {
+            get
+            {
+                var t = _tiles != null && _tiles.Length > 0 ? _tiles[0, 0] : null;
+                return t != null ? t.transform.position.z : 0f;
+            }
+        }
+
         // ── Private ──────────────────────────────────────────────────────────
         private Vector2Int? GetRawCell(Camera cam)
         {
@@ -343,7 +452,11 @@ namespace RogueBlockBlast.UI
 
             Vector2 mp    = Mouse.current.position.ReadValue();
             Ray     ray   = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
-            var     plane = new Plane(Vector3.forward, Vector3.zero);
+            // Işın, oyuncunun GÖRDÜĞÜ yüzeyle kesiştirilir. 2.5D sahnede TileSkirt
+            // tile'ları kameraya doğru kaldırıyor (z ≈ -0.22); z = 0 düzlemi
+            // kullanılınca eğik kamerada imleç görünen hücreden ~0.13 hücre
+            // kayıyordu. Ortografik / düz sahnede SurfaceZ = 0, sonuç aynı.
+            var     plane = new Plane(Vector3.forward, new Vector3(0f, 0f, SurfaceZ));
 
             if (!plane.Raycast(ray, out float dist)) return false;
 

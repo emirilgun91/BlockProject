@@ -202,14 +202,16 @@ namespace RogueBlockBlast.Game
             _ghost.Clear();
             _ghostPositionBonus.Clear();
             _ghostIsFreeDrop = false;
+            bool ghostPlaceable = true;
             if (BoardView.IsMouseOverBoard(MainCamera))
             {
-                var cell = BoardView.TryGetClampedCellUnderMouse(MainCamera, _currentPiece, _currentRot);
+                var cell = ResolvePlacementAnchor();
 
                 if (cell.HasValue)
                 {
                     var  anchor   = cell.Value;
                     bool canPlace = PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot);
+                    ghostPlaceable = canPlace;
 
                     // Ghost Drop: bu konum hiçbir şeye değmiyorsa yerleştirme
                     // bedava. Kartın değeri böyle bir konumu ARAMAKTA — bunu
@@ -262,8 +264,12 @@ namespace RogueBlockBlast.Game
                     pulse);
             }
 
+            UpdateLinePreview(ghostPlaceable);
+
             BoardView.Render(_board, _ghost, ghostTileValue, _ghostPositionBonus,
-                             _staticPositionBonus, ghostOverride);
+                             _staticPositionBonus, ghostOverride,
+                             _currentPiece?.BlockColor, ghostPlaceable,
+                             _linePreviewCells, _linePreviewStrength);
 
             // ── Kilitlenme güvenlik ağı ───────────────────────────────────────
             // Hamle kontrolü normalde sadece parça yerleştirildiğinde yapılır. Tahtayı
@@ -278,6 +284,160 @@ namespace RogueBlockBlast.Game
                 PoolView.Bind(_piecePool, _selectedPoolIndex);
                 _poolDirty = false;
             }
+        }
+
+        // ── Mouse → anchor ───────────────────────────────────────────────────
+
+        [Header("Placement Feel")]
+        [Tooltip("Ortalanmış konum geçersizse (çakışma) bu mesafe içindeki en yakın " +
+                 "geçerli konuma yapışılır — hücre biriminde, parça merkezi ile imleç arası. " +
+                 "0 = yapışma kapalı.")]
+        [SerializeField] private float _placementSnapRadius = 1.05f;
+        [Tooltip("Hücre sınırında titremeyi önler: imleç sınırı bu kadar geçmeden " +
+                 "önizleme yeni hücreye atlamaz (hücre biriminde).")]
+        [SerializeField] private float _placementHysteresis = 0.12f;
+
+        [Header("Line Clear Preview")]
+        [Tooltip("Yerleştirmeden sonra bu kadar saniye geçince (oyuncu düşünüyorsa) ghost'un " +
+                 "tamamlayacağı satır/sütunlar parlar. Hemen gösterilmez: oyuncunun elinden " +
+                 "tutmamak için. Yalnızca imlecin gösterdiği konum için gerçeği söyler, yer önermez. " +
+                 "0 = anında, negatif = kapalı.")]
+        [SerializeField] private float _linePreviewDelay    = 4f;
+        [Tooltip("İpucunun belirme süresi (sn).")]
+        [SerializeField] private float _linePreviewFadeTime = 0.35f;
+
+        private float _turnStartTime;
+        private float _linePreviewStrength;
+        private readonly HashSet<Vector2Int> _linePreviewCells = new HashSet<Vector2Int>();
+
+        private Vector2Int      _lastAnchor;
+        private PieceDefinition _lastAnchorPiece;
+        private Rotation        _lastAnchorRot;
+
+        /// <summary>
+        /// İmlecin altındaki yerleştirme noktası.
+        ///
+        /// Parçanın kapladığı kutunun MERKEZİ imlecin altına gelir. Eskiden parçanın
+        /// (0,0) hücresi (çoğu şekilde sol-alt köşe) imlecin altındaydı: oyuncu
+        /// parçanın ortasını hedefliyor, parça bir-iki hücre sağ-üste iniyordu.
+        /// Döndürme de (0,0) etrafında olduğu için parça imleçten uzaklaşıp
+        /// "havada" kalıyordu — kutu merkezi rotasyondan bağımsız olduğu için
+        /// artık her rotasyonda parça imlecin altında kalır.
+        ///
+        /// Ortalanmış konum çakışıyorsa yakındaki en iyi geçerli konuma yapışılır
+        /// (<see cref="_placementSnapRadius"/>): oyuncu doğru boşluğu hedefliyor
+        /// ama yarım hücre kaçırıyorsa niyeti tutturulur.
+        /// </summary>
+        private Vector2Int? ResolvePlacementAnchor()
+        {
+            if (!BoardView.TryGetMouseCellPoint(MainCamera, out Vector2 mouse)) return null;
+
+            int w = _board.Width, h = _board.Height;
+            var cells = _currentPiece.GetCells(_currentRot);
+
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minY = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in cells)
+            {
+                if (c.x < minX) minX = c.x; if (c.x > maxX) maxX = c.x;
+                if (c.y < minY) minY = c.y; if (c.y > maxY) maxY = c.y;
+            }
+
+            // Hücre (x,y) tahtada [x, x+1] aralığını kaplar; parçanın kutusu
+            // [anchor+min, anchor+max+1]. Kutu merkezi imlece eşitlenince:
+            Vector2 target = mouse - new Vector2((minX + maxX + 1) * 0.5f, (minY + maxY + 1) * 0.5f);
+
+            int loX = -minX, hiX = w - 1 - maxX;
+            int loY = -minY, hiY = h - 1 - maxY;
+            Vector2 clampedTarget = new Vector2(Mathf.Clamp(target.x, loX, hiX), Mathf.Clamp(target.y, loY, hiY));
+
+            // Titreme önleyici: aynı parça/rotasyonda önceki konum hâlâ yakınsa ve
+            // geçerliyse onda kal. Sınırı ancak belirgin şekilde geçince atla.
+            if (_lastAnchorPiece == _currentPiece && _lastAnchorRot == _currentRot)
+            {
+                Vector2 d = clampedTarget - (Vector2)_lastAnchor;
+                float keep = 0.5f + _placementHysteresis;
+                if (Mathf.Abs(d.x) < keep && Mathf.Abs(d.y) < keep &&
+                    PlacementSystem.CanPlace(_board, _currentPiece, _lastAnchor, _currentRot))
+                    return _lastAnchor;
+            }
+
+            var centered = new Vector2Int(
+                Mathf.Clamp(Mathf.RoundToInt(clampedTarget.x), loX, hiX),
+                Mathf.Clamp(Mathf.RoundToInt(clampedTarget.y), loY, hiY));
+
+            var result = centered;
+            if (!PlacementSystem.CanPlace(_board, _currentPiece, centered, _currentRot) && _placementSnapRadius > 0f)
+            {
+                // Çevredeki geçerli konumlardan parça merkezi imlece en yakın olanı
+                float best = _placementSnapRadius * _placementSnapRadius;
+                for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    var cand = new Vector2Int(centered.x + dx, centered.y + dy);
+                    if (cand.x < loX || cand.x > hiX || cand.y < loY || cand.y > hiY) continue;
+                    if (!PlacementSystem.CanPlace(_board, _currentPiece, cand, _currentRot)) continue;
+
+                    float dist = (clampedTarget - (Vector2)cand).sqrMagnitude;
+                    if (dist <= best) { best = dist; result = cand; }
+                }
+            }
+
+            _lastAnchor      = result;
+            _lastAnchorPiece = _currentPiece;
+            _lastAnchorRot   = _currentRot;
+            return result;
+        }
+
+        /// <summary>
+        /// Ghost'un şu anki konumuna yerleşirse tamamlanacak satır/sütunların
+        /// hücrelerini <see cref="_linePreviewCells"/>'e yazar ve ipucunun
+        /// görünürlüğünü (<see cref="_linePreviewStrength"/>) günceller.
+        ///
+        /// Kural LineClearSystem ile aynı: hücre tahtada dolu (phantom / dead zone
+        /// dahil — IsFilled) VEYA ghost kaplıyorsa dolu sayılır. DoPlace'te
+        /// yerleştirme ile ClearLines arasında doluluğu değiştiren bir şey yok,
+        /// bu yüzden önizleme gerçek sonuçla birebir aynıdır.
+        ///
+        /// Zamanlama: tur başına. Sayaç her yerleştirmede sıfırlanır; oyuncu
+        /// <see cref="_linePreviewDelay"/> saniye düşünürse ipucu belirir ve
+        /// sonra imleci canlı takip eder. <c>Time.time</c> kullanılır — kart
+        /// seçimi / pause sırasında (timeScale 0) sayaç ilerlemez.
+        /// </summary>
+        private void UpdateLinePreview(bool ghostPlaceable)
+        {
+            _linePreviewCells.Clear();
+
+            bool enabled = _linePreviewDelay >= 0f
+                           && ghostPlaceable
+                           && _ghost.Count > 0
+                           && Time.time - _turnStartTime >= _linePreviewDelay;
+
+            if (enabled)
+            {
+                int w = _board.Width, h = _board.Height;
+                for (int y = 0; y < h; y++)
+                {
+                    bool full = true;
+                    for (int x = 0; x < w && full; x++)
+                        full = _board.IsFilled(x, y) || _ghost.Contains(new Vector2Int(x, y));
+                    if (full) for (int x = 0; x < w; x++) _linePreviewCells.Add(new Vector2Int(x, y));
+                }
+                for (int x = 0; x < w; x++)
+                {
+                    bool full = true;
+                    for (int y = 0; y < h && full; y++)
+                        full = _board.IsFilled(x, y) || _ghost.Contains(new Vector2Int(x, y));
+                    if (full) for (int y = 0; y < h; y++) _linePreviewCells.Add(new Vector2Int(x, y));
+                }
+            }
+
+            float target = _linePreviewCells.Count > 0 ? 1f : 0f;
+            float speed  = target > _linePreviewStrength
+                ? 1f / Mathf.Max(0.01f, _linePreviewFadeTime)
+                : 8f;                                   // kaybolması hızlı
+            _linePreviewStrength = Mathf.MoveTowards(_linePreviewStrength, target, speed * Time.unscaledDeltaTime);
         }
 
         // ── Pool ─────────────────────────────────────────────────────────────
@@ -316,6 +476,10 @@ namespace RogueBlockBlast.Game
             float shapeBonusPerTile = ShapeCardEffectRegistry.Instance?.GetScoreBonus(_currentPiece.Id) ?? 0f;
             float effectiveTileValue = _currentPiece.TileValue + shapeBonusPerTile;
             PlacementSystem.Place(_board, _currentPiece, anchor, _currentRot, effectiveTileValue);
+
+            // Yeni tur: satır tamamlama ipucu yeniden bekleme süresine girer
+            _turnStartTime       = Time.time;
+            _linePreviewStrength = 0f;
 
             // Corner Stone / Center Base bonusu da tile'a yazılır. Bu bonuslar hücre
             // bazlıdır (yalnızca köşe / merkez hücreleri alır), o yüzden yerleştirmeden
@@ -661,6 +825,8 @@ namespace RogueBlockBlast.Game
             GameOverUI.Instance?.Hide();
             Time.timeScale = 1f;
             _upgradeRevivesUsed = 0;
+            _turnStartTime       = Time.time;
+            _linePreviewStrength = 0f;
             _freeDeadPoolReroll = 0;
             _cardDeadPoolReroll = 0;
             _score              = 0;

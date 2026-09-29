@@ -76,6 +76,14 @@ namespace RogueBlockBlast.UI
         // ── Public API ───────────────────────────────────────────────────────
 
         /// <summary>Rengi doğrudan ata (animasyon yok).</summary>
+        /// <summary>
+        /// Bu hücre şu an yerleştirme önizlemesi (ghost) gösteriyor mu.
+        /// BoardView her Render'da yazar; 2.5D'de TileSkirt önizlemeye yan yüz
+        /// çizmez — önizleme tahtaya düz bir iz olarak okunur, yerleşmiş
+        /// (kalkık) bloklarla karışmaz.
+        /// </summary>
+        public bool IsGhostPreview { get; set; }
+
         public void SetColor(Color color)
         {
             _colorTween?.Kill();

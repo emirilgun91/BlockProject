@@ -68,7 +68,8 @@ namespace RogueBlockBlast.UI
                 ? $"{cardName}  <size=11><color=#8a93aa>x{stackCount}</color></size>"
                 : cardName;
 
-            _descText.text = ContentLocalization.Description(card);
+            // Değerler (+6, 20%, 2.5x…) kalın ve renkli — okunabilirlik
+            _descText.text = ValueHighlighter.Highlight(ContentLocalization.Description(card));
 
             // Effect özeti
             if (_effectText != null)
@@ -86,7 +87,7 @@ namespace RogueBlockBlast.UI
                             card, i + 1, card.Effects[i].Description);
 
                         if (!string.IsNullOrWhiteSpace(line))
-                            sb.AppendLine($"▸  {line}");
+                            sb.AppendLine($"▸  {ValueHighlighter.Highlight(line)}");
                     }
                 }
 

@@ -10,6 +10,8 @@ namespace RogueBlockBlast.UI
     {
         [Header("Scene Names")]
         [SerializeField] private string _gameplaySceneName = "SampleScene";
+        [Tooltip("Ekran dikeyken (telefon) açılacak oyun sahnesi. Build Settings'te olmalı.")]
+        [SerializeField] private string _portraitGameplaySceneName = "GamePortrait";
 
         [Header("Coin Display")]
         [SerializeField] private TMP_Text _coinText;
@@ -66,8 +68,21 @@ namespace RogueBlockBlast.UI
 
         private void OnNewRunClicked()
         {
-           
-            SceneTransition.Instance?.LoadScene(_gameplaySceneName);        }
+            SceneTransition.Instance?.LoadScene(ResolveGameplayScene());
+        }
+
+        /// <summary>
+        /// Ekran dikeyse (telefon) portrait oyun sahnesi, değilse normal sahne.
+        /// Portrait sahne Build Settings'te yoksa normal sahneye düşülür.
+        /// </summary>
+        private string ResolveGameplayScene()
+        {
+            bool portrait = Screen.height > Screen.width;
+            if (portrait && !string.IsNullOrEmpty(_portraitGameplaySceneName) &&
+                Application.CanStreamedLevelBeLoaded(_portraitGameplaySceneName))
+                return _portraitGameplaySceneName;
+            return _gameplaySceneName;
+        }
 
         private void OnShapeShopClicked()
         {

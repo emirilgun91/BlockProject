@@ -53,6 +53,9 @@ namespace RogueBlockBlast.Game.Prototype
 
         [Tooltip("Kartlar arası aralık, kart genişliğinin katı olarak. 1.0 = bitişik.")]
         [SerializeField] private float _fanSpacingFactor = 1.1f;
+        [Tooltip("Yelpazenin ekran genişliğinin en fazla ne kadarını kaplayacağı. " +
+                 "Portrait'te kart boyunu bu belirler.")]
+        [SerializeField] private float _maxFanScreenWidth = 0.94f;
 
         [Tooltip("Yelpazenin kavisi — uçtaki kartlar bu kadar alçalır.")]
         [SerializeField] private float _fanArc = 0.12f;
@@ -342,6 +345,16 @@ namespace RogueBlockBlast.Game.Prototype
                                   Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
 
             float targetHeight = visibleHeight * _cardScreenHeight;
+
+            // Dar (portrait) ekranda yelpaze genişliği de sınırlanır: 3 kartın
+            // toplam genişliği = kart × (2·aralık + 1). Yalnızca yüksekliğe göre
+            // ölçeklemek portrait'te uç kartları ekran dışına itiyordu.
+            // Landscape'te yükseklik zaten daha kısıtlayıcı — davranış değişmez.
+            float visibleWidth = visibleHeight * _camera.aspect;
+            float fanWidthInCards = 2f * _fanSpacingFactor + 1f;
+            float maxHeightByWidth = visibleWidth * _maxFanScreenWidth / fanWidthInCards
+                                     * (_cardSizePx.y / _cardSizePx.x);
+            targetHeight = Mathf.Min(targetHeight, maxHeightByWidth);
 
             _canvasScale = targetHeight / _cardSizePx.y;
             _slotSpacing = _cardSizePx.x * _canvasScale * _fanSpacingFactor;

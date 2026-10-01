@@ -39,9 +39,18 @@ namespace RogueBlockBlast.Game.Tutorial
         [Tooltip("Bir adım tamamlandığında tik işaretinin ekranda kalma süresi (saniye).")]
         [SerializeField] private float _completedHold = 1.1f;
 
+        [Tooltip("Dokunmatik metinler: varsa '<anahtar>.Touch' çevirisi kullanılır. Portrait sahnede açık.")]
+        [SerializeField] private bool _touchText = false;
+
+        /// <summary>Portrait sahne kurucusu açar.</summary>
+        public bool TouchText { get => _touchText; set => _touchText = value; }
+
         [Header("Placement")]
         [Tooltip("Canvas'ın üst kenarından uzaklık (referans çözünürlük pikseli).")]
         [SerializeField] private float _topPadding = 40f;
+
+        /// <summary>Portrait sahne kurucusu ayarlar (duraklat butonuyla çakışmasın).</summary>
+        public float TopPadding { get => _topPadding; set => _topPadding = value; }
 
         [Header("Style")]
         [SerializeField] private Color _panelColor = new Color(0.05f, 0.07f, 0.12f, 0.86f);
@@ -227,7 +236,11 @@ namespace RogueBlockBlast.Game.Tutorial
         {
             if (_text == null || _index < 0 || _index >= Scenario.Length) return;
             var step = Scenario[_index];
-            _text.text = Loc.GetOr(step.Key, step.Fallback);
+            string text = Loc.GetOr(step.Key, step.Fallback);
+            // Dokunmatik: "<anahtar>.Touch" varsa o kullanılır ("Q/E'ye bas" yerine
+            // "döndür butonuna dokun"); yoksa normal metin.
+            if (_touchText) text = Loc.GetOr(step.Key + ".Touch", text);
+            _text.text = text;
         }
 
         private void SetVisible(bool on)

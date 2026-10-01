@@ -144,7 +144,11 @@ namespace RogueBlockBlast.UI
         {
             Time.timeScale = 1f;
             Game.GameStateController.Reset();
-            SceneManager.LoadScene(_gameSceneName);
+            // Açık olan sahneyi yeniden yükle: landscape ve portrait sahne aynı
+            // GameOverUI'ı kullanıyor; sabit isim portrait'ten landscape'e atıyordu.
+            // Sahne adı boşsa (beklenmez) Inspector'daki değer yedek.
+            string scene = SceneManager.GetActiveScene().name;
+            SceneManager.LoadScene(string.IsNullOrEmpty(scene) ? _gameSceneName : scene);
         }
 
         private void OnMainMenu()

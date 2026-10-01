@@ -93,6 +93,16 @@ namespace RogueBlockBlast.Game.Prototype
             _trauma = Mathf.Clamp01(_trauma + amount * GameSettings.ScreenShake);
         }
 
+        /// <summary>
+        /// Eşleşilen ortografik yarı-yükseklik — kadrajın büyüklüğü. Portrait'te
+        /// <see cref="PortraitCameraFit"/> tahtayı ekran genişliğine sığdırmak için yazar.
+        /// </summary>
+        public float MatchOrthographicSize
+        {
+            get => _matchOrthographicSize;
+            set => _matchOrthographicSize = Mathf.Max(0.01f, value);
+        }
+
         /// <summary>Odak noktasının dünya konumu (z = 0 düzleminde).</summary>
         public Vector3 AimWorld => new Vector3(AimPoint.x, AimPoint.y, 0f);
 

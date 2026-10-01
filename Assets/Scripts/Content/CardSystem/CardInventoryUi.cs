@@ -60,6 +60,15 @@ namespace RogueBlockBlast.UI
         [Tooltip("Kenar boşluğu (px) — sol/sağ/üst.")]
         [SerializeField] private float _autoFitPadding = 12f;
 
+        [Header("Horizontal Strip (portrait)")]
+        [Tooltip("AÇIK: kartlar tek satırda yan yana dizilir, liste yatay kayar; hücre " +
+                 "boyutu panelin YÜKSEKLİĞİNDEN hesaplanır. Portrait sahnede tahta ile " +
+                 "havuz arasındaki ince şerit için. KAPALI (varsayılan): dikey ızgara.")]
+        [SerializeField] private bool _horizontalStrip = false;
+
+        /// <summary>Portrait sahne kurucusu açar.</summary>
+        public bool HorizontalStrip { get => _horizontalStrip; set => _horizontalStrip = value; }
+
         // Panel genişliği değiştiğinde yeniden hesaplamak için son ölçü.
         private float _lastFitWidth = -1f;
 
@@ -91,6 +100,13 @@ namespace RogueBlockBlast.UI
 
             var csf = _content.GetComponent<ContentSizeFitter>();
             if (csf == null) csf = _content.gameObject.AddComponent<ContentSizeFitter>();
+
+            if (_horizontalStrip)
+            {
+                SetupHorizontalStrip(csf);
+                return;
+            }
+
             csf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
             csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
@@ -112,7 +128,63 @@ namespace RogueBlockBlast.UI
 
         private void LateUpdate()
         {
-            if (_autoFit) ApplyAutoFit(force: false);
+            if (_horizontalStrip) ApplyStripFit(force: false);
+            else if (_autoFit)    ApplyAutoFit(force: false);
+        }
+
+        /// <summary>
+        /// Tek satır: içerik sola yaslı, tam yükseklikte; genişliği kart sayısıyla
+        /// büyür. ScrollRect yatay kayar.
+        /// </summary>
+        private void SetupHorizontalStrip(ContentSizeFitter csf)
+        {
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
+
+            _content.anchorMin = new Vector2(0f, 0f);
+            _content.anchorMax = new Vector2(0f, 1f);
+            _content.pivot     = new Vector2(0f, 0.5f);
+            _content.anchoredPosition = Vector2.zero;
+            _content.sizeDelta = new Vector2(0f, 0f);
+
+            var scroll = GetComponentInChildren<ScrollRect>(true) ?? GetComponent<ScrollRect>();
+            if (scroll != null)
+            {
+                scroll.horizontal = true;
+                scroll.vertical   = false;
+                scroll.verticalScrollbar = null;
+                if (scroll.horizontalScrollbar != null) scroll.horizontalScrollbar.gameObject.SetActive(false);
+            }
+
+            ApplyStripFit(force: true);
+        }
+
+        private float _lastStripHeight = -1f;
+
+        private void ApplyStripFit(bool force)
+        {
+            if (_content == null) return;
+            float height = _content.rect.height;
+            if (height < 1f) return;
+            if (!force && Mathf.Abs(height - _lastStripHeight) < 0.5f) return;
+            _lastStripHeight = height;
+
+            var grid = _content.GetComponent<GridLayoutGroup>();
+            if (grid == null) grid = _content.gameObject.AddComponent<GridLayoutGroup>();
+
+            float pad     = Mathf.Max(0f, _autoFitPadding * 0.5f);
+            float spacing = Mathf.Max(0f, _autoFitSpacing);
+            // Hücre yüksekliği = kare + canlı değer bandı; kare kenarı yükseklikten çıkar.
+            float cell = Mathf.Max(24f, height - pad * 2f - CardSlotView.LiveValueBandHeight);
+
+            grid.cellSize        = new Vector2(cell, cell + CardSlotView.LiveValueBandHeight);
+            grid.spacing         = new Vector2(spacing, spacing);
+            grid.constraint      = GridLayoutGroup.Constraint.FixedRowCount;
+            grid.constraintCount = 1;
+            grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis       = GridLayoutGroup.Axis.Vertical;
+            grid.childAlignment  = TextAnchor.MiddleLeft;
+            grid.padding         = new RectOffset((int)pad, (int)pad, (int)pad, (int)pad);
         }
 
         /// <summary>

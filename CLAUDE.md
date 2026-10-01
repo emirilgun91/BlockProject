@@ -76,6 +76,26 @@ ShapeSpawnService.GetRandomWeighted(library)
   → weighted random pick → PieceFactory.Create(shapeSO) → PieceDefinition
 ```
 
+### Portrait (mobile) version
+
+`Assets/Scenes/GamePortrait.unity` is **generated**, never hand-edited: **Tools ▸ RogueBlockBlast ▸ Scene Setup ▸ Build Portrait Scene** (`PortraitSceneBuilder`) copies `SampleScene` and converts it to a portrait layout. Rerunning it rebuilds the scene from the current `SampleScene`, so manual edits to the portrait scene are lost. Put permanent layout changes in the builder. The builder:
+
+- sets the canvas to 1080×1920, matched to width;
+- puts Combo, Score and Milestone side by side at the top;
+- lays the pool out at the bottom with explicit positions. The pool's `HorizontalLayoutGroup` is removed because it overwrote those positions;
+- moves the pieces-left counter (normally a child of `MilestoneBoard`) next to the pool;
+- turns the card inventory into a single horizontal strip (`CardInventoryUI.HorizontalStrip`);
+- adds `MobileControlsView` (rotate and pause buttons, icons drawn in code, no text);
+- sets `TutorialController.TouchText` (uses `*.Touch` localisation keys) and `RunController.DragToPlace`;
+- adds `PortraitCameraFit`, which fits the board to the screen width;
+- disables physical-card hover lift and camera parallax;
+- hides Quit;
+- also adds `PortraitMenuLayout` to the MainMenu scene.
+
+**Drag-to-place** (`RunController`): the ghost is shown only while the finger is down, `DragLift` (1.8 cells plus `GameSettings.DragOffsetY`) above the finger, and the piece is placed when the finger lifts. `TrackDragPress` runs *before* the input-lock early return. A touch "arms" placement only if it started while input was allowed and not on a `Selectable` or `ScrollRect` (pool slots are the exception). Without this, the touch that picked a card or pressed the rotate button placed a piece when it was released. Pool slots select on pointer **down**, so a drag can start from the slot.
+
+**Main menu**: there is no separate scene, because it is build index 0 and a phone opens it first. `PortraitMenuLayout` re-lays out the same scene while `Screen.height > Screen.width` and restores the original layout when the screen is landscape again. `MainMenuController.ResolveGameplayScene` loads `GamePortrait` when the screen is portrait. `GameOverUI` retry reloads the *active* scene.
+
 ### Mouse → placement anchor
 
 `RunController.ResolvePlacementAnchor()` puts the centre of the piece's bounding box under the cursor. Before this, the piece's `(0,0)` cell sat under the cursor, so pieces landed up and to the right of where the player aimed, and rotating around `(0,0)` made them jump away. It works from `BoardView.TryGetMouseCellPoint`, which gives the cursor position in continuous cell units. The ray hits the *visible* tile surface (`SurfaceZ`, which includes the TileSkirt lift), not `z = 0`. If the centred spot is blocked, the anchor snaps to the nearest valid anchor within `_placementSnapRadius` (default 1.05 cells). `_placementHysteresis` stops the preview flickering at cell borders. `BoardView.TryGetClampedCellUnderMouse` is no longer used by gameplay.
@@ -84,7 +104,7 @@ ShapeSpawnService.GetRandomWeighted(library)
 
 The ghost is drawn in the piece's own colour, opaque and blended toward the empty-cell colour (`BoardView._ghostStrength`). It is flat: `TileView.IsGhostPreview` tells `TileSkirt` not to draw a side face, so it never reads as a placed block. An invalid placement turns the empty ghost cells grey and makes the overlapping cells blink red. Grey is used because a red warning would be indistinguishable from a red piece.
 
-`RunController.UpdateLinePreview` highlights the rows and columns the current ghost would complete, but only after `_linePreviewDelay` seconds (default 4) have passed since the last placement. The delay is deliberate: the hint should help a player who hesitates, not play the game for them. It never suggests a spot. It only reports what happens at the spot the cursor is on. It uses the same rule as `LineClearSystem` (`IsFilled` or covered by the ghost), and `DoPlace` changes nothing about fill state between `Place` and `ClearLines`, so the preview always matches the real clear. The timer runs on `Time.time`, so it stops while the game is paused or a card is being picked.
+`RunController.UpdateLinePreview` highlights the rows and columns the current ghost would complete, but only after `_linePreviewDelay` seconds (default 4) have passed since the last placement. `LineHintOutline` (`UI/FX/`, a self-creating singleton, shader `Resources/FX/LineHintOutline`) draws a thin neon frame in the piece's colour around each of those lines. The frame settles into place with a small pop, and a light runs along it. Placed blocks are never recoloured: an earlier version tinted them toward white, and players read that as failure, not success. The frame draws nothing inside the line. Keep its HDR intensity moderate, because bloom from the frame spilling onto warm-coloured blocks greys them out. If `Show` is not called in a frame (pause, card pick), the frames hide themselves. The delay is deliberate: the hint should help a player who hesitates, not play the game for them. It never suggests a spot. It only reports what happens at the spot the cursor is on. It uses the same rule as `LineClearSystem` (`IsFilled` or covered by the ghost), and `DoPlace` changes nothing about fill state between `Place` and `ClearLines`, so the preview always matches the real clear. The timer runs on `Time.time`, so it stops while the game is paused or a card is being picked.
 
 ### Data Flow on Piece Placement
 
@@ -148,6 +168,7 @@ The game uses the **SimpleLocalization** asset at `Assets/SimpleLocalization/` (
 
 - **`Loc`** — the facade over SimpleLocalization: language persistence (`GameSettings.Language`), system-language detection, next/previous cycling, `Get` / `GetOr` that return the key instead of throwing on a miss, and culture-correct `ToUpper` (Turkish `i → İ`).
 - **`ContentLocalization`** — translations for ScriptableObject content via `Card.<id>.Name` / `Card.<id>.Desc`, `Upgrade.<id>.*`, `Shape.<id>.Name`. Falls back to the asset's own text when a key is missing, so content can be translated incrementally.
+- **`ValueHighlighter`**: makes the numeric values in card text (`+6`, `20%`, `%20`, `2.5x`, `×1.5`, `1.5 倍`, `0,02`) bold and coloured through TMP rich text. Values with an explicit minus get the penalty colour, everything else the value colour. It runs when the text is displayed (`Cardview`, `CardtTooltip`), not in the CSVs, so every language and every future card is covered with no markup. Digits attached to letters are left alone because they are shape names (`I3`, `4Gen`), and the dash in a range (`2-3`) is not treated as a minus. Always apply it to the raw text; applying it twice wraps the numbers twice.
 - **`LocFiller`** (editor) — bulk-writes CSV cells; preserves existing rows and never overwrites a filled cell unless `overwrite: true`.
 
 **Rule: every new player-facing string ships translated in all 15 supported languages.** Key naming is `Section.Element` PascalCase.

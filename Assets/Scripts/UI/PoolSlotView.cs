@@ -8,7 +8,7 @@ using RogueBlockBlast.Content;
 
 namespace RogueBlockBlast.UI
 {
-    public class PoolSlotView : MonoBehaviour, IPointerClickHandler
+    public class PoolSlotView : MonoBehaviour, IPointerClickHandler, IPointerDownHandler
     {
         public Action OnClicked;
         [SerializeField] private RectTransform _container;
@@ -108,7 +108,10 @@ namespace RogueBlockBlast.UI
                 .SetAutoKill(true);
         }
 
-        public void OnPointerClick(PointerEventData _) => OnClicked?.Invoke();
+        // Seçim BASMA anında: dokunmatikte oyuncu slottan başlayıp tahtaya sürükler —
+        // click (bırakma) aynı slotta olmadığı için hiç tetiklenmezdi. Masaüstünde fark yok.
+        public void OnPointerDown(PointerEventData _)  => OnClicked?.Invoke();
+        public void OnPointerClick(PointerEventData _) { }
 
         // ── Render ───────────────────────────────────────────────────────────
         public void Render(PieceDefinition piece, bool selected)

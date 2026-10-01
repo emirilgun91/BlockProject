@@ -69,6 +69,11 @@ namespace RogueBlockBlast.UI
             _settingsButton?.onClick.AddListener(OpenSettings);
             _mainMenuButton?.onClick.AddListener(() => Request(PendingAction.MainMenu));
             _quitButton?.onClick.AddListener(() => Request(PendingAction.QuitGame));
+
+            // Mobilde "masaüstüne çık" anlamsız — iOS uygulamanın kendini kapatmasına
+            // izin vermiyor, Android'de de sistemin geri/ana ekran hareketi var.
+            if (Application.isMobilePlatform && _quitButton != null)
+                _quitButton.gameObject.SetActive(false);
             _confirmYes?.onClick.AddListener(ConfirmPending);
             _confirmNo?.onClick.AddListener(CancelPending);
 

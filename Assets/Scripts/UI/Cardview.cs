@@ -86,7 +86,8 @@ namespace RogueBlockBlast.UI
             if (_data == null) return;
 
             _nameText.text = ContentLocalization.Name(_data);
-            _descText.text = ContentLocalization.Description(_data);
+            // Değerler (+6, 20%, 2.5x…) kalın ve renkli — okunabilirlik
+            _descText.text = ValueHighlighter.Highlight(ContentLocalization.Description(_data));
 
             if (_iconImage != null)
             {

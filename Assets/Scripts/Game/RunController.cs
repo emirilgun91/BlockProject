@@ -169,6 +169,12 @@ namespace RogueBlockBlast.Game
 
         private void Update()
         {
+            // Sürükle-bırak: dokunuşun NEREDE ve NE ZAMAN başladığı input kilidinden
+            // ÖNCE kaydedilir. Kart seçimi sırasında Update aşağıda erken dönüyor;
+            // kaydedilmezse kartı seçen dokunuşun bırakılması, kilit açıldığı karede
+            // "tahtaya bırakma" sayılıp bir de parça yerleştiriyordu.
+            TrackDragPress();
+
             if (_board == null || _currentPiece == null) return;
             if (!GameStateController.InputAllowed) return;
             bool canRotate = !(_cardState.HasFirstPicks &&
@@ -203,7 +209,19 @@ namespace RogueBlockBlast.Game
             _ghostPositionBonus.Clear();
             _ghostIsFreeDrop = false;
             bool ghostPlaceable = true;
-            if (BoardView.IsMouseOverBoard(MainCamera))
+
+            // Sürükle-bırak (portrait / dokunmatik): ghost yalnızca parmak basılıyken
+            // görünür ve parmağın DragLift kadar üstünde durur — parmak parçayı
+            // örtmesin. Parmak kalkınca (release) yerleşir. Kapalıyken masaüstü
+            // davranışı: hover'da ghost, tıklamada yerleştir.
+            var  pointer      = Pointer.current;
+            bool dragPressed  = _dragToPlace && _dragArmed && pointer != null && pointer.press.isPressed;
+            bool dragReleased = _dragToPlace && _dragArmed && pointer != null && pointer.press.wasReleasedThisFrame;
+            bool showGhost    = _dragToPlace
+                ? (dragPressed || dragReleased) && IsLiftedPointerOverBoard()
+                : BoardView.IsMouseOverBoard(MainCamera);
+
+            if (showGhost)
             {
                 var cell = ResolvePlacementAnchor();
 
@@ -237,12 +255,12 @@ namespace RogueBlockBlast.Game
                         }
                     }
 
-                    if (Mouse.current != null &&
-                        Mouse.current.leftButton.wasPressedThisFrame &&
-                        canPlace)
-                    {
+                    bool placeNow = _dragToPlace
+                        ? dragReleased
+                        : Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+
+                    if (placeNow && canPlace)
                         DoPlace(anchor);
-                    }
                 }
             }
 
@@ -309,6 +327,8 @@ namespace RogueBlockBlast.Game
         private float _turnStartTime;
         private float _linePreviewStrength;
         private readonly HashSet<Vector2Int> _linePreviewCells = new HashSet<Vector2Int>();
+        private readonly List<int>           _linePreviewRows  = new List<int>();
+        private readonly List<int>           _linePreviewCols  = new List<int>();
 
         private Vector2Int      _lastAnchor;
         private PieceDefinition _lastAnchorPiece;
@@ -328,9 +348,91 @@ namespace RogueBlockBlast.Game
         /// (<see cref="_placementSnapRadius"/>): oyuncu doğru boşluğu hedefliyor
         /// ama yarım hücre kaçırıyorsa niyeti tutturulur.
         /// </summary>
+        [Header("Touch / Portrait")]
+        [Tooltip("AÇIK: sürükle-bırak yerleştirme (portrait mobil). Ghost yalnızca basılıyken " +
+                 "görünür, parmağın üstünde durur, bırakınca yerleşir. KAPALI: masaüstü tıkla-yerleştir.")]
+        [SerializeField] private bool  _dragToPlace   = false;
+        [Tooltip("Sürüklerken ghost'un parmağın kaç hücre üstünde duracağı (taban). Oyuncunun " +
+                 "Ayarlar ▸ Touch Drag Offset değeri (GameSettings.DragOffsetY, 0..2) bunun üstüne eklenir.")]
+        [SerializeField] private float _dragLiftCells = 1.8f;
+
+        /// <summary>Taban pay + oyuncunun ayarı. Varsayılan ayar 0 → parmak parçayı örtmez.</summary>
+        private float DragLift => _dragLiftCells + RogueBlockBlast.Core.Settings.GameSettings.DragOffsetY;
+
+        /// <summary>Portrait sahne kurucusu açar.</summary>
+        public bool DragToPlace { get => _dragToPlace; set => _dragToPlace = value; }
+
+        /// <summary>Dokunmatik döndür butonu — Q/E ile aynı kurallar (First Picks kilidi dahil).</summary>
+        public void RotateCurrentPiece(int direction)
+        {
+            if (_currentPiece == null || !GameStateController.InputAllowed) return;
+            bool canRotate = !(_cardState.HasFirstPicks &&
+                               _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
+            if (!canRotate) return;
+            _currentRot = direction >= 0 ? NextRot(_currentRot) : PrevRot(_currentRot);
+            TutorialEvents.Rotated();
+        }
+
+        /// <summary>
+        /// Bu dokunuş yerleştirme yapabilir mi? Yalnızca oyun input kabul ederken ve
+        /// buton / kaydırılabilir liste dışında başlayan dokunuşlar "silahlanır".
+        /// Bırakıldığı kareden sonra düşer.
+        /// </summary>
+        private bool _dragArmed;
+
+        private void TrackDragPress()
+        {
+            if (!_dragToPlace) { _dragArmed = false; return; }
+            var p = Pointer.current;
+            if (p == null) { _dragArmed = false; return; }
+
+            if (p.press.wasPressedThisFrame)
+                _dragArmed = GameStateController.InputAllowed &&
+                             !PressStartedOnInteractiveUI(p.position.ReadValue());
+            else if (!p.press.isPressed && !p.press.wasReleasedThisFrame)
+                _dragArmed = false;   // bırakma karesi geçti — sonraki dokunuşa kadar kapalı
+        }
+        private static readonly List<UnityEngine.EventSystems.RaycastResult> _uiHits = new List<UnityEngine.EventSystems.RaycastResult>();
+
+        /// <summary>
+        /// Dokunuş bir butonun / kaydırılabilir listenin üstünde mi başladı?
+        /// Öyleyse o dokunuş yerleştirme yapmaz: ghost parmağın üstünde durduğu
+        /// için, tahtanın altındaki döndür butonuna basıp bırakmak ya da kart
+        /// şeridini kaydırmak "tahtaya bırakma" sayılıp parçayı yerleştiriyordu.
+        /// Havuz slotu istisna — oyuncu parçayı oradan tahtaya sürükler.
+        /// </summary>
+        private static bool PressStartedOnInteractiveUI(Vector2 screenPos)
+        {
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null) return false;
+
+            var data = new UnityEngine.EventSystems.PointerEventData(es) { position = screenPos };
+            _uiHits.Clear();
+            es.RaycastAll(data, _uiHits);
+
+            foreach (var hit in _uiHits)
+            {
+                if (hit.gameObject == null) continue;
+                if (hit.gameObject.GetComponentInParent<RogueBlockBlast.UI.PoolSlotView>() != null) return false;
+                if (hit.gameObject.GetComponentInParent<UnityEngine.UI.Selectable>() != null) return true;
+                if (hit.gameObject.GetComponentInParent<UnityEngine.UI.ScrollRect>()  != null) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Sürükle-bırak modunda imleç + kaldırma payı tahtanın üstünde mi (yarım hücre tolerans).</summary>
+        private bool IsLiftedPointerOverBoard()
+        {
+            if (!BoardView.TryGetMouseCellPoint(MainCamera, out Vector2 p)) return false;
+            p.y += DragLift;
+            return p.x >= -0.5f && p.x <= _board.Width + 0.5f &&
+                   p.y >= -0.5f && p.y <= _board.Height + 0.5f;
+        }
+
         private Vector2Int? ResolvePlacementAnchor()
         {
             if (!BoardView.TryGetMouseCellPoint(MainCamera, out Vector2 mouse)) return null;
+            if (_dragToPlace) mouse.y += DragLift;
 
             int w = _board.Width, h = _board.Height;
             var cells = _currentPiece.GetCells(_currentRot);
@@ -408,6 +510,8 @@ namespace RogueBlockBlast.Game
         private void UpdateLinePreview(bool ghostPlaceable)
         {
             _linePreviewCells.Clear();
+            _linePreviewRows.Clear();
+            _linePreviewCols.Clear();
 
             bool enabled = _linePreviewDelay >= 0f
                            && ghostPlaceable
@@ -422,14 +526,18 @@ namespace RogueBlockBlast.Game
                     bool full = true;
                     for (int x = 0; x < w && full; x++)
                         full = _board.IsFilled(x, y) || _ghost.Contains(new Vector2Int(x, y));
-                    if (full) for (int x = 0; x < w; x++) _linePreviewCells.Add(new Vector2Int(x, y));
+                    if (!full) continue;
+                    _linePreviewRows.Add(y);
+                    for (int x = 0; x < w; x++) _linePreviewCells.Add(new Vector2Int(x, y));
                 }
                 for (int x = 0; x < w; x++)
                 {
                     bool full = true;
                     for (int y = 0; y < h && full; y++)
                         full = _board.IsFilled(x, y) || _ghost.Contains(new Vector2Int(x, y));
-                    if (full) for (int y = 0; y < h; y++) _linePreviewCells.Add(new Vector2Int(x, y));
+                    if (!full) continue;
+                    _linePreviewCols.Add(x);
+                    for (int y = 0; y < h; y++) _linePreviewCells.Add(new Vector2Int(x, y));
                 }
             }
 
@@ -438,6 +546,13 @@ namespace RogueBlockBlast.Game
                 ? 1f / Mathf.Max(0.01f, _linePreviewFadeTime)
                 : 8f;                                   // kaybolması hızlı
             _linePreviewStrength = Mathf.MoveTowards(_linePreviewStrength, target, speed * Time.unscaledDeltaTime);
+
+            // Görsel: hattın çevresine parça renginde ince, parlayan çerçeve.
+            // Bloklar kendi renginde kalır (eskiden beyaza kayıyordu — "sönme" gibi okunuyordu).
+            LineHintOutline.Instance.Show(BoardView, _linePreviewRows, _linePreviewCols,
+                                          _board.Width, _board.Height,
+                                          _currentPiece != null ? _currentPiece.BlockColor : Color.white,
+                                          _linePreviewStrength);
         }
 
         // ── Pool ─────────────────────────────────────────────────────────────

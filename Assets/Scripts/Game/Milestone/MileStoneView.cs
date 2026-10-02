@@ -48,6 +48,9 @@ namespace RogueBlockBlast.UI
         [SerializeField] private TMP_Text _thresholdText;
         [SerializeField] private TMP_Text _piecesText;       // opsiyonel
 
+        /// <summary>"N left" sayacının rect'i — arayüz turu işaretlemek için.</summary>
+        public RectTransform PiecesRect => _piecesText != null ? _piecesText.rectTransform : null;
+
         [Header("Colors")]
         [SerializeField] private Color _colorNormal  = new Color(0.91f, 0.64f, 0.19f, 1f); // amber
         [SerializeField] private Color _colorDanger  = new Color(0.75f, 0.24f, 0.17f, 1f); // kırmızı — az kaldı

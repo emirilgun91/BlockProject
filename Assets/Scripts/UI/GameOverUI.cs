@@ -1,4 +1,5 @@
-﻿using RogueBlockBlast.Game;
+﻿using DG.Tweening;
+using RogueBlockBlast.Game;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,6 +34,8 @@ namespace RogueBlockBlast.UI
         [Header("Buttons")]
         [SerializeField] private Button _retryButton;
         [SerializeField] private Button _mainMenuButton;
+        [Tooltip("Shape Shop'u üstte açar. Yalnızca parası bir şeye yetiyorsa görünür.")]
+        [SerializeField] private Button _upgradeButton;
 
         [Header("Scene Names")]
         [SerializeField] private string _gameSceneName    = "Game";
@@ -74,6 +77,8 @@ namespace RogueBlockBlast.UI
 
             _retryButton.onClick.AddListener(OnRetry);
             _mainMenuButton.onClick.AddListener(OnMainMenu);
+            _upgradeButton?.onClick.AddListener(OnUpgrade);
+            if (_upgradeButton != null) _upgradeButton.gameObject.SetActive(false);
         }
 
         private void Update()
@@ -130,6 +135,7 @@ namespace RogueBlockBlast.UI
                 _coinsEarnedText.text = coinsEarned.ToString("N0");
  
             // ── Show ─────────────────────────────────────────────────────────
+            RefreshUpgradeButton();
             Time.timeScale = 0f;
             Game.GameStateController.LockInput();
             _root.SetActive(true);
@@ -150,6 +156,26 @@ namespace RogueBlockBlast.UI
             string scene = SceneManager.GetActiveScene().name;
             SceneManager.LoadScene(string.IsNullOrEmpty(scene) ? _gameSceneName : scene);
         }
+
+        private bool _overlayHooked;
+
+        /// <summary>Para bir şeye yetiyorsa "Upgrade Now!" görünür; yetmiyorsa hiç gösterilmez.</summary>
+        private void RefreshUpgradeButton()
+        {
+            if (_upgradeButton == null) return;
+            var overlay = ShapeShopOverlay.Instance;
+            if (overlay != null && !_overlayHooked) { overlay.Closed += RefreshUpgradeButton; _overlayHooked = true; }
+            bool show = overlay != null && overlay.HasAffordableUpgrade;
+            _upgradeButton.gameObject.SetActive(show);
+
+            // Dikkat çeksin ama yalvarmasın: yavaş, küçük bir nabız. timeScale 0 iken de oynar.
+            var rt = (RectTransform)_upgradeButton.transform;
+            rt.DOKill();
+            rt.localScale = Vector3.one;
+            if (show) rt.DOScale(1.06f, 0.7f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo).SetUpdate(true);
+        }
+
+        private void OnUpgrade() => ShapeShopOverlay.Instance?.Open();
 
         private void OnMainMenu()
         {

@@ -29,10 +29,6 @@ public class AudioManager : MonoBehaviour
     private float _lastScoreTime = -1f;
     private float _currentComboPitch = 1f;
 
-    // Ayarların kaydedileceği anahtarlar
-    private const string MASTER_KEY = "MasterVolume";
-    private const string MUSIC_KEY = "MusicVolume";
-    private const string SFX_KEY = "SFXVolume";
 
     private void Awake()
     {
@@ -138,23 +134,16 @@ public class AudioManager : MonoBehaviour
     }
 
     // --- Ayarlar ---
-    public void SetMasterVolume(float volume)
-    {
-        SetMixerVolume("MasterVol", volume);
-        PlayerPrefs.SetFloat(MASTER_KEY, volume);
-    }
+    // Bu üç fonksiyon yalnızca mikseri sürer, HİÇBİR ŞEY KAYDETMEZ.
+    // Kalıcı ses ayarının tek sahibi GameSettings'tir. Eskiden burada PlayerPrefs'e de
+    // yazılıyordu: oyun kapanırken pencere odağı kaybolunca SettingsBootstrap ana sesi
+    // geçici olarak 0'a çekiyor, bu 0 da kalıcı kaydediliyor ve oyun bir sonraki açılışta
+    // sessiz başlıyordu (ayrıca Muted açıkken de 0 yazılıyordu).
+    public void SetMasterVolume(float volume) => SetMixerVolume("MasterVol", volume);
 
-    public void SetMusicVolume(float volume)
-    {
-        SetMixerVolume("MusicVol", volume);
-        PlayerPrefs.SetFloat(MUSIC_KEY, volume);
-    }
+    public void SetMusicVolume(float volume) => SetMixerVolume("MusicVol", volume);
 
-    public void SetSFXVolume(float volume)
-    {
-        SetMixerVolume("SFXVol", volume);
-        PlayerPrefs.SetFloat(SFX_KEY, volume);
-    }
+    public void SetSFXVolume(float volume) => SetMixerVolume("SFXVol", volume);
 
     private void SetMixerVolume(string parameterName, float sliderValue)
     {
@@ -164,12 +153,7 @@ public class AudioManager : MonoBehaviour
 
     private void LoadVolumeSettings()
     {
-        float masterVol = PlayerPrefs.GetFloat(MASTER_KEY, 0.75f);
-        float musicVol = PlayerPrefs.GetFloat(MUSIC_KEY, 0.75f);
-        float sfxVol = PlayerPrefs.GetFloat(SFX_KEY, 0.75f);
-
-        SetMasterVolume(masterVol);
-        SetMusicVolume(musicVol);
-        SetSFXVolume(sfxVol);
+        // Kaynak GameSettings (PlayerPrefs oradan okunur; Muted dahil).
+        RogueBlockBlast.Core.Settings.GameSettings.ApplyAudio();
     }
 }

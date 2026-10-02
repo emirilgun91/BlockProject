@@ -10,7 +10,7 @@ namespace RogueBlockBlast.UI
 {
     /// <summary>
     /// Shape Shop ana kontrolcüsü.
-    /// Main Menu sahnesinde bulunur.
+    /// Main Menu sahnesinde ve (ShapeShopOverlay ile) oyun sahnelerinde bulunur — prefab: ShapeShopPanel.
     ///
     /// Hierarchy:
     ///  ShapeShop (bu script)
@@ -41,14 +41,7 @@ namespace RogueBlockBlast.UI
         private void OnEnable()
         {
             // Her panel açılışında registry'leri yükle
-            if (_shapeLibrary != null)
-            {
-                ShapeUpgradeRegistry.Instance.Load(_shapeLibrary.Shapes);
-                var ids = _shapeLibrary.Shapes
-                    .Where(s => s != null)
-                    .Select(s => s.Id);
-                UnlockRegistry.Instance?.Init(ids, System.Array.Empty<string>());
-            }
+            EnsureRegistries();
 
             UpdateCoinText(CoinWallet.Instance?.Balance ?? 0);
             if (CoinWallet.Instance != null)
@@ -65,6 +58,38 @@ namespace RogueBlockBlast.UI
 
         // ── Public API ───────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Oyun sahnesi gibi PanelManager'ın olmadığı yerlerde "geri" basılınca tetiklenir.
+        /// Dinleyen varsa panelin kapanmasını o yönetir; yoksa PanelManager kapatır.
+        /// </summary>
+        public event System.Action BackRequested;
+
+        /// <summary>
+        /// Oyuncunun parası en az bir şeye yetiyor mu: kilitli bir şeklin açılması,
+        /// skor yükseltmesi ya da ağırlık artırma. Ağırlık AZALTMA sayılmaz — bir
+        /// yükseltme değil, ince ayar. Kartlardaki fiyat/yetme kurallarıyla aynı.
+        /// </summary>
+        public bool HasAffordableUpgrade()
+        {
+            if (_shapeLibrary == null || CoinWallet.Instance == null) return false;
+            EnsureRegistries();
+
+            int coins = CoinWallet.Instance.Balance;
+            var reg   = ShapeUpgradeRegistry.Instance;
+            foreach (var shape in _shapeLibrary.Shapes)
+            {
+                if (shape == null) continue;
+                if (!shape.IsUnlocked)
+                {
+                    if (coins >= shape.UnlockCost) return true;
+                    continue;
+                }
+                if (reg.CanUpgradeScore(shape.Id) && coins >= reg.GetScoreUpgradeCost(shape.Id)) return true;
+                if (reg.CanIncreaseWeight(shape.Id) && coins >= reg.GetWeightIncreaseCost(shape.Id)) return true;
+            }
+            return false;
+        }
+
         /// <summary>Tüm kartları yeniden render et — coin veya upgrade değişince.</summary>
         public void RefreshAll()
         {
@@ -77,10 +102,21 @@ namespace RogueBlockBlast.UI
 
         public void OnBackButton()
         {
-            PanelManager.Instance?.CloseCurrentPanel();
+            if (BackRequested != null) BackRequested.Invoke();
+            else PanelManager.Instance?.CloseCurrentPanel();
         }
 
         // ── Private ──────────────────────────────────────────────────────────
+
+        private void EnsureRegistries()
+        {
+            if (_shapeLibrary == null) return;
+            ShapeUpgradeRegistry.Instance.Load(_shapeLibrary.Shapes);
+            var ids = _shapeLibrary.Shapes
+                .Where(s => s != null)
+                .Select(s => s.Id);
+            UnlockRegistry.Instance?.Init(ids, System.Array.Empty<string>());
+        }
 
         private void BuildCards()
         {

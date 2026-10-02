@@ -29,7 +29,11 @@ namespace RogueBlockBlast.Game.Tutorial
         public static bool IsCompleted => PlayerPrefs.GetInt(CompletedKey, 0) == 1;
 
         /// <summary>Ana menüdeki "ilerlemeyi sıfırla" akışı için.</summary>
-        public static void ResetProgress() => PlayerPrefs.DeleteKey(CompletedKey);
+        public static void ResetProgress()
+        {
+            PlayerPrefs.DeleteKey(CompletedKey);
+            TutorialIntroTour.ResetProgress();
+        }
 
         [Header("Behaviour")]
         [Tooltip("AÇIK: öğretici daha önce bitirilmiş olsa da her run'da baştan oynar. " +
@@ -116,8 +120,31 @@ namespace RogueBlockBlast.Game.Tutorial
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {
-            if (!_alwaysShow && IsCompleted) { enabled = false; return; }
+            bool introPending = _alwaysShow || !TutorialIntroTour.IsCompleted;
+            if (!_alwaysShow && IsCompleted && !introPending) { enabled = false; return; }
 
+            // Arayüz turu önce: bir kereliğine panelleri işaretleyip anlatır, ardından
+            // banner senaryosu (varsa) başlar. Daha önce senaryoyu bitirmiş oyuncular da turu görür.
+            if (introPending) StartCoroutine(RunIntroThenScenario());
+            else BeginScenario();
+        }
+
+        private System.Collections.IEnumerator RunIntroThenScenario()
+        {
+            // Sahnenin açılış animasyonu / layout'u otursun — delikler doğru yeri bulsun.
+            yield return new WaitForSecondsRealtime(0.8f);
+
+            bool done = false;
+            var tour = TutorialIntroTour.Begin(transform, _touchText, FindFont());
+            tour.Finished += () => done = true;
+            while (!done) yield return null;
+
+            BeginScenario();
+        }
+
+        private void BeginScenario()
+        {
+            if (!_alwaysShow && IsCompleted) { enabled = false; return; }
             Build();
             Subscribe();
             Advance();

@@ -311,9 +311,6 @@ namespace RogueBlockBlast.Game
                  "geçerli konuma yapışılır — hücre biriminde, parça merkezi ile imleç arası. " +
                  "0 = yapışma kapalı.")]
         [SerializeField] private float _placementSnapRadius = 1.05f;
-        [Tooltip("Hücre sınırında titremeyi önler: imleç sınırı bu kadar geçmeden " +
-                 "önizleme yeni hücreye atlamaz (hücre biriminde).")]
-        [SerializeField] private float _placementHysteresis = 0.12f;
 
         [Header("Line Clear Preview")]
         [Tooltip("Yerleştirmeden sonra bu kadar saniye geçince (oyuncu düşünüyorsa) ghost'un " +
@@ -453,20 +450,15 @@ namespace RogueBlockBlast.Game
             int loY = -minY, hiY = h - 1 - maxY;
             Vector2 clampedTarget = new Vector2(Mathf.Clamp(target.x, loX, hiX), Mathf.Clamp(target.y, loY, hiY));
 
-            // Titreme önleyici: aynı parça/rotasyonda önceki konum hâlâ yakınsa ve
-            // geçerliyse onda kal. Sınırı ancak belirgin şekilde geçince atla.
-            if (_lastAnchorPiece == _currentPiece && _lastAnchorRot == _currentRot)
-            {
-                Vector2 d = clampedTarget - (Vector2)_lastAnchor;
-                float keep = 0.5f + _placementHysteresis;
-                if (Mathf.Abs(d.x) < keep && Mathf.Abs(d.y) < keep &&
-                    PlacementSystem.CanPlace(_board, _currentPiece, _lastAnchor, _currentRot))
-                    return _lastAnchor;
-            }
-
+            // Parça, imlecin altındaki HÜCREYE göre kayar: kutunun orta hücresi imlecin
+            // hücresine oturur. Eskiden sürekli merkez yuvarlanıyordu; çift boyutlu
+            // parçalarda atlama hücrenin ortasında / hysteresis yüzünden alt kısmında
+            // oluyordu. Şimdi imleç hücre sınırını geçtiği anda parça bir hücre kayar.
+            int refX = Mathf.FloorToInt((minX + maxX + 1) * 0.5f);
+            int refY = Mathf.FloorToInt((minY + maxY + 1) * 0.5f);
             var centered = new Vector2Int(
-                Mathf.Clamp(Mathf.RoundToInt(clampedTarget.x), loX, hiX),
-                Mathf.Clamp(Mathf.RoundToInt(clampedTarget.y), loY, hiY));
+                Mathf.Clamp(Mathf.FloorToInt(mouse.x) - refX, loX, hiX),
+                Mathf.Clamp(Mathf.FloorToInt(mouse.y) - refY, loY, hiY));
 
             var result = centered;
             if (!PlacementSystem.CanPlace(_board, _currentPiece, centered, _currentRot) && _placementSnapRadius > 0f)

@@ -301,10 +301,22 @@ namespace RogueBlockBlast.EditorTools
                     var ic = UiKit.NewRect("Icon", art);
                     ic.anchorMin = ic.anchorMax = new Vector2(0, 0.5f);
                     ic.pivot = new Vector2(0, 0.5f);
-                    ic.sizeDelta = new Vector2(46, 46);
+                    ic.sizeDelta = new Vector2(44, 44);
                     ic.anchoredPosition = new Vector2(30, 0);
+
+                    // Yazı layout'la diziliyor; ikon layout dışında olduğu için yazının
+                    // başlangıcı ikonun sağına alınır
+                    var hlg = art.GetComponent<HorizontalLayoutGroup>();
+                    if (hlg != null)
+                    {
+                        hlg.padding = new RectOffset(92, hlg.padding.right, hlg.padding.top, hlg.padding.bottom);
+                        Mark(hlg);
+                    }
                     var ii = ic.gameObject.AddComponent<Image>();
                     ii.sprite = sprite; ii.preserveAspect = true; ii.raycastTarget = false;
+                    // Buton görselinde HorizontalLayoutGroup var; ikon diziye girerse
+                    // yazıyı ve coin rozetini sağa itiyor (rozet butondan taşıyordu)
+                    ic.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
                     ic.SetSiblingIndex(1);   // vurgu çubuğunun önünde, yazının arkasında
                 }
 
@@ -321,7 +333,21 @@ namespace RogueBlockBlast.EditorTools
                     var ci = coinBadge.GetComponent<Image>();
                     ci.sprite = UiKit.Pill; ci.type = Image.Type.Sliced; ci.color = UiTheme.WithAlpha(UiTheme.Sunken, 0.9f);
                     Mark(ci);
+                    // Butonun sağ kenarından taşıyordu: içeride, sağa yaslı
+                    coinBadge.anchorMin = coinBadge.anchorMax = new Vector2(1, 0.5f);
+                    coinBadge.pivot = new Vector2(1, 0.5f);
+                    coinBadge.anchoredPosition = new Vector2(-16, 0);
+                    coinBadge.sizeDelta = new Vector2(128, 44);
+                    var le = coinBadge.GetComponent<LayoutElement>() ?? coinBadge.gameObject.AddComponent<LayoutElement>();
+                    le.ignoreLayout = true;   // konumu layout değil yukarıdaki çapa belirlesin
+                    Mark(le);
+                    Mark(coinBadge);
                 }
+
+                // Hover'da açılan sol vurgu çubuğu: yeni buton görselinin yanında
+                // anlamsız bir çizgi gibi kalıyordu. Görünmez; içindeki ok kalır.
+                var accent = Find(art, "AccentBar");
+                if (accent != null) Tint(accent, Color.clear);
 
                 var view = b.GetComponent<MenuButtonView>();
                 if (view != null)
@@ -345,9 +371,27 @@ namespace RogueBlockBlast.EditorTools
 
             foreach (var img in panel.GetComponentsInChildren<Image>(true))
             {
-                if (img.transform == panel || img.sprite == null) continue;
+                // Frame() eski "Rim" çocuklarını siliyor; listede onlar sonra gelebilir
+                if (img == null || img.transform == panel || img.sprite == null) continue;
                 var n = img.sprite.name;
-                if (n.StartsWith("stat_tile_bg")) Frame(img.rectTransform, "Skin_Board");
+                if (n.StartsWith("stat_tile_bg") || n.StartsWith("Skin_Board"))
+                {
+                    // Kutular sayı yazısının ÇOCUĞU olarak kurulmuş: eski görselin ortası
+                    // saydamdı, pano görseli opak — yazının üstüne çizip sayıyı gizliyordu.
+                    // Yazının kardeşi yapılıp hemen önüne (arkasında çizilecek) alınır.
+                    var tile = img.rectTransform;
+                    var text = tile.parent;
+                    if (text != null && text.GetComponent<TMP_Text>() != null)
+                    {
+                        tile.SetParent(text.parent, worldPositionStays: true);
+                        var le = tile.GetComponent<LayoutElement>() ?? tile.gameObject.AddComponent<LayoutElement>();
+                        le.ignoreLayout = true;
+                    }
+                    // Grubun en arkasına: yazının da yanındaki ikonun (şimşek, coin) da altında
+                    tile.SetAsFirstSibling();
+                    Mark(tile);
+                    Frame(tile, "Skin_Board");
+                }
                 else if (n.StartsWith("panel_ambient_glow")) { img.color = Color.clear; Mark(img); }
                 else if (n.StartsWith("divider")) { img.color = UiTheme.RimSoft; Mark(img); }
                 else if (n.StartsWith("countdown_capsule"))
@@ -487,6 +531,11 @@ namespace RogueBlockBlast.EditorTools
             Btn(rt, style, UiTheme.Text);
             t.fontSize = size;
             t.characterSpacing = 0f;
+            // + ve - yazı satırının ortasında değil, glifin kendi ortasında dursun
+            // (Center satır metriğine göre hizalıyor, glif yukarı/sağa kayıyordu)
+            t.alignment = TextAlignmentOptions.CenterGeoAligned;
+            t.margin = Vector4.zero;
+            UiKit.Stretch(t.rectTransform);
         }
 
         static void Edit(string path, System.Action<GameObject> edit)

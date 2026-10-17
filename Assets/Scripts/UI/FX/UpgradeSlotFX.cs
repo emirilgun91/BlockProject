@@ -25,14 +25,17 @@ namespace RogueBlockBlast.UI.FX
         private const float IconLiftY      = 2.5f;
 
         // ── Glow ─────────────────────────────────────────────────────────────
-        // Palet sarısı (#F0BB4C) — satın alma flash'ıyla aynı aileden.
-        private static readonly Color GlowColor = new Color(0.94f, 0.73f, 0.30f);
-        private const float GlowAlpha    = 0.42f;
+        // UI kitinin vurgu rengi (cyan). Eskiden altın sarısıydı; koyu lacivert
+        // kartların üstünde kirli bir sarı leke gibi duruyordu. Altın, satın alma
+        // flaşında kalır — orada coin'i anlatıyor.
+        private static readonly Color GlowColor = UiTheme.Accent;
+        private const float GlowAlpha    = 0.22f;
         private const float GlowPadding  = -14f;   // kart rect'inin dışına taşar
 
-        // Hale, slot boyutundan bağımsız olarak %10 küçültülür. Padding'i
-        // kısmak yerine ölçek kullanmak, farklı slot ölçülerinde de tam %10 verir.
-        private const float GlowScale    = 0.9f;
+        // Hale tam ölçekte: slot çerçevesinin kenarına oturur ve dışa taşar. Eskiden
+        // %10 küçültülüyordu (eski görselin saydam payı vardı); yeni pano görselinde
+        // küçültülünce kartın içinde kalın bir halka gibi duruyordu.
+        private const float GlowScale    = 1f;
 
         // ── Shine ────────────────────────────────────────────────────────────
         private const float ShineInterval = 7f;    // ortalama bekleme (çok yavaş)

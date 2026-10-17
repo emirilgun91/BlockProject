@@ -18873,7 +18873,7 @@ MonoBehaviour:
   _upgradeLibrary: {fileID: 11400000, guid: 0e28f486cc7339442b6b2661d79ef079, type: 2}
   mainLoopMusic: {fileID: 8300000, guid: d950f03ea7b58a34dad2371446f9384a, type: 3}
   MilestoneConfig: {fileID: 11400000, guid: 88c4c4ba54f8d1644874bc5ee0305cd3, type: 2}
-  _demoBuild: 0
+  _demoBuild: 1
   _demoEndScoreThreshold: 20000
   LineClearVFX: {fileID: 1355268666}
   GameOverSFX: {fileID: 8300000, guid: d92eeaacec51ff347ad73a07f378db16, type: 3}

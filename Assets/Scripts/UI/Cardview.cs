@@ -29,6 +29,15 @@ namespace RogueBlockBlast.UI
         [SerializeField] private TMP_Text _descText;
         [SerializeField] private Button   _selectButton;
 
+        [Header("Rarity Frame")]
+        [Tooltip("Kartın arka plan/çerçeve Image'ı. Boşsa bu GameObject'teki Image kullanılır.")]
+        [SerializeField] private Image  _frameImage;
+        [Tooltip("Boş bırakılan rarity prefabdaki varsayılan çerçeveyi korur.")]
+        [SerializeField] private Sprite _frameCommon;
+        [SerializeField] private Sprite _frameUncommon;
+        [SerializeField] private Sprite _frameRare;
+        [SerializeField] private Sprite _frameEpic;
+
         [Header("Hover Animation")]
         [SerializeField] private float _hoverLift  = 18f;
         [SerializeField] private float _hoverSpeed = 10f;
@@ -39,6 +48,8 @@ namespace RogueBlockBlast.UI
         private Vector3        _basePos;
         private float          _targetY;
         private float          _hoverOffsetY;
+        private Sprite         _defaultFrame;
+        private bool           _frameResolved;
         // ── Unity ────────────────────────────────────────────────────────────
         private void Awake()
         {
@@ -89,6 +100,8 @@ namespace RogueBlockBlast.UI
             // Değerler (+6, 20%, 2.5x…) kalın ve renkli — okunabilirlik
             _descText.text = ValueHighlighter.Highlight(ContentLocalization.Description(_data));
 
+            ApplyFrame(_data.Rarity);
+
             if (_iconImage != null)
             {
                 if (_data.Icon != null)
@@ -106,13 +119,37 @@ namespace RogueBlockBlast.UI
 
         private void OnSelectClicked() => _onSelect?.Invoke(_data);
 
-        private static Color GetRarityColor(CardRarity rarity) => rarity switch
+        /// <summary>
+        /// Rarity'ye göre çerçeve sprite'ını seçer. Kart havuzdan tekrar
+        /// kullanıldığı için varsayılan çerçeve ilk seferde saklanır; o rarity'ye
+        /// sprite atanmamışsa ona dönülür (bir önceki kartın çerçevesi kalmaz).
+        /// </summary>
+        private void ApplyFrame(CardRarity rarity)
         {
-            CardRarity.Common   => new Color(0.17f, 0.43f, 0.64f, 0.5f),
-            CardRarity.Uncommon => new Color(0.08f, 0.56f, 0.47f, 0.5f),
-            CardRarity.Rare     => new Color(0.36f, 0.31f, 0.81f, 0.5f),
-            CardRarity.Epic     => new Color(0.56f, 0.27f, 0.68f, 0.5f),
-            _                   => Color.grey
-        };
+            if (!_frameResolved)
+            {
+                _frameResolved = true;
+                if (_frameImage == null) _frameImage = GetComponent<Image>();
+                if (_frameImage != null) _defaultFrame = _frameImage.sprite;
+            }
+            if (_frameImage == null) return;
+
+            Sprite frame = rarity switch
+            {
+                CardRarity.Common   => _frameCommon,
+                CardRarity.Uncommon => _frameUncommon,
+                CardRarity.Rare     => _frameRare,
+                CardRarity.Epic     => _frameEpic,
+                _                   => null
+            };
+            _frameImage.sprite = frame != null ? frame : _defaultFrame;
+        }
+
+        private static Color GetRarityColor(CardRarity rarity)
+        {
+            var c = CardRarityPalette.Get(rarity);
+            c.a = 0.5f;
+            return c;
+        }
     }
 }

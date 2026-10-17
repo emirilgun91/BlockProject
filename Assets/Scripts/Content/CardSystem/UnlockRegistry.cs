@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
 {
     /// <summary>
     /// Shape ve Card unlock state'ini yönetir.
-    /// PlayerPrefs ile run'lar arası kalıcı.
+    /// SaveStore (save.json) ile run'lar arası kalıcı.
     ///
     /// Kullanım:
     ///   UnlockRegistry.Instance.IsCardUnlocked(id)
@@ -23,7 +24,7 @@ namespace RogueBlockBlast.Core
         // Milestone'ların ilk kez geçilip geçilmediği
         private const string MilestoneKeyPrefix = "MilestoneFirstReach_";
 
-        // Runtime cache — PlayerPrefs her seferinde çağrılmasın
+        // Runtime cache — SaveStore her seferinde çağrılmasın
         private readonly HashSet<string> _unlockedCards  = new();
         private readonly HashSet<string> _unlockedShapes = new();
         private readonly HashSet<string> _reachedMilestones = new();
@@ -38,7 +39,7 @@ namespace RogueBlockBlast.Core
         }
 
         /// <summary>
-        /// Runtime cache'i boşaltır — PlayerPrefs dışarıdan silindiğinde
+        /// Runtime cache'i boşaltır — kayıt dışarıdan silindiğinde
         /// (ör. ilerleme sıfırlama) çağrılır. Sonrasında Init ile yeniden yüklenmeli.
         /// </summary>
         public void ClearRuntimeCache()
@@ -61,7 +62,7 @@ namespace RogueBlockBlast.Core
         {
             if (string.IsNullOrEmpty(cardId)) return;
             if (_unlockedCards.Add(cardId))
-                PlayerPrefs.SetInt(CardKeyPrefix + cardId, 1);
+                SaveStore.SetInt(CardKeyPrefix + cardId, 1);
         }
 
         // Kilitli olarak tanınan shape ID'leri (LockedByDefault=true olanlar Init'te eklenir)
@@ -88,8 +89,22 @@ namespace RogueBlockBlast.Core
         public void UnlockShape(string shapeId)
         {
             if (string.IsNullOrEmpty(shapeId)) return;
-            if (_unlockedShapes.Add(shapeId))
-                PlayerPrefs.SetInt(ShapeKeyPrefix + shapeId, 1);
+            if (!_unlockedShapes.Add(shapeId)) return;
+            SaveStore.SetInt(ShapeKeyPrefix + shapeId, 1);
+            SaveStore.Save();
+
+            Achievements.AchievementService.Unlock(Achievements.AchievementIds.FirstShapeUnlock);
+            if (AllLockedShapesUnlocked())
+                Achievements.AchievementService.Unlock(Achievements.AchievementIds.AllShapes);
+        }
+
+        /// <summary>Başlangıçta kilitli olan şekillerin hepsi açıldı mı?</summary>
+        private bool AllLockedShapesUnlocked()
+        {
+            if (_lockedShapes.Count == 0) return false;
+            foreach (var id in _lockedShapes)
+                if (!_unlockedShapes.Contains(id)) return false;
+            return true;
         }
 
         // ── Milestone first reach ────────────────────────────────────────────
@@ -103,7 +118,7 @@ namespace RogueBlockBlast.Core
             if (_reachedMilestones.Contains(milestoneLabel)) return false;
 
             _reachedMilestones.Add(milestoneLabel);
-            PlayerPrefs.SetInt(MilestoneKeyPrefix + milestoneLabel, 1);
+            SaveStore.SetInt(MilestoneKeyPrefix + milestoneLabel, 1);
             return true;
         }
 
@@ -141,12 +156,12 @@ namespace RogueBlockBlast.Core
             _lockedShapes.Clear();
 
             foreach (var id in shapeIds)
-                if (PlayerPrefs.GetInt(ShapeKeyPrefix + id, 0) == 1)
+                if (SaveStore.GetInt(ShapeKeyPrefix + id, 0) == 1)
                     _unlockedShapes.Add(id);
 
             _unlockedCards.Clear();
             foreach (var id in cardIds)
-                if (PlayerPrefs.GetInt(CardKeyPrefix + id, 0) == 1)
+                if (SaveStore.GetInt(CardKeyPrefix + id, 0) == 1)
                     _unlockedCards.Add(id);
         }
 
@@ -165,16 +180,16 @@ namespace RogueBlockBlast.Core
         {
             _reachedMilestones.Clear();
             foreach (var label in milestoneLabels)
-                if (PlayerPrefs.GetInt(MilestoneKeyPrefix + label, 0) == 1)
+                if (SaveStore.GetInt(MilestoneKeyPrefix + label, 0) == 1)
                     _reachedMilestones.Add(label);
         }
 
         /// <summary>Tüm unlock verilerini siler (debug / test için).</summary>
         public void ResetAll(IEnumerable<string> shapeIds, IEnumerable<string> cardIds, IEnumerable<string> milestoneLabels)
         {
-            foreach (var id in shapeIds)    PlayerPrefs.DeleteKey(ShapeKeyPrefix + id);
-            foreach (var id in cardIds)     PlayerPrefs.DeleteKey(CardKeyPrefix  + id);
-            foreach (var l  in milestoneLabels) PlayerPrefs.DeleteKey(MilestoneKeyPrefix + l);
+            foreach (var id in shapeIds)    SaveStore.DeleteKey(ShapeKeyPrefix + id);
+            foreach (var id in cardIds)     SaveStore.DeleteKey(CardKeyPrefix  + id);
+            foreach (var l  in milestoneLabels) SaveStore.DeleteKey(MilestoneKeyPrefix + l);
 
             _unlockedShapes.Clear();
             _unlockedCards.Clear();

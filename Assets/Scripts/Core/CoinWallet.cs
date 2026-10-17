@@ -1,11 +1,12 @@
 ﻿using System;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
 {
     /// <summary>
     /// Run'lar arası kalıcı coin yönetimi.
-    /// PlayerPrefs ile saklanır.
+    /// SaveStore (save.json) ile saklanır.
     /// DontDestroyOnLoad — sahneler arası yaşar.
     ///
     /// Kullanım:
@@ -40,6 +41,7 @@ namespace RogueBlockBlast.Core
             Balance += amount;
             Save();
             OnBalanceChanged?.Invoke(Balance);
+            Achievements.AchievementService.AddStat(Achievements.AchievementStats.CoinsEarned, amount);
         }
 
         /// <summary>
@@ -61,9 +63,14 @@ namespace RogueBlockBlast.Core
 
         // ── Persistence ──────────────────────────────────────────────────────
 
-        private void Save() => PlayerPrefs.SetInt(SaveKey, Balance);
+        // Coin değişimi seyrek ve değerli (satın alma, milestone) — debounce beklemeden yaz.
+        private void Save()
+        {
+            SaveStore.SetInt(SaveKey, Balance);
+            SaveStore.Save();
+        }
 
-        private void Load() => Balance = PlayerPrefs.GetInt(SaveKey, 0);
+        private void Load() => Balance = SaveStore.GetInt(SaveKey, 0);
 
         /// <summary>Debug / test için sıfırla.</summary>
         public void Reset()

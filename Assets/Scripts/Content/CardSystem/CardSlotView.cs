@@ -38,12 +38,6 @@ namespace RogueBlockBlast.UI
         [Tooltip("İkonun kenar boşluğu (px).")]
         [SerializeField] private float _iconPadding = 7f;
 
-        // Rarity renkleri — palette ile uyumlu
-        private static readonly Color RarityCommon   = HexColor("2E6DA4");
-        private static readonly Color RarityUncommon = HexColor("148F77");
-        private static readonly Color RarityRare     = HexColor("5B4FCF");
-        private static readonly Color RarityEpic     = HexColor("8E44AD");
-
         private CardSO _card;
         private int    _stackCount;
 
@@ -191,19 +185,6 @@ namespace RogueBlockBlast.UI
             return Vector2.zero;
         }
 
-        private static Color GetRarityColor(CardRarity rarity) => rarity switch
-        {
-            CardRarity.Common   => RarityCommon,
-            CardRarity.Uncommon => RarityUncommon,
-            CardRarity.Rare     => RarityRare,
-            CardRarity.Epic     => RarityEpic,
-            _                   => RarityCommon,
-        };
-
-        private static Color HexColor(string hex)
-        {
-            ColorUtility.TryParseHtmlString("#" + hex, out Color c);
-            return c;
-        }
+        private static Color GetRarityColor(CardRarity rarity) => CardRarityPalette.Get(rarity);
     }
 }

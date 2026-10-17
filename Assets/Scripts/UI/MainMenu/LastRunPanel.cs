@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using DG.Tweening;
 using TMPro;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 
 namespace RogueBlockBlast.UI
@@ -9,7 +10,7 @@ namespace RogueBlockBlast.UI
     /// Son run özetini gösterir — Score, Coins, MaxCombo.
     /// 5 saniye sonra fade out olup PreviewBoard'a geçer.
     ///
-    /// PlayerPrefs keyleri:
+    /// Kayıt (SaveStore) anahtarları:
     ///   LastRun_HasData  (int, 0/1)
     ///   LastRun_Score    (int)
     ///   LastRun_Coins    (int)
@@ -41,7 +42,7 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _fadeInTime   = 0.4f;
         [SerializeField] private float _fadeOutTime  = 0.4f;
 
-        // PlayerPrefs keys
+        // SaveStore keys
         private const string KeyHasData  = "LastRun_HasData";
         private const string KeyScore    = "LastRun_Score";
         private const string KeyCoins    = "LastRun_Coins";
@@ -49,7 +50,7 @@ namespace RogueBlockBlast.UI
 
         private void Start()
         {
-            if (PlayerPrefs.GetInt(KeyHasData, 0) == 0)
+            if (SaveStore.GetInt(KeyHasData, 0) == 0)
             {
                 HidePanelImmediate();
                 ShowPreviewBoard();
@@ -62,9 +63,9 @@ namespace RogueBlockBlast.UI
 
         private void PopulateTexts()
         {
-            int   score = PlayerPrefs.GetInt(KeyScore, 0);
-            int   coins = PlayerPrefs.GetInt(KeyCoins, 0);
-            float combo = PlayerPrefs.GetFloat(KeyMaxCombo, 1f);
+            int   score = SaveStore.GetInt(KeyScore, 0);
+            int   coins = SaveStore.GetInt(KeyCoins, 0);
+            float combo = SaveStore.GetFloat(KeyMaxCombo, 1f);
 
             if (_scoreValueText != null) _scoreValueText.text = score.ToString("N0");
             if (_coinsValueText != null) _coinsValueText.text = coins.ToString("N0");
@@ -111,23 +112,23 @@ namespace RogueBlockBlast.UI
 
         // ── Static — RunController'dan çağrılır ──────────────────────────────
 
-        /// <summary>Son run verilerini PlayerPrefs'e kaydet.</summary>
+        /// <summary>Son run verilerini SaveStore'a kaydet.</summary>
         public static void SaveLastRun(int score, int coins, float maxCombo)
         {
-            PlayerPrefs.SetInt  (KeyHasData,  1);
-            PlayerPrefs.SetInt  (KeyScore,    score);
-            PlayerPrefs.SetInt  (KeyCoins,    coins);
-            PlayerPrefs.SetFloat(KeyMaxCombo, maxCombo);
-            PlayerPrefs.Save();
+            SaveStore.SetInt  (KeyHasData,  1);
+            SaveStore.SetInt  (KeyScore,    score);
+            SaveStore.SetInt  (KeyCoins,    coins);
+            SaveStore.SetFloat(KeyMaxCombo, maxCombo);
+            SaveStore.Save();
         }
 
         /// <summary>Son run verilerini temizle.</summary>
         public static void ClearLastRun()
         {
-            PlayerPrefs.DeleteKey(KeyHasData);
-            PlayerPrefs.DeleteKey(KeyScore);
-            PlayerPrefs.DeleteKey(KeyCoins);
-            PlayerPrefs.DeleteKey(KeyMaxCombo);
+            SaveStore.DeleteKey(KeyHasData);
+            SaveStore.DeleteKey(KeyScore);
+            SaveStore.DeleteKey(KeyCoins);
+            SaveStore.DeleteKey(KeyMaxCombo);
         }
     }
 }

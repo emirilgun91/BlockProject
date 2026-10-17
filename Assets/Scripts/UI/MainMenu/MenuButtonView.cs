@@ -2,6 +2,7 @@
 using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.Core;
 using TMPro;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -122,8 +123,8 @@ namespace RogueBlockBlast.UI
                 return;
             }
 
-            // Milestone kontrolü — PlayerPrefs'ten en yüksek geçilen milestone
-            int maxReached = PlayerPrefs.GetInt("MaxMilestoneReached", 0);
+            // Milestone kontrolü — SaveStore'dan en yüksek geçilen milestone
+            int maxReached = SaveStore.GetInt("MaxMilestoneReached", 0);
             _isLocked = maxReached < _unlockMilestoneIndex;
 
             if (_lockOverlay != null) _lockOverlay.SetActive(_isLocked);

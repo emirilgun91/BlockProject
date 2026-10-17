@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
@@ -41,8 +42,8 @@ namespace RogueBlockBlast.Core
                 if (s == null) continue;
                 _shapeCache[s.Id] = s;
 
-                int sl = PlayerPrefs.GetInt(ScorePrefix  + s.Id, 0);
-                int wl = PlayerPrefs.GetInt(WeightPrefix + s.Id, 0);
+                int sl = SaveStore.GetInt(ScorePrefix  + s.Id, 0);
+                int wl = SaveStore.GetInt(WeightPrefix + s.Id, 0);
                 if (sl != 0) _scoreLevels[s.Id]  = sl;
                 if (wl != 0) _weightLevels[s.Id] = wl;
             }
@@ -113,7 +114,9 @@ namespace RogueBlockBlast.Core
         {
             if (!CanUpgradeScore(id)) return false;
             _scoreLevels[id] = GetScoreLevel(id) + 1;
-            PlayerPrefs.SetInt(ScorePrefix + id, _scoreLevels[id]);
+            SaveStore.SetInt(ScorePrefix + id, _scoreLevels[id]);
+            SaveStore.Save();
+            Achievements.AchievementService.Unlock(Achievements.AchievementIds.ShapeUpgrade);
             return true;
         }
 
@@ -160,7 +163,8 @@ namespace RogueBlockBlast.Core
         {
             if (!CanIncreaseWeight(id)) return false;
             _weightLevels[id] = GetWeightLevel(id) + 1;
-            PlayerPrefs.SetInt(WeightPrefix + id, _weightLevels[id]);
+            SaveStore.SetInt(WeightPrefix + id, _weightLevels[id]);
+            SaveStore.Save();
             return true;
         }
 
@@ -168,7 +172,8 @@ namespace RogueBlockBlast.Core
         {
             if (!CanDecreaseWeight(id, baseWeight)) return false;
             _weightLevels[id] = GetWeightLevel(id) - 1;
-            PlayerPrefs.SetInt(WeightPrefix + id, _weightLevels[id]);
+            SaveStore.SetInt(WeightPrefix + id, _weightLevels[id]);
+            SaveStore.Save();
             return true;
         }
 
@@ -178,8 +183,8 @@ namespace RogueBlockBlast.Core
         {
             foreach (var id in _shapeCache.Keys)
             {
-                PlayerPrefs.DeleteKey(ScorePrefix  + id);
-                PlayerPrefs.DeleteKey(WeightPrefix + id);
+                SaveStore.DeleteKey(ScorePrefix  + id);
+                SaveStore.DeleteKey(WeightPrefix + id);
             }
             _scoreLevels.Clear();
             _weightLevels.Clear();

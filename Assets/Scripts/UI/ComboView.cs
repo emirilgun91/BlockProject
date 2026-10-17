@@ -46,7 +46,8 @@ namespace RogueBlockBlast.UI
         [Header("Animation")]
         [SerializeField] private float _fillDuration  = 0.18f;
         [SerializeField] private float _emptyDuration = 0.14f;
-        [SerializeField] private float _glowPunchScale = 1.22f;
+        [SerializeField] private float _glowPunchScale = 1.22f;   // max'a ulaşınca ilk vuruş
+        [SerializeField] private float _maxPulseScale  = 1.12f;   // sonraki sürekli nabız
         [SerializeField] private float _textPunchScale = 1.15f;
 
         // ── Runtime ──────────────────────────────────────────────────────────
@@ -54,6 +55,11 @@ namespace RogueBlockBlast.UI
         private int         _lastCharges    = -1;
         private float       _lastMultiplier = -1f;
         private Sequence    _glowSequence;
+        private int         _glowBarIndex   = -1;   // pulse eden bar; -1 = yok
+        private Transform   _glowRoot;              // pulse eden bar'ın çerçevesi (ölçeklenen)
+        private Vector3     _glowRootScale  = Vector3.one;
+        private bool        _pendingMaxGlow;        // OnMaxCharge, OnStateChanged'den ÖNCE gelir
+        private int         _visibleBars    = -1;
         private RogueBlockBlast.UI.FX.ComboRescueFX _rescueFX;
 
         // ── Public API ───────────────────────────────────────────────────────
@@ -85,25 +91,30 @@ namespace RogueBlockBlast.UI
             if (_multiplierText != null)
                 _multiplierBaseScale = _multiplierText.transform.localScale;
 
-            ApplyState(new ComboState(0, 3, 1f, false), animate: false);
+            // Sabit 3 değil: combo-bar yükseltmesi MaxCharge'ı 4-5 yapabilir.
+            ApplyState(new ComboState(system.Charges, system.MaxCharge, system.Multiplier,
+                                      system.IsMaxCharge), animate: false);
         }
 
         // ── Handlers ─────────────────────────────────────────────────────────
         private void HandleStateChanged(ComboState state)
         {
-            // Max charge düştüyse glow'u durdur
-            if (_lastCharges >= state.MaxCharge && state.Charges < state.MaxCharge)
+            // Max charge düştüyse glow'u durdur — bar'lar güncellenmeden ÖNCE,
+            // yoksa pulse sequence yeni renk tween'iyle çakışır.
+            if (!state.IsMaxCharge)
                 StopMaxGlow();
 
             ApplyState(state, animate: true);
+
+            // ComboSystem OnMaxCharge'ı OnStateChanged'den önce ateşliyor. Glow
+            // burada, bar'lar son hâline tween'lendikten sonra başlatılır;
+            // aksi hâlde UpdateBars'ın DOColor'ı pulse'un üstüne yazıyordu.
+            if (_pendingMaxGlow && state.IsMaxCharge)
+                PlayMaxGlow(state.MaxCharge - 1);
+            _pendingMaxGlow = false;
         }
 
-        private void HandleMaxCharge()
-        {
-            // 3. bar'a özel glow animasyonu
-            if (_chargeBars != null && _chargeBars.Length >= 3)
-                PlayMaxGlow(_chargeBars[2]);
-        }
+        private void HandleMaxCharge() => _pendingMaxGlow = true;
 
         private void HandleReset()
         {
@@ -222,15 +233,21 @@ namespace RogueBlockBlast.UI
         {
             if (_chargeBars == null) return;
 
+            SetVisibleBarCount(state.MaxCharge);
+
             for (int i = 0; i < _chargeBars.Length; i++)
             {
                 if (_chargeBars[i] == null) continue;
 
+                // Pulse eden bar'ın rengi glow sequence'a ait.
+                if (i == _glowBarIndex) continue;
+
                 bool shouldBeFilled = i < state.Charges;
 
-                Color targetColor = shouldBeFilled
-                    ? (state.IsMaxCharge ? _colorMaxGlow : _colorFilled)
-                    : _colorEmpty;
+                // Max'ta da dolu renk: _colorMaxGlow (turuncu) mavi bar sprite'ını
+                // çarpınca kahverengiye dönüyor, barlar "söndü" gibi okunuyordu.
+                // Max'ı son bar'ın nabzı anlatır.
+                Color targetColor = shouldBeFilled ? _colorFilled : _colorEmpty;
 
                 if (!animate)
                 {
@@ -267,27 +284,91 @@ namespace RogueBlockBlast.UI
             }
         }
 
-        // ── Max glow ─────────────────────────────────────────────────────────
-        private void PlayMaxGlow(Image bar)
+        /// <summary>
+        /// Sahnede yükseltmenin en üst seviyesi kadar bar var (5). Yalnızca
+        /// MaxCharge kadarı gösterilir; fazlası "kilitli aşama" gibi duruyordu.
+        /// </summary>
+        private void SetVisibleBarCount(int count)
         {
-            _glowSequence?.Kill();
+            if (count == _visibleBars) return;
+            _visibleBars = count;
+
+            for (int i = 0; i < _chargeBars.Length; i++)
+            {
+                if (_chargeBars[i] == null) continue;
+                GetBarRoot(_chargeBars[i]).SetActive(i < count);
+            }
+        }
+
+        /// <summary>
+        /// Bar Image'ı bir "Charge_N" çerçevesinin içindeki Fill'dir. Çerçeveyi
+        /// gizlemek gerekir; çerçeve layout group'un doğrudan çocuğudur.
+        /// </summary>
+        private static GameObject GetBarRoot(Image bar)
+        {
+            var parent = bar.transform.parent;
+            bool parentIsContainer = parent == null || parent.GetComponent<LayoutGroup>() != null;
+            return parentIsContainer ? bar.gameObject : parent.gameObject;
+        }
+
+        // ── Max glow ─────────────────────────────────────────────────────────
+        private void PlayMaxGlow(int index)
+        {
+            if (_chargeBars == null || index < 0 || index >= _chargeBars.Length) return;
+            var bar = _chargeBars[index];
+            if (bar == null) return;
+
+            StopMaxGlow();
+            bar.DOKill();
+            bar.fillAmount = 1f;   // DOKill fill tween'ini de durdurdu
+            bar.color      = _colorFilled;
+            _glowBarIndex  = index;
+
+            var root = GetBarRoot(bar).transform;
+            _glowRoot      = root;
+            _glowRootScale = root.localScale;
+            root.DOKill();
+
+            // Tint beyazın üstüne çıkamıyor; "parlama" dolu renk ile biraz
+            // kısılmış hâli arasında gidip gelerek, büyüme ile birlikte okunuyor.
+            Color dim = Color.Lerp(_colorFilled, Color.black, 0.3f);
+            dim.a = _colorFilled.a;
+            float pulse = Mathf.Max(1.05f, _maxPulseScale);
+
+            // Girişte bir kez güçlü vuruş, sonra sürekli nabız.
+            // Sahnede 2 kayıtlı; o kadar büyüyen bar komşularının üstüne taşıyor.
+            root.localScale = _glowRootScale * Mathf.Clamp(_glowPunchScale, 1f, 1.35f);
+            var intro = DOTween.Sequence()
+                .Append(root.DOScale(_glowRootScale, 0.25f).SetEase(Ease.OutBack));
+
+            var loop = DOTween.Sequence()
+                .Append(root.DOScale(_glowRootScale * pulse, 0.45f).SetEase(Ease.InOutSine))
+                .Join(bar.DOColor(_colorFilled, 0.45f).SetEase(Ease.InOutSine))
+                .Append(root.DOScale(_glowRootScale, 0.45f).SetEase(Ease.InOutSine))
+                .Join(bar.DOColor(dim, 0.45f).SetEase(Ease.InOutSine))
+                .SetLoops(-1, LoopType.Restart);
+
             _glowSequence = DOTween.Sequence()
-                // Sadece renk — scale yok, ekranı kaplamasın
-                .Append(bar.DOColor(_colorMaxGlow, 0.15f).SetEase(Ease.OutQuad))
-                // Sürekli pulse
-                .Append(bar.DOColor(_colorFilled,  0.5f).SetEase(Ease.InOutSine))
-                .Append(bar.DOColor(_colorMaxGlow,  0.5f).SetEase(Ease.InOutSine))
-                .SetLoops(-1, LoopType.Restart)
+                .Append(intro)
+                .Append(loop)
                 .SetAutoKill(false);
         }
 
         /// <summary>Max charge pulse'u durdurur (charge düşünce çağır).</summary>
+        /// <remarks>Rengi UpdateBars toparlar; burada yalnızca sequence bırakılır.</remarks>
         private void StopMaxGlow()
         {
+            if (_glowBarIndex < 0) return;
             _glowSequence?.Kill();
+            _glowSequence = null;
+            _glowBarIndex = -1;
 
-            if (_chargeBars != null && _chargeBars.Length >= 3 && _chargeBars[2] != null)
-                _chargeBars[2].DOColor(_colorEmpty, _emptyDuration);
+            if (_glowRoot != null)
+            {
+                _glowRoot.DOKill();
+                _glowRoot.localScale = _glowRootScale;
+                _glowRoot = null;
+            }
         }
     }
 }

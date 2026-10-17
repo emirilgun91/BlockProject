@@ -3,12 +3,13 @@ using RogueBlockBlast.Content;
 
 //using UnityEditor.Overlays;
 
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 
 namespace RogueBlockBlast.Core
 {
     /// <summary>
-    /// Upgrade seviyelerini PlayerPrefs ile kalıcı saklar.
+    /// Upgrade seviyelerini SaveStore (save.json) ile kalıcı saklar.
     /// DontDestroyOnLoad — sahneler arası yaşar.
     ///
     /// Kullanım:
@@ -44,14 +45,14 @@ namespace RogueBlockBlast.Core
             foreach (var u in library.Upgrades)
             {
                 if (u == null) continue;
-                int saved = PlayerPrefs.GetInt(KeyPrefix + u.Id, 0);
+                int saved = SaveStore.GetInt(KeyPrefix + u.Id, 0);
                 Debug.Log($"[UpgradeRegistry] Load → Key:{KeyPrefix + u.Id} | Saved:{saved}");
                 if (saved > 0) _levels[u.Id] = saved;
             }
         }
 
         /// <summary>
-        /// Runtime cache'i boşaltır — PlayerPrefs dışarıdan silindiğinde
+        /// Runtime cache'i boşaltır — kayıt dışarıdan silindiğinde
         /// (ör. ilerleme sıfırlama) çağrılır. Diskten okumaz; sonrasında
         /// <see cref="Init"/> ile yeniden yüklenmeli.
         /// </summary>
@@ -65,13 +66,13 @@ namespace RogueBlockBlast.Core
 
         /// <summary>
         /// Bu upgrade unlock edilmiş mi?
-        /// Milestone kontrolü PlayerPrefs'ten yapılır.
+        /// Milestone kontrolü SaveStore'dan yapılır.
         /// </summary>
         public bool IsUnlocked(UpgradeSO upgrade)
         {
             if (upgrade == null) return false;
             if (upgrade.UnlockStageIndex <= 0) return true;
-            int maxReached = PlayerPrefs.GetInt("MaxMilestoneReached", 0);
+            int maxReached = SaveStore.GetInt("MaxMilestoneReached", 0);
             return maxReached >= upgrade.UnlockStageIndex;
         }
 
@@ -129,8 +130,9 @@ namespace RogueBlockBlast.Core
 
             int newLevel = current + 1;
             _levels[upgrade.Id] = newLevel;
-            PlayerPrefs.SetInt(KeyPrefix + upgrade.Id, newLevel);
-            PlayerPrefs.Save();
+            SaveStore.SetInt(KeyPrefix + upgrade.Id, newLevel);
+            SaveStore.Save();
+            Achievements.AchievementService.Unlock(Achievements.AchievementIds.FirstUpgrade);
             return true;
         }
 
@@ -153,8 +155,8 @@ namespace RogueBlockBlast.Core
             else
                 _levels[upgrade.Id] = newLevel;
 
-            PlayerPrefs.SetInt(KeyPrefix + upgrade.Id, newLevel);
-            PlayerPrefs.Save();
+            SaveStore.SetInt(KeyPrefix + upgrade.Id, newLevel);
+            SaveStore.Save();
             return true;
         }
 
@@ -169,7 +171,7 @@ namespace RogueBlockBlast.Core
             foreach (var u in library.Upgrades)
             {
                 if (u == null) continue;
-                PlayerPrefs.DeleteKey(KeyPrefix + u.Id);
+                SaveStore.DeleteKey(KeyPrefix + u.Id);
             }
             _levels.Clear();
         }

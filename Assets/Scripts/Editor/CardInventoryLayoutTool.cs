@@ -31,9 +31,10 @@ namespace RogueBlockBlast.EditorTools
         /// <summary>Panelin sol kenardan uzaklığı (px). Tahtaya yaklaştırmak için artır.</summary>
         const float PanelLeftMargin = 258f;
 
-        static readonly Color SlotBg  = new Color32(0x18, 0x1B, 0x2E, 0xFF);
-        static readonly Color PanelBg = new Color32(0x0E, 0x11, 0x20, 0xE6);
-        static readonly Color BadgeBg = new Color32(0x10, 0x10, 0x1E, 0xF2);
+        // Renkler ve sprite'lar UI kitinden (UiTheme / UiKit). Envanter landscape'te ~0.46
+        // ölçekli çizildiği için slot köşeleri biraz büyütülür (portrait'te ölçek 1).
+        static Color PanelBg => UiTheme.WithAlpha(UiTheme.Surface, 0.88f);
+        const float SlotPpu = 0.7f;
 
         [MenuItem("Tools/RogueBlockBlast/Card Inventory/Fix Layout", priority = 80)]
         public static void Fix()
@@ -167,20 +168,34 @@ namespace RogueBlockBlast.EditorTools
                 foreach (var c in root.GetComponents<CanvasScaler>())      Object.DestroyImmediate(c);
                 foreach (var c in root.GetComponents<GraphicRaycaster>())  Object.DestroyImmediate(c);
 
-                var sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
 
                 // Kök zemin — hover algılansın diye raycast hedefi
                 var bg = root.GetComponent<Image>();
                 if (bg == null) bg = root.AddComponent<Image>();
-                bg.sprite = sprite; bg.type = Image.Type.Sliced;
-                bg.color = SlotBg; bg.raycastTarget = true;
+                bg.sprite = UiKit.Fill(UiTheme.RadiusControl); bg.type = Image.Type.Sliced;
+                bg.pixelsPerUnitMultiplier = SlotPpu;
+                bg.color = UiTheme.Raised; bg.raycastTarget = true;
 
-                // Rarity çerçevesi — ikonun arkasında, üst kareyi kaplar
+                // Rarity çerçevesi tüm slotu sarar. Yalnız üst kareyi sardığında ikonun
+                // arkasında kalmış renkli bir parça gibi okunuyordu.
                 var border = NewChild("RarityBorder", rt);
-                AnchorTop(border, SlotSize, 0f);
+                Stretch(border);
                 var borderImg = border.gameObject.AddComponent<Image>();
-                borderImg.sprite = sprite; borderImg.type = Image.Type.Sliced;
                 borderImg.raycastTarget = false;
+                var slotSkin = UiKit.Skin("Skin_CardSlot");
+                if (slotSkin != null)
+                {
+                    // Görsel dolguyu ve beyaz kenarı birlikte taşıyor; CardSlotView rarity
+                    // rengini ona veriyor → kenar rarity renginde, dolgu onun koyusu.
+                    // Kök zemin yalnız raycast için kalır.
+                    borderImg.sprite = slotSkin; borderImg.type = Image.Type.Sliced;
+                    bg.color = Color.clear;
+                }
+                else
+                {
+                    borderImg.sprite = UiKit.Rim(UiTheme.RadiusControl); borderImg.type = Image.Type.Sliced;
+                    borderImg.pixelsPerUnitMultiplier = SlotPpu;   // yalnız kenar — rengi CardSlotView rarity'den verir
+                }
 
                 // İkon — üst karenin içinde, kenarlardan pay bırakır
                 var icon = NewChild("IconImage", rt);
@@ -196,8 +211,8 @@ namespace RogueBlockBlast.EditorTools
                 badge.sizeDelta = new Vector2(26f, 20f);
                 badge.anchoredPosition = new Vector2(-2f, -2f);
                 var badgeImg = badge.gameObject.AddComponent<Image>();
-                badgeImg.sprite = sprite; badgeImg.type = Image.Type.Sliced;
-                badgeImg.color = BadgeBg; badgeImg.raycastTarget = false;
+                badgeImg.sprite = UiKit.Pill; badgeImg.type = Image.Type.Sliced;
+                badgeImg.color = UiTheme.Sunken; badgeImg.raycastTarget = false;
 
                 var stackText = NewChild("StackText", badge);
                 Stretch(stackText, 2, 2, 1, 1);
@@ -220,7 +235,7 @@ namespace RogueBlockBlast.EditorTools
                 liveTmp.fontSize  = 15f;
                 liveTmp.fontStyle = FontStyles.Bold;
                 liveTmp.alignment = TextAlignmentOptions.Center;
-                liveTmp.color     = new Color(1f, 0.86f, 0.35f);
+                liveTmp.color     = UiTheme.Warm;
                 liveTmp.raycastTarget = false;
                 liveTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 liveTmp.overflowMode     = TextOverflowModes.Ellipsis;

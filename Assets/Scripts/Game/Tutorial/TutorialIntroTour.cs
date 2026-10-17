@@ -5,6 +5,7 @@ using DG.Tweening;
 using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.UI;
 using TMPro;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -29,8 +30,8 @@ namespace RogueBlockBlast.Game.Tutorial
     {
         public const string CompletedKey = "Tutorial_Intro_Completed";
 
-        public static bool IsCompleted => PlayerPrefs.GetInt(CompletedKey, 0) == 1;
-        public static void ResetProgress() => PlayerPrefs.DeleteKey(CompletedKey);
+        public static bool IsCompleted => SaveStore.GetInt(CompletedKey, 0) == 1;
+        public static void ResetProgress() => SaveStore.DeleteKey(CompletedKey);
 
         public event Action Finished;
 
@@ -145,8 +146,8 @@ namespace RogueBlockBlast.Game.Tutorial
         {
             if (_finished) return;
             _finished = true;
-            PlayerPrefs.SetInt(CompletedKey, 1);
-            PlayerPrefs.Save();
+            SaveStore.SetInt(CompletedKey, 1);
+            SaveStore.Save();
 
             if (_locked) { GameStateController.UnlockInput(); _locked = false; }
 

@@ -399,6 +399,23 @@ namespace RogueBlockBlast.UI
             return true;
         }
 
+        /// <summary>
+        /// Tahtayı dünyada kapsayan kutu: hücre ızgarası × (0 … görünen yüzey z'si).
+        /// Karo renderer'larının sınırlarından farklı olarak giriş/temizleme
+        /// animasyonlarında değişmez — HUD yerleşimi (BoardClearanceFitter) bunu okur.
+        /// </summary>
+        public bool TryGetWorldBox(out Vector3 min, out Vector3 max)
+        {
+            min = max = Vector3.zero;
+            if (_tiles == null || _tiles.Length == 0) return false;
+
+            float z = SurfaceZ;
+            min = new Vector3(OriginWorld.x, OriginWorld.y, Mathf.Min(z, 0f));
+            max = new Vector3(OriginWorld.x + _tiles.GetLength(0) * CellSize,
+                              OriginWorld.y + _tiles.GetLength(1) * CellSize, Mathf.Max(z, 0f));
+            return true;
+        }
+
         /// <summary>Tile'ların görünen yüzeyinin dünya z'si (TileSkirt kaldırması dahil).</summary>
         private float SurfaceZ
         {

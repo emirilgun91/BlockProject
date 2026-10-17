@@ -1,6 +1,7 @@
 ﻿using DG.Tweening;
 using RogueBlockBlast.Game;
 using TMPro;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -44,7 +45,7 @@ namespace RogueBlockBlast.UI
         [Header("Fade")]
         [SerializeField] private float _fadeSpeed = 5f;
 
-        // ── PlayerPrefs key ──────────────────────────────────────────────────
+        // ── Kayıt anahtarı ───────────────────────────────────────────────────
         private const string BestScoreKey = "BestScore";
 
         /// <summary>
@@ -55,11 +56,11 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public static bool RecordBestScore(int finalScore)
         {
-            int best = PlayerPrefs.GetInt(BestScoreKey, 0);
+            int best = SaveStore.GetInt(BestScoreKey, 0);
             if (finalScore <= best) return false;
 
-            PlayerPrefs.SetInt(BestScoreKey, finalScore);
-            PlayerPrefs.Save();
+            SaveStore.SetInt(BestScoreKey, finalScore);
+            SaveStore.Save();
             return true;
         }
 
@@ -108,7 +109,7 @@ namespace RogueBlockBlast.UI
         {
             // ── Best score ──────────────────────────────────────────────────
             bool newRecord = RecordBestScore(finalScore);
-            int  bestScore = PlayerPrefs.GetInt(BestScoreKey, 0);
+            int  bestScore = SaveStore.GetInt(BestScoreKey, 0);
 
             // ── Score display ───────────────────────────────────────────────
             _finalScoreText.text = FormatScore(finalScore);

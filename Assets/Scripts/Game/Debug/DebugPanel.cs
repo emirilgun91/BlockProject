@@ -141,6 +141,23 @@ namespace RogueBlockBlast.Game
             if (GUILayout.Button("Dili değiştir")) Loc.NextLanguage();
             GUILayout.EndHorizontal();
 
+            // ── Achievement'lar ──────────────────────────────────────────────
+            int achOpen = 0;
+            foreach (var def in Core.Achievements.AchievementCatalog.All)
+                if (Core.Achievements.AchievementService.IsUnlocked(def.Id)) achOpen++;
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(
+                $"Achievement: {achOpen}/{Core.Achievements.AchievementCatalog.All.Count}" +
+                (Core.Achievements.AchievementService.Backend.IsReady ? "  (Steam bağlı)" : "  (yerel)"),
+                _small);
+            if (GUILayout.Button("Yerel ach. sıfırla", GUILayout.Width(130)))
+                Core.Achievements.AchievementService.ResetLocal();
+            // Geliştirici hesabındaki test açılışlarını yayından önce temizlemek için.
+            if (Achievements.SteamPlatform.Initialized &&
+                GUILayout.Button("Steam ach. sıfırla", GUILayout.Width(130)))
+                Achievements.SteamPlatform.DevResetAllAchievements();
+            GUILayout.EndHorizontal();
+
             GUILayout.Space(6);
 
             // ── Kart ekleme ──────────────────────────────────────────────────
@@ -191,14 +208,7 @@ namespace RogueBlockBlast.Game
             GUILayout.EndArea();
         }
 
-        private static Color RarityColor(CardRarity r) => r switch
-        {
-            CardRarity.Common   => new Color(0.35f, 0.62f, 0.85f),
-            CardRarity.Uncommon => new Color(0.20f, 0.80f, 0.62f),
-            CardRarity.Rare     => new Color(0.55f, 0.50f, 0.95f),
-            CardRarity.Epic     => new Color(0.75f, 0.40f, 0.90f),
-            _                   => Color.gray,
-        };
+        private static Color RarityColor(CardRarity r) => CardRarityPalette.Get(r);
     }
 }
 #endif

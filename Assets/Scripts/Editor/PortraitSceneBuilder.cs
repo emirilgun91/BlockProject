@@ -117,16 +117,15 @@ namespace RogueBlockBlast.EditorTools
                     {
                         ring.SetParent(pool, worldPositionStays: false);
                         SetRect(ring, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                                counterPos, new Vector2(125f, 125f));
+                                counterPos, ring.sizeDelta);
                         ring.localScale = Vector3.one;
                     }
                     if (count != null)
                     {
-                        // Landscape oranı korunur: halka 1.0, yazı 0.63 ölçek, aynı merkez
+                        // Landscape ölçüleri korunur (HudStyleBuilder ayarlıyor), aynı merkez
                         count.SetParent(pool, worldPositionStays: false);
                         SetRect(count, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                                 counterPos, count.sizeDelta);
-                        count.localScale = Vector3.one * 0.63f;
                     }
 
                     // "Yeni kart" bildirimi: HUD'ın altında, ortada
@@ -151,6 +150,11 @@ namespace RogueBlockBlast.EditorTools
                 SetRect(inv, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f),
                         new Vector2(0f, 338f), new Vector2(-48f, 150f));
                 inv.localScale = Vector3.one;
+
+                // Landscape'te envanter ~0.46 ölçekli olduğu için zemin sprite yoğunluğu
+                // yarıya indirilmişti (HudStyleBuilder); burada ölçek 1, köşeler normale döner.
+                foreach (var img in new[] { inv.GetComponent<Image>(), inv.Find("Rim")?.GetComponent<Image>() })
+                    if (img != null) img.pixelsPerUnitMultiplier = 1f;
 
                 var ui = inv.GetComponent<CardInventoryUI>();
                 if (ui != null) { ui.HorizontalStrip = true; EditorUtility.SetDirty(ui); }

@@ -1,14 +1,18 @@
 using UnityEngine;
 using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Save;
 
 namespace RogueBlockBlast.Core.Settings
 {
     /// <summary>
     /// Kayıt verisi yönetimi — ilerleme sıfırlama.
     ///
-    /// PlayerPrefs anahtar listesini dışarıdan okuyamadığımız için sıfırlama
-    /// "her şeyi sil, ayarları geri yaz" şeklinde yapılır. Böylece hangi sistem
-    /// hangi anahtarı yazmış olursa olsun hiçbiri arkada kalmaz.
+    /// İlerleme <see cref="SaveStore"/>'da (save.json), ayarlar PlayerPrefs'te.
+    /// save.json boşaltılır; PlayerPrefs'te de demo döneminden kalan eski
+    /// ilerleme anahtarları silinir. PlayerPrefs anahtar listesini dışarıdan
+    /// okuyamadığımız için o taraf "her şeyi sil, ayarları geri yaz" şeklinde
+    /// yapılır. Böylece hangi sistem hangi anahtarı yazmış olursa olsun hiçbiri
+    /// arkada kalmaz.
     /// </summary>
     public static class SaveDataService
     {
@@ -17,7 +21,9 @@ namespace RogueBlockBlast.Core.Settings
         {
             GameSettings.EnsureLoaded();     // ayarlar bellekte olsun — birazdan diski silecek
 
-            PlayerPrefs.DeleteAll();
+            SaveStore.DeleteAll();           // save.json boşalır ve hemen yazılır; göç de kapanır
+
+            PlayerPrefs.DeleteAll();         // eski (demo) ilerleme anahtarları
             PersistSettings();               // ayarları geri yaz
             PlayerPrefs.Save();
 
@@ -26,6 +32,11 @@ namespace RogueBlockBlast.Core.Settings
             UpgradeRegistry.Instance?.ClearRuntimeCache();
             UnlockRegistry.Instance?.ClearRuntimeCache();
             ShapeUpgradeRegistry.Instance?.ResetAll();
+
+            // DeleteAll yerel achievement kayıtlarını da sildi; Steam'de açık
+            // olanlar geri yazılır (Steam'deki achievement'lar asla silinmez).
+            Achievements.AchievementService.Sync();
+            SaveStore.Save();                // coin = 0 ve Steam'den geri gelen achievement'lar
 
             Debug.Log("[SaveData] İlerleme sıfırlandı (ayarlar korundu).");
         }

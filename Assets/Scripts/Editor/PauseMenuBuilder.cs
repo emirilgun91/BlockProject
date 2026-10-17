@@ -21,19 +21,8 @@ namespace RogueBlockBlast.EditorTools
     /// </summary>
     public static class PauseMenuBuilder
     {
-        static readonly Color Dimmer     = new Color(0.02f, 0.02f, 0.05f, 0.86f);
-        static readonly Color WindowBg   = new Color32(0x14, 0x14, 0x28, 0xFF);
-        static readonly Color WindowEdge = new Color32(0x2F, 0xE6, 0xFF, 0xFF);
-        static readonly Color Accent     = new Color32(0x2F, 0xE6, 0xFF, 0xFF);
-        static readonly Color BtnNeutral = new Color32(0x2A, 0x2A, 0x4A, 0xFF);
-        static readonly Color BtnResume  = new Color32(0x21, 0xC9, 0x7A, 0xFF);
-        static readonly Color BtnDanger  = new Color32(0xC7, 0x33, 0x33, 0xFF);
-
-        const float WindowW = 620f, WindowH = 640f;
-        const float BtnW = 460f, BtnH = 78f;
-
-        static TMP_FontAsset _bold, _regular;
-        static Sprite _round;
+        const float WindowW = 560f, WindowH = 640f;
+        const float BtnW = 420f, BtnH = 68f;
 
         [MenuItem("Tools/RogueBlockBlast/Pause Menu/Build In Game Scene", priority = 70)]
         public static void Build()
@@ -52,7 +41,6 @@ namespace RogueBlockBlast.EditorTools
                 .FirstOrDefault(c => c.name == "Gameplay Canvas");
             if (canvas == null) { Debug.LogError("[PauseMenu] 'Gameplay Canvas' bulunamadı."); return; }
 
-            LoadAssets();
             RogueBlockBlast.Core.Localization.Loc.Init();
 
             // Eskisini temizle — bu araç tekrar çalıştırılabilir olmalı
@@ -77,156 +65,87 @@ namespace RogueBlockBlast.EditorTools
             Debug.Log("[PauseMenu] Duraklatma menüsü ve oyun içi ayarlar paneli üretildi.");
         }
 
-        static void LoadAssets()
-        {
-            _bold    = FindFont("Exo2-Bold SDF") ?? FindFont("Exo2-SemiBold SDF");
-            _regular = FindFont("Exo2-Regular SDF") ?? _bold;
-            _round   = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        }
-
-        static TMP_FontAsset FindFont(string name) =>
-            AssetDatabase.FindAssets($"t:TMP_FontAsset {name}")
-                .Select(g => AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(AssetDatabase.GUIDToAssetPath(g)))
-                .FirstOrDefault(f => f != null && f.name == name);
-
-        static RectTransform NewRect(string name, Transform parent)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            return (RectTransform)go.transform;
-        }
-
-        static Image AddImage(RectTransform rt, Color color, Sprite sprite = null, bool raycast = true)
-        {
-            var img = rt.gameObject.AddComponent<Image>();
-            img.color = color;
-            if (sprite != null) { img.sprite = sprite; img.type = Image.Type.Sliced; }
-            img.raycastTarget = raycast;
-            return img;
-        }
-
-        static void Stretch(RectTransform rt, float l = 0, float r = 0, float t = 0, float b = 0)
-        {
-            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-            rt.offsetMin = new Vector2(l, b); rt.offsetMax = new Vector2(-r, -t);
-        }
-
-        static TextMeshProGUILocalized LocText(string name, Transform parent, string key, float size,
-                                               Color color, bool bold, TextAlignmentOptions align)
-        {
-            var rt = NewRect(name, parent);
-            rt.gameObject.AddComponent<LocalizationKeyHolder>().LocalizationKey = key;
-            var t = rt.gameObject.AddComponent<TextMeshProGUILocalized>();
-            t.fontSize = size; t.color = color; t.font = bold ? _bold : _regular;
-            t.alignment = align; t.raycastTarget = false; t.enableWordWrapping = false;
-            return t;
-        }
-
-        static Button MenuButton(Transform parent, string name, string locKey, Color bg, Color? labelColor = null)
-        {
-            var rt = NewRect(name, parent);
-            rt.sizeDelta = new Vector2(BtnW, BtnH);
-            AddImage(rt, bg, _round);
-            var btn = rt.gameObject.AddComponent<Button>();
-            btn.targetGraphic = rt.GetComponent<Image>();
-
-            var c = btn.colors;
-            c.highlightedColor = Color.Lerp(bg, Color.white, 0.22f);
-            c.pressedColor     = Color.Lerp(bg, Color.black, 0.25f);
-            c.fadeDuration     = 0.08f;
-            btn.colors = c;
-
-            var le = rt.gameObject.AddComponent<LayoutElement>();
-            le.preferredWidth = BtnW; le.preferredHeight = BtnH; le.flexibleWidth = 0;
-
-            var label = LocText("Label", rt, locKey, 30f, labelColor ?? Color.white, true, TextAlignmentOptions.Center);
-            Stretch((RectTransform)label.transform);
-            return btn;
-        }
-
         static RectTransform BuildPauseMenu(Transform canvas, GameObject settingsPanel)
         {
             // Kök HER ZAMAN açık kalır — PauseMenuController burada yaşar ve ESC'yi dinler.
             // Açılıp kapanan şey alttaki "Content"; kök kapanırsa Update() durur ve ESC ölür.
-            var root = NewRect("PauseMenu", canvas);
-            Stretch(root);
+            var root = UiKit.NewRect("PauseMenu", canvas);
+            UiKit.Stretch(root);
 
-            var content = NewRect("Content", root);
-            Stretch(content);
-            AddImage(content, Dimmer);
+            var content = UiKit.NewRect("Content", root);
+            UiKit.Stretch(content);
+            var scrim = content.gameObject.AddComponent<Image>();
+            scrim.color = UiTheme.Scrim;
 
-            var edge = NewRect("Window", content);
-            edge.anchorMin = edge.anchorMax = new Vector2(0.5f, 0.5f);
-            edge.pivot = new Vector2(0.5f, 0.5f);
-            edge.sizeDelta = new Vector2(WindowW, WindowH);
-            AddImage(edge, WindowEdge, _round);
+            var body = UiKit.Window(content, "Window", new Vector2(WindowW, WindowH),
+                                    UiTheme.WithAlpha(UiTheme.Accent, 0.16f));
 
-            var body = NewRect("Body", edge);
-            Stretch(body, 4, 4, 4, 4);
-            AddImage(body, WindowBg, _round);
+            // Pencere içeriğine göre boylanır: geri bildirim butonu (URL boşken
+            // gizli) veya portrait'te çıkış butonu kapanınca boşluk kalmaz.
+            // Window, Body'nin tercih edilen yüksekliğini alır; Glow layout dışı.
+            var window = (RectTransform)body.parent;
+            var wv = window.gameObject.AddComponent<VerticalLayoutGroup>();
+            wv.childControlWidth = true; wv.childForceExpandWidth = true;
+            wv.childControlHeight = true; wv.childForceExpandHeight = false;
+            window.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            window.Find("Glow").gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
 
-            var title = LocText("Title", body, "Pause.Title", 44f, Accent, true, TextAlignmentOptions.Center);
-            var trt = (RectTransform)title.transform;
-            trt.anchorMin = new Vector2(0, 1); trt.anchorMax = new Vector2(1, 1);
-            trt.pivot = new Vector2(0.5f, 1);
-            trt.offsetMin = new Vector2(0, -110); trt.offsetMax = new Vector2(0, -30);
-
-            var list = NewRect("Buttons", body);
-            list.anchorMin = new Vector2(0.5f, 0); list.anchorMax = new Vector2(0.5f, 1);
-            list.pivot = new Vector2(0.5f, 0.5f);
-            list.sizeDelta = new Vector2(BtnW, -150);
-            list.anchoredPosition = new Vector2(0, -55);
+            var list = body;
             var vlg = list.gameObject.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 18; vlg.childAlignment = TextAnchor.MiddleCenter;
+            vlg.padding = new RectOffset(0, 0, 40, 48);
+            vlg.spacing = 14; vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childControlWidth = false; vlg.childForceExpandWidth = false;
             vlg.childControlHeight = false; vlg.childForceExpandHeight = false;
 
-            var resume   = MenuButton(list, "ResumeButton",   "Pause.Resume",   BtnResume,
-                                      new Color32(0x07, 0x1A, 0x12, 0xFF));
-            var settings = MenuButton(list, "SettingsButton", "Pause.Settings", BtnNeutral);
-            var mainMenu = MenuButton(list, "MainMenuButton", "Pause.MainMenu", BtnNeutral);
+            var title = UiKit.LocText("Title", body, "Pause.Title", 40f, UiTheme.Text, true, TextAlignmentOptions.Center);
+            title.characterSpacing = 8f;
+            ((RectTransform)title.transform).sizeDelta = new Vector2(WindowW - 60, 56);
+
+            // Başlığın altında kısa vurgu çizgisi, ardından butonlara nefes payı
+            var accent = UiKit.NewRect("TitleAccent", body);
+            accent.sizeDelta = new Vector2(56, 4);
+            UiKit.Sliced(accent, UiKit.Pill, UiTheme.Accent, false);
+            UiKit.NewRect("Spacer", body).sizeDelta = new Vector2(1, 14);
+
+            var btnSize  = new Vector2(BtnW, BtnH);
+            var resume   = UiKit.Button(list, "ResumeButton",   btnSize, UiKit.Style.Primary,   "Pause.Resume");
+            var settings = UiKit.Button(list, "SettingsButton", btnSize, UiKit.Style.Secondary, "Pause.Settings");
+            var mainMenu = UiKit.Button(list, "MainMenuButton", btnSize, UiKit.Style.Secondary, "Pause.MainMenu");
 
             // Geri bildirim: tıklamayı ExternalLinkButton kendi Awake'inde
             // bağlar — burada onClick'e dokunulmaz. URL boşken
             // PauseMenuController butonu gizler; adres sonradan girilecek.
-            var feedback = MenuButton(list, "FeedbackButton", "Pause.Feedback", BtnNeutral);
+            var feedback = UiKit.Button(list, "FeedbackButton", btnSize, UiKit.Style.Secondary, "Pause.Feedback");
             feedback.gameObject.AddComponent<RogueBlockBlast.UI.ExternalLinkButton>();
 
-            var quit     = MenuButton(list, "QuitButton",     "Pause.Quit",     BtnDanger);
+            var quit     = UiKit.Button(list, "QuitButton",     btnSize, UiKit.Style.Danger,    "Pause.Quit");
 
             // ── Çıkış onay kutusu ────────────────────────────────────────────
-            var confirm = NewRect("ConfirmBox", content);
-            confirm.anchorMin = confirm.anchorMax = new Vector2(0.5f, 0.5f);
-            confirm.pivot = new Vector2(0.5f, 0.5f);
-            confirm.sizeDelta = new Vector2(700, 280);
-            AddImage(confirm, new Color32(0x3A, 0x14, 0x14, 0xFF), _round);
+            // Pencerenin üstünde ayrı bir kutu; kırmızı hale "geri dönüşü yok" der.
+            var confirmWin = UiKit.Window(content, "ConfirmBox", new Vector2(640, 280),
+                                          UiTheme.WithAlpha(UiTheme.Danger, 0.18f));
+            var confirm = (RectTransform)confirmWin.parent;
+            UiKit.TintFrame(confirmWin, UiTheme.WithAlpha(UiTheme.Danger, 0.6f));
 
-            var warn = LocText("Warning", confirm, "Dialog.QuitRun.Body", 24f,
-                               new Color32(0xFF, 0xD0, 0xD0, 0xFF), false, TextAlignmentOptions.Center);
-            warn.enableWordWrapping = true;
+            var warn = UiKit.LocText("Warning", confirmWin, "Dialog.QuitRun.Body", 24f,
+                                     UiTheme.Text, false, TextAlignmentOptions.Center);
+            warn.textWrappingMode = TextWrappingModes.Normal;
             var wrt = (RectTransform)warn.transform;
             wrt.anchorMin = new Vector2(0, 1); wrt.anchorMax = new Vector2(1, 1);
             wrt.pivot = new Vector2(0.5f, 1);
-            wrt.offsetMin = new Vector2(30, -150); wrt.offsetMax = new Vector2(-30, -40);
+            wrt.offsetMin = new Vector2(36, -160); wrt.offsetMax = new Vector2(-36, -36);
 
-            var crow = NewRect("Buttons", confirm);
+            var crow = UiKit.NewRect("Buttons", confirmWin);
             crow.anchorMin = new Vector2(0, 0); crow.anchorMax = new Vector2(1, 0);
             crow.pivot = new Vector2(0.5f, 0);
-            crow.offsetMin = new Vector2(30, 30); crow.offsetMax = new Vector2(-30, 110);
+            crow.offsetMin = new Vector2(30, 30); crow.offsetMax = new Vector2(-30, 98);
             var ch = crow.gameObject.AddComponent<HorizontalLayoutGroup>();
-            ch.spacing = 20; ch.childAlignment = TextAnchor.MiddleCenter;
+            ch.spacing = 16; ch.childAlignment = TextAnchor.MiddleCenter;
             ch.childControlWidth = false; ch.childForceExpandWidth = false;
             ch.childControlHeight = false;
 
-            var no  = MenuButton(crow, "No",  "Dialog.No",  BtnNeutral);
-            var yes = MenuButton(crow, "Yes", "Dialog.Yes", BtnDanger);
-            foreach (var b in new[] { no, yes })
-            {
-                var rt = (RectTransform)b.transform;
-                rt.sizeDelta = new Vector2(280, 70);
-                var le = b.GetComponent<LayoutElement>();
-                le.preferredWidth = 280; le.preferredHeight = 70;
-            }
+            var no  = UiKit.Button(crow, "No",  new Vector2(250, 64), UiKit.Style.Secondary, "Dialog.No");
+            var yes = UiKit.Button(crow, "Yes", new Vector2(250, 64), UiKit.Style.Danger,    "Dialog.Yes");
             confirm.gameObject.SetActive(false);
 
             // ── Controller ───────────────────────────────────────────────────

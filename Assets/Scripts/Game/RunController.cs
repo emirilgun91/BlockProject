@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using DG.Tweening;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.Game.Achievements;
 using RogueBlockBlast.Game.Tutorial;
 using RogueBlockBlast.UI;
 using RogueBlockBlast.UI.FX;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
@@ -54,7 +56,7 @@ namespace RogueBlockBlast.Game
         [Header("Demo")]
         [Tooltip("AÇIK: bu skor eşiğine sahip milestone'a ulaşınca demo bitiş paneli " +
                  "açılır ve run sona erer. Tam sürümde kapatın.")]
-        [SerializeField] private bool _demoBuild = true;
+        [SerializeField] private bool _demoBuild = false;
 
         [Tooltip("Demoyu bitiren milestone'un skor eşiği. MilestoneConfig'te " +
                  "20000 = 'Stage 6'. Eşik üzerinden bakılır çünkü etiketler " +
@@ -602,6 +604,7 @@ namespace RogueBlockBlast.Game
             // ── Line clear ────────────────────────────────────────────────────
             var (cleared, tileValueSum, clearedRows, clearedCols, snapshots) =
                 LineClearSystem.ClearLines(_board);
+            bool boardEmptied = false;   // achievement: temizlikten hemen sonra tahta boş mu
 
             if (cleared > 0)
             {
@@ -660,6 +663,8 @@ namespace RogueBlockBlast.Game
                 // Decaying Rift: early clear bonus
                 if (_cardState.HasDecayingRift && _cardState.RiftTileActive)
                     CheckRiftCleared(clearedRows, clearedCols);
+
+                boardEmptied = _board.IsAllCellsCleared();
 
                 // Perfect Clear: all placed pieces gone?
                 if (_cardState.HasPerfectClear && _board.IsAllCellsCleared())
@@ -820,6 +825,7 @@ namespace RogueBlockBlast.Game
             if (_cardState.HasGambler && UnityEngine.Random.value < _cardState.GamblerChance)
             {
                 bool won = UnityEngine.Random.value < 0.5f;
+                RunEvents.GambleResolved(won);
                 gainedScore = Mathf.RoundToInt(
                     gainedScore * (won ? _cardState.GamblerWinFactor : _cardState.GamblerLoseFactor));
                 AddScoreFactor("Card.Card_Gambler.Name", "Gambler",
@@ -856,6 +862,9 @@ namespace RogueBlockBlast.Game
             _milestoneSystem?.OnScoreChanged(_score);
 
             RunStatsTracker.Instance?.RecordCombo(_comboSystem.Multiplier);
+            RunEvents.PiecePlaced(new PlacementReport(
+                cleared, clearedRows, clearedCols, snapshots, boardEmptied,
+                _comboSystem.Multiplier, _comboSystem.IsMaxCharge, _score));
 
             if (gainedScore != 0)
             {
@@ -994,6 +1003,7 @@ namespace RogueBlockBlast.Game
             _poolRerollButton.OnRerollClicked = OnPoolRerollClicked;
             GenerateNewPool();
             _poolDirty = true;
+            RunEvents.RunStarted();
         }
 
         private void SpawnNextFromPool()
@@ -1069,6 +1079,7 @@ namespace RogueBlockBlast.Game
             _gameOverFired = true;
 
             FrameFeedbackController.Instance?.OnGameOver();
+            RunEvents.RunEnded(_score, RunStatsTracker.Instance?.PiecesPlaced ?? 0);
             AudioManager.Instance.PlaySFX(GameOverSFX,1f,false);
 
             SaveRunResults();
@@ -1129,6 +1140,8 @@ namespace RogueBlockBlast.Game
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
                     OnGameOver(GameOverReason.NoMoves);
+                else
+                    RunEvents.DeadPoolSurvived();
                 _poolDirty = true;
                 return;
             }
@@ -1140,6 +1153,8 @@ namespace RogueBlockBlast.Game
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
                     OnGameOver(GameOverReason.NoMoves);
+                else
+                    RunEvents.DeadPoolSurvived();
                 return;
             }
 
@@ -1152,6 +1167,8 @@ namespace RogueBlockBlast.Game
                 GenerateNewPool();
                 if (!HasAnyValidMoveInPool())
                     OnGameOver(GameOverReason.NoMoves);
+                else
+                    RunEvents.DeadPoolSurvived();
                 _poolDirty = true;
                 return;
             }
@@ -1176,6 +1193,7 @@ namespace RogueBlockBlast.Game
                     OnGameOver(GameOverReason.NoMoves);
                     return;
                 }
+                RunEvents.DeadPoolSurvived();
                 _poolDirty = true;
                 return;
             }
@@ -1190,6 +1208,8 @@ namespace RogueBlockBlast.Game
         private void HandleMilestoneReached(int coinReward, MilestoneData data)
         {
             TutorialEvents.MilestoneReached();
+            RunEvents.MilestoneReached(data.Label, _milestoneSystem.AllMilestonesCleared,
+                _milestoneSystem.LastCompletedPiecesRemaining, _milestoneSystem.EffectivePoolLimit);
 
             // Reset per-milestone card counters for the new window
             _cardState.OnMilestoneReached();
@@ -1276,9 +1296,9 @@ namespace RogueBlockBlast.Game
                     MilestoneView?.ShowNewCardEarned(RogueBlockBlast.Core.Localization.ContentLocalization.Name(newlyUnlockedCard));
                 }
 
-                int current = PlayerPrefs.GetInt("MaxMilestoneReached", 0);
+                int current = SaveStore.GetInt("MaxMilestoneReached", 0);
                 if (_milestoneSystem.CurrentMilestoneIndex > current)
-                    PlayerPrefs.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
+                    SaveStore.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
             }
 
             if (CardPool != null && CardPool.Count > 0)
@@ -1452,6 +1472,7 @@ namespace RogueBlockBlast.Game
             RebuildStaticPositionBonus();   // Corner Stone / Center Base yeni alınmış olabilir
             CardInventoryUI.Instance?.AddCard(card);
             TutorialEvents.CardPicked();
+            RunEvents.CardPicked(card, CardInventoryUI.Instance?.GetSelectedCardIds().Count() ?? 0);
 
             // Döndürme kilidi kart SEÇİLİR SEÇİLMEZ geçerli oluyor. İpucu yalnızca
             // yerleştirmeden sonra tazelenseydi (eskiden öyleydi) oyuncu ilk şekli

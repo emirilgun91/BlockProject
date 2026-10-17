@@ -1,5 +1,6 @@
 using RogueBlockBlast.Core.Localization;
 using TMPro;
+using RogueBlockBlast.Core.Save;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,12 +27,12 @@ namespace RogueBlockBlast.Game.Tutorial
         public const string CompletedKey = "Tutorial_Completed";
 
         /// <summary>Öğretici bir daha gösterilmesin diye işaretlendi mi?</summary>
-        public static bool IsCompleted => PlayerPrefs.GetInt(CompletedKey, 0) == 1;
+        public static bool IsCompleted => SaveStore.GetInt(CompletedKey, 0) == 1;
 
         /// <summary>Ana menüdeki "ilerlemeyi sıfırla" akışı için.</summary>
         public static void ResetProgress()
         {
-            PlayerPrefs.DeleteKey(CompletedKey);
+            SaveStore.DeleteKey(CompletedKey);
             TutorialIntroTour.ResetProgress();
         }
 
@@ -200,8 +201,10 @@ namespace RogueBlockBlast.Game.Tutorial
         {
             _active = false;
             SetVisible(false);
-            PlayerPrefs.SetInt(CompletedKey, 1);
-            PlayerPrefs.Save();
+            SaveStore.SetInt(CompletedKey, 1);
+            SaveStore.Save();
+            RogueBlockBlast.Core.Achievements.AchievementService.Unlock(
+                RogueBlockBlast.Core.Achievements.AchievementIds.Tutorial);
             Unsubscribe();
             enabled = false;
         }

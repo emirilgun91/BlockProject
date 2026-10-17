@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using RogueBlockBlast.Core.Save;
 using RogueBlockBlast.Core.Settings;
 using RogueBlockBlast.Core.Localization;
 using Assets.SimpleLocalization.Scripts;
@@ -33,18 +34,40 @@ namespace RogueBlockBlast.EditorTools
             Debug.Log("[Settings] Varsayılanlara döndürüldü.");
         }
 
-        [MenuItem("Tools/RogueBlockBlast/Save Data/Delete EVERYTHING (PlayerPrefs)", priority = 2)]
+        [MenuItem("Tools/RogueBlockBlast/Save Data/Delete EVERYTHING (save.json + PlayerPrefs)", priority = 2)]
         private static void DeleteAll()
         {
             if (!EditorUtility.DisplayDialog(
-                    "Tüm PlayerPrefs silinsin mi?",
-                    "İlerleme VE ayarlar dahil her şey silinir. Bu geri alınamaz.",
+                    "Tüm kayıtlar silinsin mi?",
+                    "save.json (ilerleme) ve PlayerPrefs (ayarlar + eski ilerleme) silinir. Bu geri alınamaz.",
                     "Hepsini sil", "Vazgeç"))
                 return;
 
+            SaveStore.DeleteFiles();
             PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
-            Debug.Log("[SaveData] Tüm PlayerPrefs silindi.");
+            Debug.Log("[SaveData] save.json ve tüm PlayerPrefs silindi.");
+        }
+
+        [MenuItem("Tools/RogueBlockBlast/Save Data/Show save.json", priority = 3)]
+        private static void RevealSaveFile()
+        {
+            EditorUtility.RevealInFinder(System.IO.File.Exists(SaveStore.FilePath)
+                ? SaveStore.FilePath
+                : Application.persistentDataPath);
+        }
+
+        // save.json silinince bir sonraki Play PlayerPrefs'ten göç eder — göçü yeniden denemek için.
+        [MenuItem("Tools/RogueBlockBlast/Save Data/Delete save.json only (re-run migration)", priority = 4)]
+        private static void DeleteSaveFileOnly()
+        {
+            if (Application.isPlaying)
+            {
+                Debug.LogWarning("[SaveData] Play mode'dayken silinmez — çıkışta dosya yeniden yazılır.");
+                return;
+            }
+            SaveStore.DeleteFiles();
+            Debug.Log("[SaveData] save.json silindi.");
         }
 
         [MenuItem("Tools/RogueBlockBlast/Localization/Reload Table", priority = 20)]

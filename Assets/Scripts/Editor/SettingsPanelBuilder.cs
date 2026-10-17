@@ -22,29 +22,18 @@ namespace RogueBlockBlast.EditorTools
     /// </summary>
     public static class SettingsPanelBuilder
     {
-        // ── Palet ────────────────────────────────────────────────────────────
-        static readonly Color Dimmer      = new Color(0.02f, 0.02f, 0.05f, 0.82f);
-        static readonly Color WindowBg    = new Color32(0x14, 0x14, 0x28, 0xFF);
-        static readonly Color WindowEdge  = new Color32(0x2F, 0xE6, 0xFF, 0xFF);
-        static readonly Color RowBg       = new Color32(0x1B, 0x1B, 0x33, 0xFF);
-        static readonly Color RowBgAlt    = new Color32(0x21, 0x21, 0x3D, 0xFF);
-        static readonly Color Accent      = new Color32(0x2F, 0xE6, 0xFF, 0xFF);
-        static readonly Color AccentDim   = new Color32(0x1E, 0x6E, 0x85, 0xFF);
-        static readonly Color TextMain    = new Color32(0xE6, 0xEA, 0xF7, 0xFF);
-        static readonly Color TextDim     = new Color32(0x8A, 0x93, 0xAA, 0xFF);
-        static readonly Color BtnNeutral  = new Color32(0x2A, 0x2A, 0x4A, 0xFF);
-        static readonly Color BtnApply    = new Color32(0x21, 0xC9, 0x7A, 0xFF);
-        static readonly Color BtnCancel   = new Color32(0x8F, 0x45, 0xAD, 0xFF);
-        static readonly Color BtnDanger   = new Color32(0xC7, 0x33, 0x33, 0xFF);
+        // ── Palet — UiTheme'den ──────────────────────────────────────────────
+        static Color Dimmer   => UiTheme.Scrim;
+        static Color RowBg    => UiTheme.WithAlpha(UiTheme.Raised, 0.45f);
+        static Color Accent   => UiTheme.Accent;
+        static Color TextMain => UiTheme.Text;
 
         const float WindowW = 1040f, WindowH = 920f;
-        const float HeaderH = 86f,  FooterH = 100f;
-        const float RowH    = 62f,  SectionH = 54f;
+        const float HeaderH = 90f,  FooterH = 104f;
+        const float RowH    = 62f,  SectionH = 58f;
         const float CtrlW   = 420f;          // sağdaki kontrol alanı genişliği
 
         static TMP_FontAsset _fontBold, _fontRegular;
-        static Sprite _sprRound, _sprBg, _sprKnob, _sprCheck;
-        static int _rowIndex;
 
         [MenuItem("Tools/RogueBlockBlast/Settings Panel/Rebuild", priority = 60)]
         public static void Rebuild()
@@ -66,15 +55,16 @@ namespace RogueBlockBlast.EditorTools
             LoadAssets();
             RogueBlockBlast.Core.Localization.Loc.Init();
 
-            // Eski Window'u sakla — silme, pasifleştir
+            // Bir önceki yedeği sil, mevcut Window'u yedek olarak pasifleştir —
+            // her çalıştırmada tek bir Window_OLD kalır.
+            foreach (Transform child in panel.Cast<Transform>().ToList())
+                if (child.name.StartsWith("Window_OLD")) Object.DestroyImmediate(child.gameObject);
             var old = panel.Find("Window");
             if (old != null)
             {
                 old.name = "Window_OLD";
                 old.gameObject.SetActive(false);
             }
-            var older = panel.Find("Window_OLD (1)");
-            if (older != null) Object.DestroyImmediate(older.gameObject);
 
             BuildContents(panel);
 
@@ -145,19 +135,9 @@ namespace RogueBlockBlast.EditorTools
 
         static void LoadAssets()
         {
-            _fontBold    = FindFont("Exo2-Bold SDF")    ?? FindFont("Exo2-SemiBold SDF");
-            _fontRegular = FindFont("Exo2-Regular SDF") ?? _fontBold;
-
-            _sprRound = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            _sprBg    = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
-            _sprKnob  = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-            _sprCheck = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Checkmark.psd");
+            _fontBold    = UiKit.Bold;
+            _fontRegular = UiKit.Regular;
         }
-
-        static TMP_FontAsset FindFont(string name) =>
-            AssetDatabase.FindAssets($"t:TMP_FontAsset {name}")
-                .Select(g => AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(AssetDatabase.GUIDToAssetPath(g)))
-                .FirstOrDefault(f => f != null && f.name == name);
 
         static void EnsurePanelRoot(Transform panel)
         {
@@ -232,56 +212,13 @@ namespace RogueBlockBlast.EditorTools
             return t;
         }
 
-        static Button NewButton(string name, Transform parent, Vector2 size, Color bg,
-                                string label = null, string locKey = null, float fontSize = 24f,
-                                Color? labelColor = null)
-        {
-            var rt = NewRect(name, parent);
-            rt.sizeDelta = size;
-            AddImage(rt, bg, _sprRound);
-            var btn = rt.gameObject.AddComponent<Button>();
-            btn.targetGraphic = rt.GetComponent<Image>();
-
-            var colors = btn.colors;
-            colors.highlightedColor = Color.Lerp(bg, Color.white, 0.20f);
-            colors.pressedColor     = Color.Lerp(bg, Color.black, 0.25f);
-            colors.disabledColor    = new Color(bg.r, bg.g, bg.b, 0.35f);
-            colors.fadeDuration     = 0.08f;
-            btn.colors = colors;
-
-            var le = rt.gameObject.AddComponent<LayoutElement>();
-            le.preferredWidth = size.x; le.preferredHeight = size.y;
-            le.flexibleWidth = 0;
-
-            if (locKey != null)
-            {
-                var t = NewLocText("Label", rt, locKey, fontSize, labelColor ?? Color.white, true, TextAlignmentOptions.Center);
-                Stretch((RectTransform)t.transform);
-            }
-            else if (label != null)
-            {
-                var t = NewText("Label", rt, label, fontSize, labelColor ?? Color.white, true, TextAlignmentOptions.Center);
-                Stretch((RectTransform)t.transform);
-            }
-            return btn;
-        }
+        static Button NewButton(string name, Transform parent, Vector2 size, UiKit.Style style,
+                                string label = null, string locKey = null, float fontSize = 24f)
+            => UiKit.Button(parent, name, size, style, locKey, label, fontSize);
 
         // ── Pencere ──────────────────────────────────────────────────────────
         static RectTransform BuildWindow(Transform panel)
-        {
-            // Dış çerçeve (kenarlık efekti) + iç gövde
-            var edge = NewRect("Window", panel);
-            edge.anchorMin = edge.anchorMax = new Vector2(0.5f, 0.5f);
-            edge.pivot = new Vector2(0.5f, 0.5f);
-            edge.sizeDelta = new Vector2(WindowW, WindowH);
-            edge.anchoredPosition = Vector2.zero;
-            AddImage(edge, WindowEdge, _sprRound);
-
-            var body = NewRect("Body", edge);
-            Stretch(body, 4, 4, 4, 4);
-            AddImage(body, WindowBg, _sprRound);
-            return body;
-        }
+            => UiKit.Window(panel, "Window", new Vector2(WindowW, WindowH), UiTheme.WithAlpha(UiTheme.Accent, 0.12f));
 
         static void BuildHeader(RectTransform window, Refs refs)
         {
@@ -289,23 +226,22 @@ namespace RogueBlockBlast.EditorTools
             header.anchorMin = new Vector2(0, 1); header.anchorMax = new Vector2(1, 1);
             header.pivot = new Vector2(0.5f, 1);
             header.offsetMin = new Vector2(0, -HeaderH); header.offsetMax = Vector2.zero;
-            AddImage(header, new Color32(0x0F, 0x0F, 0x1E, 0xFF), _sprRound);
 
-            var title = NewLocText("Title", header, "Settings.Title", 40f, Accent, true, TextAlignmentOptions.Center);
+            var title = NewLocText("Title", header, "Settings.Title", 36f, TextMain, true, TextAlignmentOptions.Center);
+            title.characterSpacing = 8f;
             Stretch((RectTransform)title.transform, 90, 90);
 
-            refs.Close = NewButton("CloseButton", header, new Vector2(56, 56), BtnNeutral, label: "X", fontSize: 28);
+            refs.Close = NewButton("CloseButton", header, new Vector2(52, 52), UiKit.Style.Ghost, label: "X", fontSize: 24);
             var crt = (RectTransform)refs.Close.transform;
             crt.anchorMin = crt.anchorMax = new Vector2(1, 0.5f);
             crt.pivot = new Vector2(1, 0.5f);
-            crt.anchoredPosition = new Vector2(-16, 0);
+            crt.anchoredPosition = new Vector2(-20, 0);
 
-            // Alt ayraç
-            var line = NewRect("Line", window);
+            // Alt ayraç — kenarlardan içeride, ince
+            var line = UiKit.Divider(window, "Line");
             line.anchorMin = new Vector2(0, 1); line.anchorMax = new Vector2(1, 1);
             line.pivot = new Vector2(0.5f, 1);
-            line.offsetMin = new Vector2(0, -HeaderH - 2); line.offsetMax = new Vector2(0, -HeaderH);
-            AddImage(line, AccentDim, raycast: false);
+            line.offsetMin = new Vector2(28, -HeaderH - 1); line.offsetMax = new Vector2(-28, -HeaderH);
         }
 
         static RectTransform BuildScrollArea(RectTransform window)
@@ -346,18 +282,21 @@ namespace RogueBlockBlast.EditorTools
             footer.anchorMin = new Vector2(0, 0); footer.anchorMax = new Vector2(1, 0);
             footer.pivot = new Vector2(0.5f, 0);
             footer.offsetMin = Vector2.zero; footer.offsetMax = new Vector2(0, FooterH);
-            AddImage(footer, new Color32(0x0F, 0x0F, 0x1E, 0xFF), _sprRound);
+
+            var line = UiKit.Divider(footer, "Line");
+            line.anchorMin = new Vector2(0, 1); line.anchorMax = new Vector2(1, 1);
+            line.pivot = new Vector2(0.5f, 1);
+            line.offsetMin = new Vector2(28, -1); line.offsetMax = new Vector2(-28, 0);
 
             var row = NewRect("Buttons", footer);
-            Stretch(row, 20, 20, 18, 18);
+            Stretch(row, 20, 20, 20, 20);
             var h = row.gameObject.AddComponent<HorizontalLayoutGroup>();
             h.spacing = 16; h.childAlignment = TextAnchor.MiddleCenter;
             h.childControlWidth = false; h.childForceExpandWidth = false;
-            h.childControlHeight = true; h.childForceExpandHeight = true;
+            h.childControlHeight = false; h.childForceExpandHeight = false;
 
-            refs.Cancel = NewButton("CancelButton", row, new Vector2(240, 64), BtnCancel, locKey: "Settings.Cancel", fontSize: 26);
-            refs.Apply  = NewButton("ApplyButton",  row, new Vector2(240, 64), BtnApply,  locKey: "Settings.Apply",  fontSize: 26,
-                                    labelColor: new Color32(0x07, 0x1A, 0x12, 0xFF));
+            refs.Cancel = NewButton("CancelButton", row, new Vector2(240, 62), UiKit.Style.Secondary, locKey: "Settings.Cancel", fontSize: 24);
+            refs.Apply  = NewButton("ApplyButton",  row, new Vector2(240, 62), UiKit.Style.Primary,   locKey: "Settings.Apply",  fontSize: 24);
         }
 
         // ── Satır tipleri ────────────────────────────────────────────────────
@@ -367,16 +306,15 @@ namespace RogueBlockBlast.EditorTools
             var le = rt.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = SectionH; le.minHeight = SectionH;
 
-            var t = NewLocText("Label", rt, locKey, 26f, Accent, true);
-            Stretch((RectTransform)t.transform, 12, 0, 12, 0);
+            var t = NewLocText("Label", rt, locKey, 20f, Accent, true);
+            t.characterSpacing = 6f;
+            t.alignment = TextAlignmentOptions.BottomLeft;
+            Stretch((RectTransform)t.transform, 14, 0, 0, 12);
 
-            var line = NewRect("Underline", rt);
+            var line = UiKit.Divider(rt, "Underline");
             line.anchorMin = new Vector2(0, 0); line.anchorMax = new Vector2(1, 0);
             line.pivot = new Vector2(0.5f, 0);
-            line.offsetMin = new Vector2(12, 4); line.offsetMax = new Vector2(-12, 6);
-            AddImage(line, AccentDim, raycast: false);
-
-            _rowIndex = 0;
+            line.offsetMin = new Vector2(14, 4); line.offsetMax = new Vector2(-14, 5);
             return rt;
         }
 
@@ -386,18 +324,18 @@ namespace RogueBlockBlast.EditorTools
             var rt = NewRect("Row_" + locKey, parent);
             var le = rt.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = height; le.minHeight = height;
-            AddImage(rt, (_rowIndex++ % 2 == 0) ? RowBg : RowBgAlt, _sprRound, raycast: false);
+            UiKit.Panel(rt, RowBg, UiTheme.RadiusControl, raycast: false);
 
             var label = NewLocText("Label", rt, locKey, 23f, TextMain);
             var lrt = (RectTransform)label.transform;
             lrt.anchorMin = new Vector2(0, 0); lrt.anchorMax = new Vector2(1, 1);
-            lrt.offsetMin = new Vector2(20, 0); lrt.offsetMax = new Vector2(-CtrlW - 20, 0);
+            lrt.offsetMin = new Vector2(22, 0); lrt.offsetMax = new Vector2(-CtrlW - 20, 0);
 
             ctrlArea = NewRect("Control", rt);
             ctrlArea.anchorMin = new Vector2(1, 0); ctrlArea.anchorMax = new Vector2(1, 1);
             ctrlArea.pivot = new Vector2(1, 0.5f);
             ctrlArea.sizeDelta = new Vector2(CtrlW, 0);
-            ctrlArea.anchoredPosition = new Vector2(-16, 0);
+            ctrlArea.anchoredPosition = new Vector2(-18, 0);
             return rt;
         }
 
@@ -406,7 +344,7 @@ namespace RogueBlockBlast.EditorTools
         {
             Row(parent, locKey, out var area);
 
-            valueText = NewText("Value", area, "0", 22f, Accent, true, TextAlignmentOptions.MidlineRight);
+            valueText = NewText("Value", area, "0", 22f, TextMain, true, TextAlignmentOptions.MidlineRight);
             var vrt = (RectTransform)valueText.transform;
             vrt.anchorMin = new Vector2(1, 0); vrt.anchorMax = new Vector2(1, 1);
             vrt.pivot = new Vector2(1, 0.5f);
@@ -416,35 +354,45 @@ namespace RogueBlockBlast.EditorTools
             var srt = NewRect("Slider", area);
             srt.anchorMin = new Vector2(0, 0.5f); srt.anchorMax = new Vector2(1, 0.5f);
             srt.pivot = new Vector2(0.5f, 0.5f);
-            srt.offsetMin = new Vector2(0, -9); srt.offsetMax = new Vector2(-84, 9);
+            srt.offsetMin = new Vector2(0, -14); srt.offsetMax = new Vector2(-88, 14);
 
+            // İz: koyu hap, ortada dikeyde 10px. İnce kenar bu boyda topaklanıyordu, yok.
             var bg = NewRect("Background", srt);
-            Stretch(bg);
-            AddImage(bg, new Color32(0x0D, 0x0D, 0x1A, 0xFF), _sprBg);
+            Stretch(bg, 0, 0, 9, 9);
+            var trackSkin = UiKit.Skin("Skin_Track");
+            UiKit.Sliced(bg, trackSkin ?? UiKit.Pill, trackSkin != null ? Color.white : UiTheme.Sunken, false);
 
             var fillArea = NewRect("Fill Area", srt);
-            Stretch(fillArea, 6, 12, 0, 0);
+            Stretch(fillArea, 0, 12, 9, 9);
             var fill = NewRect("Fill", fillArea);
             fill.anchorMin = Vector2.zero; fill.anchorMax = new Vector2(1, 1);
-            fill.sizeDelta = new Vector2(10, 0);
-            AddImage(fill, Accent, _sprBg);
+            fill.sizeDelta = new Vector2(12, 0);
+            UiKit.Sliced(fill, UiKit.Skin("Skin_Fill") ?? UiKit.Pill, Accent, false);
 
             var handleArea = NewRect("Handle Slide Area", srt);
-            Stretch(handleArea, 6, 6, 0, 0);
+            Stretch(handleArea, 12, 12, 0, 0);
             var handle = NewRect("Handle", handleArea);
-            handle.sizeDelta = new Vector2(26, 26);
-            AddImage(handle, Color.white, _sprKnob);
+            handle.sizeDelta = new Vector2(26, 0);
+            var handleImg = UiKit.Sliced(handle, UiKit.Pill, Color.white, true);
+            handleImg.type = Image.Type.Simple;
+            handleImg.preserveAspect = true;
 
             var slider = srt.gameObject.AddComponent<Slider>();
             slider.fillRect = fill;
             slider.handleRect = handle;
-            slider.targetGraphic = handle.GetComponent<Image>();
+            slider.targetGraphic = handleImg;
+            var c = slider.colors;
+            c.normalColor = Color.white; c.highlightedColor = UiTheme.Accent;
+            c.pressedColor = UiTheme.Accent; c.selectedColor = Color.white;
+            c.fadeDuration = 0.08f;
+            slider.colors = c;
             slider.direction = Slider.Direction.LeftToRight;
             slider.minValue = min; slider.maxValue = max;
             slider.wholeNumbers = false;
             return slider;
         }
 
+        /// <summary>Kayan anahtar: hap şeklinde iz + topuz. Görseli KitSwitch sürer.</summary>
         static Toggle ToggleRow(Transform parent, string locKey)
         {
             Row(parent, locKey, out var area);
@@ -452,21 +400,30 @@ namespace RogueBlockBlast.EditorTools
             var trt = NewRect("Toggle", area);
             trt.anchorMin = trt.anchorMax = new Vector2(1, 0.5f);
             trt.pivot = new Vector2(1, 0.5f);
-            trt.sizeDelta = new Vector2(46, 46);
+            trt.sizeDelta = new Vector2(66, 36);
             trt.anchoredPosition = Vector2.zero;
 
-            var bg = NewRect("Background", trt);
-            Stretch(bg);
-            AddImage(bg, new Color32(0x0D, 0x0D, 0x1A, 0xFF), _sprRound);
+            var track = NewRect("Background", trt);
+            Stretch(track);
+            var trackImg = UiKit.Sliced(track, UiKit.Pill, UiTheme.Sunken, true);
+            var rim = NewRect("Rim", track);
+            Stretch(rim);
+            var rimImg = UiKit.Sliced(rim, UiKit.PillRim, UiTheme.RimSoft, false);
 
-            var check = NewRect("Checkmark", bg);
-            Stretch(check, 6, 6, 6, 6);
-            var checkImg = AddImage(check, Accent, _sprCheck, raycast: false);
+            var knob = NewRect("Knob", trt);
+            knob.anchorMin = knob.anchorMax = new Vector2(0.5f, 0.5f);
+            knob.pivot = new Vector2(0.5f, 0.5f);
+            knob.sizeDelta = new Vector2(26, 26);
+            var knobImg = UiKit.Sliced(knob, UiKit.Pill, UiTheme.TextDim, false);
+            knobImg.type = Image.Type.Simple;
 
             var toggle = trt.gameObject.AddComponent<Toggle>();
-            toggle.targetGraphic = bg.GetComponent<Image>();
-            toggle.graphic = checkImg;
+            toggle.targetGraphic = trackImg;
+            toggle.graphic = null;
+            toggle.transition = Selectable.Transition.None;
             toggle.isOn = true;
+
+            trt.gameObject.AddComponent<KitSwitch>().Configure(trackImg, rimImg, knob, knobImg, 15f);
             return toggle;
         }
 
@@ -475,19 +432,19 @@ namespace RogueBlockBlast.EditorTools
         {
             Row(parent, locKey, out var area);
 
-            prev = NewButton("Prev", area, new Vector2(48, 44), BtnNeutral, label: "<", fontSize: 24);
+            prev = NewButton("Prev", area, new Vector2(46, 42), UiKit.Style.Secondary, label: "<", fontSize: 22);
             var prt = (RectTransform)prev.transform;
             prt.anchorMin = prt.anchorMax = new Vector2(0, 0.5f);
             prt.pivot = new Vector2(0, 0.5f);
             prt.anchoredPosition = new Vector2(60, 0);
 
-            next = NewButton("Next", area, new Vector2(48, 44), BtnNeutral, label: ">", fontSize: 24);
+            next = NewButton("Next", area, new Vector2(46, 42), UiKit.Style.Secondary, label: ">", fontSize: 22);
             var nrt = (RectTransform)next.transform;
             nrt.anchorMin = nrt.anchorMax = new Vector2(1, 0.5f);
             nrt.pivot = new Vector2(1, 0.5f);
             nrt.anchoredPosition = Vector2.zero;
 
-            label = NewText("Value", area, "-", 22f, Accent, true, TextAlignmentOptions.Center);
+            label = NewText("Value", area, "-", 22f, TextMain, true, TextAlignmentOptions.Center);
             var lrt = (RectTransform)label.transform;
             lrt.anchorMin = new Vector2(0, 0); lrt.anchorMax = new Vector2(1, 1);
             lrt.offsetMin = new Vector2(116, 0); lrt.offsetMax = new Vector2(-56, 0);
@@ -498,24 +455,24 @@ namespace RogueBlockBlast.EditorTools
         {
             Row(parent, locKey, out var area);
 
-            var btn = NewButton("Cycle", area, new Vector2(260, 46), BtnNeutral);
+            var btn = NewButton("Cycle", area, new Vector2(260, 44), UiKit.Style.Secondary);
             var brt = (RectTransform)btn.transform;
             brt.anchorMin = brt.anchorMax = new Vector2(1, 0.5f);
             brt.pivot = new Vector2(1, 0.5f);
             brt.anchoredPosition = Vector2.zero;
 
-            label = NewText("Value", brt, "-", 22f, Accent, true, TextAlignmentOptions.Center);
+            label = NewText("Value", brt, "-", 21f, Accent, true, TextAlignmentOptions.Center);
             Stretch((RectTransform)label.transform, 8, 8);
             return btn;
         }
 
-        static Button ActionRow(Transform parent, string locKey, Color color)
+        static Button ActionRow(Transform parent, string locKey, UiKit.Style style)
         {
             var rt = NewRect("Row_" + locKey, parent);
             var le = rt.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = RowH; le.minHeight = RowH;
 
-            var btn = NewButton("Button", rt, new Vector2(420, 50), color, locKey: locKey, fontSize: 22);
+            var btn = NewButton("Button", rt, new Vector2(420, 50), style, locKey: locKey, fontSize: 21);
             var brt = (RectTransform)btn.transform;
             brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 0.5f);
             brt.pivot = new Vector2(0.5f, 0.5f);
@@ -567,8 +524,8 @@ namespace RogueBlockBlast.EditorTools
 
             // DATA
             Section(content, "Settings.Section.Data");
-            refs.ResetSettings = ActionRow(content, "Settings.Data.ResetSettings", BtnNeutral);
-            refs.ResetProgress = ActionRow(content, "Settings.Data.ResetProgress", BtnDanger);
+            refs.ResetSettings = ActionRow(content, "Settings.Data.ResetSettings", UiKit.Style.Secondary);
+            refs.ResetProgress = ActionRow(content, "Settings.Data.ResetProgress", UiKit.Style.Danger);
             BuildConfirmBox(content, refs);
         }
 
@@ -578,7 +535,7 @@ namespace RogueBlockBlast.EditorTools
             var box = NewRect("ResetConfirm", content);
             var le = box.gameObject.AddComponent<LayoutElement>();
             le.preferredHeight = 160; le.minHeight = 160;
-            AddImage(box, new Color32(0x3A, 0x14, 0x14, 0xFF), _sprRound, raycast: false);
+            UiKit.Panel(box, UiTheme.DangerDeep, UiTheme.RadiusControl, UiTheme.WithAlpha(UiTheme.Danger, 0.6f), raycast: false);
 
             var warn = NewLocText("Warning", box, "Settings.Data.ResetProgress.Warn", 20f,
                                   new Color32(0xFF, 0xB3, 0xB3, 0xFF), false, TextAlignmentOptions.Center);
@@ -597,8 +554,8 @@ namespace RogueBlockBlast.EditorTools
             h.childControlWidth = false; h.childForceExpandWidth = false;
             h.childControlHeight = true;
 
-            refs.ConfirmNo  = NewButton("No",  row, new Vector2(200, 50), BtnNeutral, locKey: "Dialog.No",  fontSize: 22);
-            refs.ConfirmYes = NewButton("Yes", row, new Vector2(200, 50), BtnDanger,  locKey: "Dialog.Yes", fontSize: 22);
+            refs.ConfirmNo  = NewButton("No",  row, new Vector2(200, 50), UiKit.Style.Secondary, locKey: "Dialog.No",  fontSize: 22);
+            refs.ConfirmYes = NewButton("Yes", row, new Vector2(200, 50), UiKit.Style.Danger,    locKey: "Dialog.Yes", fontSize: 22);
 
             refs.ConfirmBox = box.gameObject;
             box.gameObject.SetActive(false);

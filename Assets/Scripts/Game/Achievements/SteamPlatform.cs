@@ -22,12 +22,27 @@ namespace RogueBlockBlast.Game.Achievements
     /// </summary>
     public sealed class SteamPlatform : MonoBehaviour
     {
+        /// <summary>Ana oyunun (Blockflow) Steam App ID'si.</summary>
+        public const uint FullGameAppId = 4559890;
+
+        /// <summary>Demonun (Blockflow Demo) Steam App ID'si — ayrı bir Steam uygulaması.</summary>
+        public const uint DemoAppId = 5192270;
+
         /// <summary>
-        /// Steamworks App ID (Blockflow). Oyun Steam dışından açılırsa
-        /// RestartAppIfNecessary onu Steam üzerinden yeniden başlatır. Editörde
-        /// aynı ID proje kökündeki <c>steam_appid.txt</c>'den okunur.
+        /// Bu build demo mu? Tam sürüm build'inden önce false yapılmalı
+        /// (ve proje kökündeki <c>steam_appid.txt</c> ana oyunun ID'sine çevrilmeli).
+        /// RunController'daki <c>_demoBuild</c> demo sınırını açar; bu bayrak yalnızca
+        /// Steam tarafını seçer — sahne yüklenmeden çalıştığı için ondan okuyamıyor.
         /// </summary>
-        public const uint AppId = 4559890;
+        public const bool IsDemo = true;
+
+        /// <summary>
+        /// Kullanılan Steamworks App ID. Oyun Steam dışından açılırsa
+        /// RestartAppIfNecessary onu bu ID ile Steam üzerinden yeniden başlatır —
+        /// yanlış ID, demo yerine ana oyunu açtırıyordu. Editörde aynı ID proje
+        /// kökündeki <c>steam_appid.txt</c>'den okunur.
+        /// </summary>
+        public const uint AppId = IsDemo ? DemoAppId : FullGameAppId;
 
         public static SteamPlatform Instance { get; private set; }
         public static bool Initialized { get; private set; }

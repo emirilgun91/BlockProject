@@ -7,9 +7,21 @@ namespace RogueBlockBlast.Core
 {
     public static class ShapeSpawnService
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Trailer çekimi için: doluysa sıradaki şekil buradan alınır (TrailerDirector
+        /// havuzu önceden planlar). Oyunda hiç doldurulmaz.
+        /// </summary>
+        public static readonly Queue<ShapeSO> DebugForcedShapes = new Queue<ShapeSO>();
+#endif
+
         /// <param name="filter">Opsiyonel filtre — null ise tüm unlock'lu şekiller dahil edilir.</param>
         public static PieceDefinition GetRandomWeighted(ShapeLibrarySO library, System.Func<ShapeSO, bool> filter = null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (DebugForcedShapes.Count > 0)
+                return PieceFactory.Create(DebugForcedShapes.Dequeue());
+#endif
             if (library == null || library.Shapes == null || library.Shapes.Count == 0)
                 return null;
 

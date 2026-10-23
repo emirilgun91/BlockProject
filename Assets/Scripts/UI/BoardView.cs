@@ -105,7 +105,7 @@ namespace RogueBlockBlast.UI
                 var tv = go.GetComponent<TileView>();
                 if (tv == null) { Destroy(go); continue; }
 
-                tv.Init();
+                tv.Init(Vector3.one * targetScale);
 
                 var sr = go.GetComponent<SpriteRenderer>();
                 if (sr != null) sr.sortingOrder = 10;

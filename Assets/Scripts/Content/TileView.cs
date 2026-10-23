@@ -67,6 +67,16 @@ namespace RogueBlockBlast.UI
             _baseScale = transform.localScale;
         }
 
+        /// <summary>
+        /// Giriş animasyonunda tile 0 ölçekle doğar; temel ölçek o 0 olursa intro
+        /// bitmeden oynayan bir place/clear FX tile'ı 0'a küçültüp orada bırakıyordu
+        /// (tahtada kalıcı görünmez hücreler). Temel ölçek hedef boyuta kilitlenir.
+        /// </summary>
+        public void Init(Vector3 baseScale)
+        {
+            _baseScale = baseScale;
+        }
+
         private void OnDestroy()
         {
             _fxSequence?.Kill();

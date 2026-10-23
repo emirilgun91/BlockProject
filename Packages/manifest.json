@@ -2,7 +2,8 @@
   "dependencies": {
     "com.bilalemregrkn.mygrid": "https://github.com/bilalemregrkn/MyGrid.git",
     "com.ivanmurzak.unity.mcp": "1.1.0",
-    "com.ivanmurzak.unity.mcp.animation": "1.2.35",
+    "com.ivanmurzak.unity.mcp.animation": "2.0.1",
+    "com.ivanmurzak.unity.mcp.cinemachine": "2.0.1",
     "com.ivanmurzak.unity.mcp.inputsystem": "1.0.17",
     "com.rlabrecque.steamworks.net": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.164.1",
     "com.unity.2d.animation": "13.0.4",
@@ -21,6 +22,7 @@
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.platformtoolkit": "1.2.0",
+    "com.unity.recorder": "5.1.7",
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.test-framework": "1.6.0",
     "com.unity.timeline": "1.8.10",

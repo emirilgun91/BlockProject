@@ -74,6 +74,8 @@ Scenes, prefabs, assets, Editor state:
 
 | Source | What |
 |---|---|
+| `animation` | animation: animators (every Animator in the loaded scenes), CreateClip(path, frameRate, loop), CreateController(path, motion) |
+| `cinemachine` | Cinemachine: cameras, brains, noiseProfiles, bodyTypes / aimTypes / extensionTypes; CreateCamera(name, follow, lookAt, position, eulerAngles, priority), EnsureBrain(camera) |
 | `componentTypes` | component types that can be added (name fullName namespace) |
 | `console` | captured Editor log entries, oldest first (last 1000): logType message timestamp stackTrace sequence |
 | `editor` | Editor state (isPlaying, isPaused, selection …) and operations: CreateGameObject, OpenScene, NewScene, SaveScenes, InstantiatePrefab, OpenPrefab / SavePrefab / ClosePrefab, CopyAsset / MoveAsset / DeleteAsset / CreateFolder, CreateMaterial, SaveAssets, RefreshAssets, ClearConsole, ExecuteMenuItem (rql-schema "editor" for signatures) |
@@ -90,9 +92,128 @@ Scenes, prefabs, assets, Editor state:
 | `unity.assets(…)` | unity.assets(filter, folder?): AssetDatabase search, e.g. "t:Material", "t:Prefab Enemy" (at most 200, loaded as needed) |
 | `unity.find(…)` | unity.find(name): the GameObject with that unique name or hierarchy path ("Level/Pillar_1"), e.g. set Follow = unity.find("Player") |
 
+## Animation
+
+Clips and controllers are assets: `unity.assets("t:AnimationClip")`, `unity.asset("Assets/…/Walk.anim")`,
+`unity.asset("Assets/…/Player.controller")`. An AnimationClip has `curves` (path type property keyCount timeRange keys, keys with
+writable time value inTangent outTangent …), `objectCurves` (sprite swaps), `events` and `settings` (loopTime loopBlend mirror …), all
+writable views, plus ordinary members (frameRate wrapMode legacy length isLooping). An AnimatorController has `layers` (name
+defaultWeight blendingMode defaultState `states` anyStateTransitions) and `parameters` (name type defaultFloat defaultInt defaultBool);
+states and transitions are assets whose members (speed motion tag … / hasExitTime exitTime duration conditions …) are set directly.
+Writes and calls are undoable; creating an asset is not. `rql-schema "AnimationClip"` / `"AnimatorController"` list the methods.
+
+Clips (curve `path` is the child path under the Animator, "" = its own GameObject; `type` the animated component):
+
+```
+animation | call CreateClip("Assets/Animations/Walk.anim")   empty clip, 60 fps
+animation | call CreateClip("Assets/Animations/Idle.anim", 30, true)   path, frameRate, loop
+unity.assets("t:AnimationClip") | select name length frameRate isLooping n=(curves.count()) e=(events.count())
+unity.asset("Assets/Animations/Walk.anim") | call SetCurve("", "Transform", "localPosition.y", [[0, 0], [0.5, 1], [1, 0]])   path, type, property, keys [time, value(, inTangent, outTangent)]
+unity.asset("Assets/Animations/Walk.anim") | call SetCurve("Body", "SpriteRenderer", "m_Color.a", [{time: 0, value: 1}, {time: 1, value: 0, inTangent: -1}])
+unity.asset("Assets/Animations/Walk.anim") | get curves | select path type property keyCount timeRange
+unity.asset("Assets/Animations/Walk.anim") | get curves | where property == "localPosition.y" | get keys | select index time value inTangent outTangent
+unity.asset("Assets/Animations/Walk.anim") | get curves | where property == "localPosition.y" | set keys[1].value = 2, keys[1].outTangent = 0
+unity.asset("Assets/Animations/Walk.anim") | get curves | where property == "localPosition.y" | call AddKey(1.5, 0.5)   returns the key index; RemoveKey(index), SetKeys([[t, v], …]), Evaluate(t)
+unity.asset("Assets/Animations/Walk.anim") | get curves | where path == "Body" | set postWrapMode = "Loop"
+unity.asset("Assets/Animations/Walk.anim") | call RemoveCurve("Body", "SpriteRenderer", "m_Color.a")   or … | get curves | where … | call Remove()
+unity.asset("Assets/Animations/Walk.anim") | set frameRate = 30, settings.loopTime = true
+unity.asset("Assets/Animations/Walk.anim") | call AddEvent(0.5, "Footstep", "left")   time, functionName, stringParameter?, floatParameter?, intParameter?
+unity.asset("Assets/Animations/Walk.anim") | get events | select index time functionName stringParameter
+unity.asset("Assets/Animations/Walk.anim") | set events[0].time = 0.25, events[0].intParameter = 1
+unity.asset("Assets/Animations/Walk.anim") | call RemoveEvent(0)   ClearEvents() / ClearCurves() remove all
+```
+
+Animator controllers (states by name; a trailing `layer` argument is a layer name or index, default 0):
+
+```
+animation | call CreateController("Assets/Animations/Player.controller")   Base Layer, empty state machine (CreateController(path, motion) adds a state)
+unity.asset("Assets/Animations/Player.controller") | call AddParameter("Speed", "Float")   Float, Int, Bool or Trigger
+unity.asset("Assets/Animations/Player.controller") | call AddParameter("Grounded", "Bool", true)   optional default value
+unity.asset("Assets/Animations/Player.controller") | call AddParameter("Jump", "Trigger")
+unity.asset("Assets/Animations/Player.controller") | call AddState("Idle", unity.asset("Assets/Animations/Idle.anim"))   name, motion?, layer?; the first state becomes the default
+unity.asset("Assets/Animations/Player.controller") | call AddState("Walk", unity.asset("Assets/Animations/Walk.anim"))
+unity.asset("Assets/Animations/Player.controller") | call AddTransition("Idle", "Walk", "Speed", "Greater", 0.1)   from, to ("Exit" = exit), parameter?, mode?, threshold?, layer?
+unity.asset("Assets/Animations/Player.controller") | call AddTransition("Walk", "Idle", "Speed", "Less", 0.1)
+unity.asset("Assets/Animations/Player.controller") | call AddAnyStateTransition("Idle", "Jump")   mode defaults by parameter type: Bool / Trigger If, Float Greater, Int Equals
+unity.asset("Assets/Animations/Player.controller") | call SetDefaultState("Idle")
+unity.asset("Assets/Animations/Player.controller") | get layers | select index name defaultWeight defaultState.name states.name
+unity.asset("Assets/Animations/Player.controller") | get layers | get states | select name speed motion.name transitions.destinationState.name
+unity.asset("Assets/Animations/Player.controller") | get layers | get states | where name == "Walk" | set speed = 1.5
+unity.asset("Assets/Animations/Player.controller") | get layers | get states | where name == "Idle" | get transitions | set hasExitTime = true, exitTime = 0.9, duration = 0.25
+unity.asset("Assets/Animations/Player.controller") | get layers | get states | where name == "Idle" | get transitions | call AddCondition("Grounded", "If")   RemoveCondition(index), ClearConditions()
+unity.asset("Assets/Animations/Player.controller") | get layers | get states | get transitions | select destinationState.name hasExitTime conditions
+unity.asset("Assets/Animations/Player.controller") | get parameters | select name type defaultFloat defaultBool
+unity.asset("Assets/Animations/Player.controller") | get parameters | where name == "Speed" | set defaultFloat = 0.5
+unity.asset("Assets/Animations/Player.controller") | call AddLayer("Upper Body")   returns the layer index
+unity.asset("Assets/Animations/Player.controller") | set layers[1].defaultWeight = 0.5, layers[1].blendingMode = "Additive"
+unity.asset("Assets/Animations/Player.controller") | call AddState("Wave", null, "Upper Body")
+unity.asset("Assets/Animations/Player.controller") | call RemoveTransition("Walk", "Idle")   from "AnyState" / to "Exit" for those transitions
+unity.asset("Assets/Animations/Player.controller") | call RemoveState("Wave", "Upper Body")
+unity.asset("Assets/Animations/Player.controller") | call RemoveLayer("Upper Body")
+unity.asset("Assets/Animations/Player.controller") | call RemoveTransition("AnyState", "Idle")
+unity.asset("Assets/Animations/Player.controller") | call RemoveParameter("Jump")   conditions using it are removed too
+```
+
+Animator components (`animation | get animators` = every Animator in the loaded scenes):
+
+```
+editor | call CreateGameObject("Player")
+objects | where name == "Player" | call AddComponent("Animator")
+animation | get animators | set runtimeAnimatorController = unity.asset("Assets/Animations/Player.controller"), applyRootMotion = false
+animation | get animators | select gameObject.name runtimeAnimatorController.name isHuman cullingMode
+```
+
+Parameter names and types are read-only (conditions refer to them): rename by RemoveParameter + AddParameter. New transitions
+have no exit time and no blend duration; set them on the transition. Only the Animator's configuration members are readable (its
+playback state is not meaningful in Edit Mode); in Play Mode `call SetParameter("Speed", 2)` / `call Play("Walk")` drive it.
+Other components' AnimationCurve fields take keyframe lists too: `set curve = [[0, 0], [1, 1]]`.
+
+## Cinemachine
+
+Cinemachine 3: a `CinemachineCamera` (virtual camera) on its own GameObject; the `CinemachineBrain` on the Unity Camera
+shows the live one (highest `Priority.Value`) and blends between them. A camera's pipeline is a Body component
+(position: Follow, OrbitalFollow, ThirdPersonFollow, PositionComposer …), an Aim component (rotation: RotationComposer,
+HardLookAt, PanTilt …), an optional noise component and extensions, all on the camera's GameObject. Follow / LookAt
+targets take a GameObject name or ref. Writes and calls are undoable.
+
+```
+editor | call CreateGameObject("Player", null, "Capsule")   (a target for the examples)
+cinemachine | call CreateCamera("FollowCam", "Player", null, "(0, 3, -6)", "(20, 0, 0)", 10)   name, follow?, lookAt?, position?, eulerAngles?, priority? (adds a CinemachineBrain to the main Camera)
+cinemachine | call CreateCamera("Overview")
+cinemachine | get cameras | select name Priority.Value IsLive Follow.name LookAt.name body.$type aim.$type noise.$type
+cinemachine | get cameras | where name == "FollowCam" | call SetBody("Follow")   Body by name; cinemachine | get bodyTypes lists them ("None" removes)
+cinemachine | get cameras | where name == "FollowCam" | call SetAim("RotationComposer")   Aim by name; cinemachine | get aimTypes
+cinemachine | get cameras | where name == "FollowCam" | set body.FollowOffset = "(0, 2, -8)", body.TrackerSettings.PositionDamping = "(1, 1, 1)"
+cinemachine | get cameras | where name == "FollowCam" | set aim.Composition.ScreenPosition = "(0.1, 0)", aim.Damping = "(0.5, 0.5)"
+cinemachine | get cameras | where name == "FollowCam" | set Lens.FieldOfView = 50, Lens.NearClipPlane = 0.3, Lens.Dutch = 5
+cinemachine | get cameras | where name == "Overview" | set Lens.ModeOverride = "Orthographic", Lens.OrthographicSize = 12
+cinemachine | get cameras | where name == "FollowCam" | set Priority.Value = 20
+cinemachine | get cameras | where name == "Overview" | call SetTargets("Player")   follow (and look at) Player; SetTargets(follow, lookAt) for both, null clears
+cinemachine | get cameras | where name == "Overview" | set LookAt = null
+cinemachine | get cameras | where name == "FollowCam" | call SetNoise("Handheld_normal_mild", 1.5, 1)   profile, amplitudeGain?, frequencyGain?; cinemachine | get noiseProfiles | select name
+cinemachine | get cameras | where name == "FollowCam" | set noise.AmplitudeGain = 0.5
+cinemachine | get cameras | where name == "FollowCam" | call SetBody("OrbitalFollow")   replace the Body
+cinemachine | get cameras | where name == "FollowCam" | set body.Radius = 6, body.OrbitStyle = "Sphere"
+objects | where name == "FollowCam" | call AddComponent("CinemachineDeoccluder")   extensions are components (cinemachine | get extensionTypes)
+cinemachine | get cameras | select name extensions.$type
+cinemachine | call EnsureBrain()   brain on the main Camera (EnsureBrain("Camera name") for another)
+cinemachine | get brains | set DefaultBlend.Style = "EaseInOut", DefaultBlend.Time = 1.5
+cinemachine | get brains | select gameObject.name DefaultBlend.Style DefaultBlend.Time UpdateMethod activeCamera
+cinemachine | get cameras | where name == "Overview" | call SetNoise("None")
+cinemachine | get cameras | where name == "Overview" | call Destroy()   remove the CinemachineCamera component (objects | … | call Destroy() removes the GameObject)
+```
+
+`body` / `aim` / `noise` are the pipeline components themselves, so their members are written directly
+(`rql-schema "CinemachineFollow"` lists them). LensSettings is a struct written in place (`set Lens.FieldOfView = …`);
+`Lens.ModeOverride` (None, Orthographic, Perspective, Physical) overrides the Unity Camera's projection. Blend styles:
+Cut, EaseInOut, EaseIn, EaseOut, HardIn, HardOut, Linear, Custom. Brains update the live camera in Play Mode; `IsLive`
+reports it.
+
 ## Installed RQL modules
 
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Modules.UnityCoreModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.ToolTypesModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Mathematics.MathematicsModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.Animation.AnimationModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.Cinemachine.CinemachineModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Physics3D.PhysicsModule`

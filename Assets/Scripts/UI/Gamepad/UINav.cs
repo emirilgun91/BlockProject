@@ -72,7 +72,12 @@ namespace RogueBlockBlast.UI
             scope.Last   = null;     // yeniden açılan panel baştan başlar
             _scopes.Add(scope);
 
-            if (InputMode.UsingGamepad) Refocus(scope);
+            if (!InputMode.UsingGamepad) return;
+            // İlk kontrol verilmediyse "en üstteki" konumdan bulunur; panel bu karede
+            // açıldıysa satırların layout'u henüz yok (Ayarlar 5. satırdan açılıyordu).
+            // Seçim LateUpdate'e bırakılır — o noktada layout kurulmuş olur.
+            if (scope.First != null || scope.Manual) Refocus(scope);
+            else EventSystem.current?.SetSelectedGameObject(null);
         }
 
         /// <summary>
@@ -81,6 +86,54 @@ namespace RogueBlockBlast.UI
         /// panelin kendi kontrolcüsü (OnEnable'da) daha ayrıntılı bir kapsam
         /// açtıysa onun yerine geçmesin.
         /// </summary>
+        /// <summary>
+        /// Satır satır dizilmiş bir panelin gezinmesini açıkça kurar: yukarı/aşağı bir
+        /// önceki/sonraki satıra, sol/sağ aynı satırın içinde (Slider sol/sağı zaten
+        /// değer değiştirmek için kullanır). Satırlar <paramref name="content"/>'in
+        /// çocuklarıdır ve hiyerarşi sırasıyla alınır — layout'a bakmaz, panel açıldığı
+        /// karede de doğru çalışır. <paramref name="tail"/> (ör. Uygula/İptal) en sona eklenir.
+        ///
+        /// Otomatik gezinme Ayarlar'da satır atlıyordu: anahtarlar en sağda, kaydırıcılar
+        /// ortada durduğu için "aşağı" bir sonraki satır yerine footer'daki Uygula'ya gidiyordu.
+        /// </summary>
+        public static void LinkRows(Transform content, Transform tail = null)
+        {
+            if (content == null) return;
+            var rows = new List<List<Selectable>>();
+            void AddRow(Transform t)
+            {
+                if (!t.gameObject.activeInHierarchy) return;
+                var row = new List<Selectable>();
+                foreach (var s in t.GetComponentsInChildren<Selectable>(false))
+                    // IsInteractable bilerek bakılmıyor: panel fade-in sırasında CanvasGroup kapalı
+                    if (s.enabled && s.navigation.mode != Navigation.Mode.None) row.Add(s);
+                if (row.Count > 0) rows.Add(row);
+            }
+            foreach (Transform child in content) AddRow(child);
+            if (tail != null) AddRow(tail);
+
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var row = rows[r];
+                for (int i = 0; i < row.Count; i++)
+                {
+                    var nav = new Navigation { mode = Navigation.Mode.Explicit };
+                    nav.selectOnLeft  = i > 0 ? row[i - 1] : null;
+                    nav.selectOnRight = i < row.Count - 1 ? row[i + 1] : null;
+                    nav.selectOnUp    = r > 0 ? Pick(rows[r - 1], i, row.Count) : null;
+                    nav.selectOnDown  = r < rows.Count - 1 ? Pick(rows[r + 1], i, row.Count) : null;
+                    row[i].navigation = nav;
+                }
+            }
+        }
+
+        /// <summary>Komşu satırda aynı sütun; sütun sayısı farklıysa en yakın uç.</summary>
+        private static Selectable Pick(List<Selectable> row, int index, int fromCount)
+        {
+            if (row.Count == fromCount) return row[index];
+            return index >= fromCount - 1 && fromCount > 1 ? row[row.Count - 1] : row[0];
+        }
+
         public static void PushIfAbsent(GameObject root, Selectable first = null, Action back = null)
         {
             if (root == null) return;
@@ -218,6 +271,10 @@ namespace RogueBlockBlast.UI
         /// </summary>
         private static Selectable FirstInside(GameObject root)
         {
+            // Panel OnEnable'da push edilince layout henüz kurulmamış oluyor; konumlar
+            // eski/sıfır geliyor ve "en üstteki" yanlış seçiliyordu (Ayarlar 5. satırdan
+            // açılıyordu). Konum okumadan önce layout'u güncelle.
+            Canvas.ForceUpdateCanvases();
             root.GetComponentsInChildren(false, _buffer);
             Selectable best = null, fallback = null;
             Vector2 bestPos = default;

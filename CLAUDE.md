@@ -156,6 +156,8 @@ The whole game is playable with a gamepad, with Steam Deck Verified as the targe
   - The focused control gets a pulsing focus ring, drawn on its own overlay canvas at sorting order 32000. Many of the project's buttons only react to mouse hover.
   - A selection inside a `ScrollRect` is scrolled into view.
   - `PanelManager` uses `PushIfAbsent`, so a panel's own scope, pushed from `OnEnable`, wins (Settings: B = Apply; Shape Shop: B = back).
+  - A scope pushed without an explicit `first` gets its focus in `LateUpdate`, not in `Push`: a panel enabled this frame has no layout yet, so "topmost control" picked the wrong row (Settings opened on its fifth row).
+  - Settings rows are linked explicitly by `UINav.LinkRows(content, footer)` (hierarchy order, not layout): up/down go row to row, left/right stay in the row (sliders change value), the footer comes last. Automatic navigation skipped rows because toggles sit at the far right and sliders in the middle.
   - Pause: Start toggles it like ESC. Its first control is Resume and B resumes. The quit confirmation and the reset-progress confirmation start on "No".
   - Game Over starts on New Run. The victory screen starts on New Run, and its own `Update` handles B.
   - The intro tour: A = Next, B = Skip.

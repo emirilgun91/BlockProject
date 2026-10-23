@@ -156,6 +156,17 @@ namespace RogueBlockBlast.UI
             // Gamepad: ilk kontrol üstteki satır; B, ESC gibi değişiklikleri koruyarak kapatır
             // (değerler zaten canlı uygulanıyor — B ile hepsini geri almak sürpriz olurdu).
             UINav.Push(gameObject, back: OnApply);
+
+            // Satırları sırayla bağla (otomatik gezinme satır atlıyordu); footer en sonda
+            var scroll = GetComponentInChildren<ScrollRect>(true);
+            UINav.LinkRows(scroll != null ? scroll.content : null, FindChild(transform, "Footer"));
+        }
+
+        private static Transform FindChild(Transform root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name == name) return t;
+            return null;
         }
 
         private void OnDisable()

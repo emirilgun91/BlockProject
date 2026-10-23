@@ -66,15 +66,30 @@ namespace RogueBlockBlast.UI
 
         // Runtime
         private Vector3 _originalPos;
+        private bool    _originalPosReady;
         private bool    _isLocked;
+
+        /// <summary>
+        /// Hover'ın döndüğü taban konum, layout kurulduktan sonra bir kez okunur.
+        /// Awake'te okunan değer VerticalLayoutGroup yerleştirmeden önceki x = 0'dı.
+        /// Gamepad'le menüye dönülünce UINav New Run'ı aynı karede seçiyor ve hover
+        /// bu yanlış tabana (+8) gidiyordu: buton sola kayık kalıyordu. Start'ta
+        /// okumak da yetmez, o sırada hover animasyonu sürüyor olabilir.
+        /// </summary>
+        private void EnsureOriginalPos()
+        {
+            if (_originalPosReady) return;
+            if (_rect.parent is RectTransform parent) LayoutRebuilder.ForceRebuildLayoutImmediate(parent);
+            _originalPos      = _rect.anchoredPosition;
+            _originalPosReady = true;
+        }
 
         // ── Unity ────────────────────────────────────────────────────────────
 
         private void Awake()
         {
             if (_rect == null) _rect = GetComponent<RectTransform>();
-            _originalPos = _rect.anchoredPosition;
-            
+
             // Accent bar başlangıçta gizli
             if (_accentBar != null)
             {
@@ -94,10 +109,10 @@ namespace RogueBlockBlast.UI
         {
             if (_rect == null) 
                 _rect = GetComponent<RectTransform>();
-            yield return new WaitForEndOfFrame(); 
+            yield return new WaitForEndOfFrame();
 
-            _originalPos = _rect.anchoredPosition; 
-            
+            EnsureOriginalPos();
+
             EvaluateLockState();
         }
 
@@ -155,6 +170,7 @@ namespace RogueBlockBlast.UI
             if (_accentBar != null) _accentBar.DOKill();
             if (_bgImage != null) _bgImage.DOKill();
             if (_arrowImage != null) _arrowImage.DOKill();
+            EnsureOriginalPos();
             // Sağa kayma
             _rect.DOAnchorPosX(_originalPos.x + _hoverOffsetX, _hoverDuration)
                 .SetEase(Ease.OutCubic)
@@ -181,6 +197,7 @@ namespace RogueBlockBlast.UI
             if (_accentBar != null) _accentBar.DOKill();
             if (_bgImage != null) _bgImage.DOKill();
             if (_arrowImage != null) _arrowImage.DOKill();
+            EnsureOriginalPos();
             _rect.DOAnchorPosX(_originalPos.x, _hoverDuration)
                 .SetEase(Ease.OutCubic)
                 .SetUpdate(true);

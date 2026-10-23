@@ -507,7 +507,11 @@ namespace RogueBlockBlast.UI
 
             // Onay kutusu açıkken gezinme onun içinde kalır, ilk seçim "Hayır" — geri alınamaz işlem.
             if (_resetProgressConfirm == null) return;
-            if (visible) UINav.Push(_resetProgressConfirm, _resetProgressConfirmNo, () => ShowResetConfirm(false));
+            if (visible)
+            {
+                UINav.LinkRow(_resetProgressConfirmNo, _resetProgressConfirmYes);
+                UINav.Push(_resetProgressConfirm, _resetProgressConfirmNo, () => ShowResetConfirm(false));
+            }
             else         UINav.Pop(_resetProgressConfirm);
         }
 

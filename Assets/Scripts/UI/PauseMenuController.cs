@@ -197,6 +197,7 @@ namespace RogueBlockBlast.UI
                 return;
             }
             SetActive(_confirmBox, true);
+            UINav.LinkRow(_confirmNo, _confirmYes);
             UINav.Push(_confirmBox, _confirmNo, CancelPending);
         }
 

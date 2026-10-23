@@ -150,7 +150,7 @@ The whole game is playable with a gamepad, with Steam Deck Verified as the targe
   - The ghost is always drawn in gamepad mode, even when Ghost Preview is off.
   - A is ignored for one frame after input unlocks. Otherwise the A that picked a card or closed the pause menu also placed a piece.
 - **Menus (`UINav`)**: each panel calls `UINav.Push(root, first, back)` when it opens. The top scope owns focus:
-  - In gamepad mode a control inside that scope is always selected. If automatic navigation escapes the scope, the selection jumps back.
+  - In gamepad mode a control inside that scope is always selected. If automatic navigation escapes the scope, `FindInside` moves to the best control *inside* the scope in the same direction (Unity's scoring, limited to a 45° cone). If there is none, the selection stays where it was. Panels open on top of another panel that stays active: the Shape Shop over the main menu, and the confirm boxes over the pause window. There, Unity's nearest neighbour was often a button behind the panel. A plain jump-back left 29 of the Shape Shop's 32 controls and every confirm box's "Yes" unreachable. Confirm boxes also link No ↔ Yes explicitly (`UINav.LinkRow`).
   - B calls the scope's `back` action.
   - A scope is dropped when its root goes inactive (or on `Pop`), and the scope underneath gets back its last selection.
   - The focused control gets a pulsing focus ring, drawn on its own overlay canvas at sorting order 32000. Many of the project's buttons only react to mouse hover.

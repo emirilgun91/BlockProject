@@ -127,6 +127,28 @@ namespace RogueBlockBlast.UI
             }
         }
 
+        /// <summary>
+        /// Yan yana duran butonları (onay kutusunun Hayır / Evet'i) ekrandaki sıralarına
+        /// göre sol/sağ ile birbirine bağlar; yukarı/aşağı hiçbir yere gitmez.
+        ///
+        /// Onay kutuları, arkasındaki panel hâlâ açıkken üstte duruyor. Otomatik gezinme
+        /// "sağ"da Evet yerine arkadaki daha büyük butonu (pause'daki Ana Menü) buluyordu;
+        /// kapsam onu reddedip seçimi Hayır'a geri çektiği için Evet'e hiç ulaşılamıyordu.
+        /// </summary>
+        public static void LinkRow(params Selectable[] items)
+        {
+            var row = new List<Selectable>();
+            foreach (var s in items) if (s != null) row.Add(s);
+            row.Sort((a, b) => a.transform.position.x.CompareTo(b.transform.position.x));
+            for (int i = 0; i < row.Count; i++)
+            {
+                var nav = new Navigation { mode = Navigation.Mode.Explicit };
+                nav.selectOnLeft  = i > 0 ? row[i - 1] : null;
+                nav.selectOnRight = i < row.Count - 1 ? row[i + 1] : null;
+                row[i].navigation = nav;
+            }
+        }
+
         /// <summary>Komşu satırda aynı sütun; sütun sayısı farklıysa en yakın uç.</summary>
         private static Selectable Pick(List<Selectable> row, int index, int fromCount)
         {
@@ -227,7 +249,16 @@ namespace RogueBlockBlast.UI
             var current = es.currentSelectedGameObject;
             if (!IsValid(current, top))
             {
-                Refocus(top);
+                // Otomatik gezinme kapsamın dışına (arkada açık kalan panelin butonuna)
+                // çıktıysa aynı yönde kapsamın İÇİNDEKİ en iyi kontrole geçilir. Eskiden
+                // yalnızca son seçime dönülüyordu: Shape Shop'ta kartların yanındaki en
+                // yakın komşu arkadaki ana menü butonu olduğu için 32 kontrolün 29'una,
+                // onay kutularında da "Evet"e hiç ulaşılamıyordu.
+                var redirect = current != null && IsValid(top.Last)
+                    ? FindInside(top, top.Last, current)
+                    : null;
+                if (redirect != null) es.SetSelectedGameObject(redirect.gameObject);
+                else                  Refocus(top);
                 current = es.currentSelectedGameObject;
             }
 
@@ -295,6 +326,47 @@ namespace RogueBlockBlast.UI
             }
             _buffer.Clear();
             return best != null ? best : fallback;
+        }
+
+        /// <summary>
+        /// <paramref name="from"/>'dan bu karedeki gezinme yönünde, kapsamın içindeki en
+        /// iyi kontrol. Puan Unity'nin otomatik gezinmesiyle aynı (yöne izdüşüm / uzaklık²),
+        /// ama yalnızca 45°'lik koninin içindekiler aday; yoksa null (seçim yerinde kalır).
+        /// Yön çubuk/d-pad'den okunur; okunamazsa kaçılan kontrolün konumundan çıkarılır.
+        /// </summary>
+        private static Selectable FindInside(Scope scope, Selectable from, GameObject escaped)
+        {
+            Vector2 origin = ScreenCenter((RectTransform)from.transform);
+            Vector2 dir = Vector2.zero;
+            var pad = UnityEngine.InputSystem.Gamepad.current;
+            if (pad != null)
+            {
+                dir = pad.dpad.ReadValue();
+                if (dir.sqrMagnitude < 0.25f) dir = pad.leftStick.ReadValue();
+            }
+            if (dir.sqrMagnitude < 0.25f && escaped.transform is RectTransform ert)
+                dir = ScreenCenter(ert) - origin;
+            if (dir.sqrMagnitude < 0.0001f) return null;
+            // Dört ana yönden birine yuvarla — Unity de öyle gezinir
+            dir = Mathf.Abs(dir.x) >= Mathf.Abs(dir.y)
+                ? new Vector2(Mathf.Sign(dir.x), 0f)
+                : new Vector2(0f, Mathf.Sign(dir.y));
+
+            scope.Root.GetComponentsInChildren(false, _buffer);
+            Selectable best = null;
+            float bestScore = 0f;
+            foreach (var s in _buffer)
+            {
+                if (s == from || !IsValid(s)) continue;
+                Vector2 v = ScreenCenter((RectTransform)s.transform) - origin;
+                float dot = Vector2.Dot(dir, v);
+                // 45°'lik koni: ızgaranın kenarında "sağ" çapraz yukarıdaki karta atlamasın
+                if (dot <= 0f || dot < Mathf.Abs(dir.x * v.y - dir.y * v.x)) continue;
+                float score = dot / v.sqrMagnitude;
+                if (score > bestScore) { bestScore = score; best = s; }
+            }
+            _buffer.Clear();
+            return best;
         }
 
         private static Vector2 ScreenCenter(RectTransform rt)

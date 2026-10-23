@@ -117,6 +117,7 @@ namespace BalanceSim
         public string Id;
         public int Rarity, BaseWeight;
         public bool Unique, Locked, IsShape;
+        public int UnlockAtStage;
         public string RequiredShapeId = "", TargetShapeId = "";
         public List<(E type, float value)> Effects = new();
         public float ShapeScore, ShapeWeight;
@@ -263,6 +264,7 @@ namespace BalanceSim
                 c.BaseWeight = I(Val(b, "BaseWeight"));
                 c.Unique = Val(b, "IsUnique") == "1";
                 c.Locked = Val(b, "LockedByDefault") == "1";
+                c.UnlockAtStage = I(Val(b, "UnlockAtStage"));
                 c.IsShape = Val(b, "IsShapeCard") == "1";
                 c.RequiredShapeId = Val(b, "RequiredShapeId");
                 c.TargetShapeId = Val(b, "TargetShapeId");

@@ -52,6 +52,7 @@ namespace BalanceSim
         public int[] ScoreLvl, WeightLvl;
         public int MaxMilestoneReached;
         public HashSet<string> Reached = new();
+        public HashSet<string> UnlockedCards = new();
 
         public Profile(GameData g)
         {
@@ -573,6 +574,9 @@ namespace BalanceSim
                 return;
             }
 
+            // RunController: sabit aşamalı kilitli kartlar bu aşamada (ya da öncesinde) açılır
+            foreach (var lc in G.Cards)
+                if (lc.Locked && lc.UnlockAtStage > 0 && lc.UnlockAtStage <= MS.Index) P.UnlockedCards.Add(lc.Id);
             if (P.Reached.Add(data.Label))
             {
                 if (MS.Index > P.MaxMilestoneReached) P.MaxMilestoneReached = MS.Index;
@@ -587,7 +591,7 @@ namespace BalanceSim
         // ── Kart seçimi (CardSelectionUI) ───────────────────────────────────
         public bool CardAvailable(CardDef c)
         {
-            if (c.Locked) return false; // hiçbir kart kilitli değil — kilit açma yolu ölü
+            if (c.Locked && !P.UnlockedCards.Contains(c.Id)) return false;
             if (!string.IsNullOrEmpty(c.RequiredShapeId))
             {
                 var s = G.Shapes[G.ShapeIndex[c.RequiredShapeId]];

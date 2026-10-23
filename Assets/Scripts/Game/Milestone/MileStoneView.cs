@@ -110,8 +110,78 @@ namespace RogueBlockBlast.UI
             _newCardSequence?.Kill();
         }
 
+        // ── Classic Mode ─────────────────────────────────────────────────────
+        // Classic'te milestone yok; aynı pano rekoru gösterir. Rekor geçilince
+        // başlık "YENİ REKOR" olur ve sayı canlı skoru izler.
+        [Header("Classic")]
+        [SerializeField] private Color _colorClassicRecord = new Color(0.30f, 0.86f, 0.55f, 1f);
+
+        private bool  _classic;
+        private int   _classicBest;
+        private int   _classicScore;
+        private bool  _classicBeaten;
+        private Color _classicNumberColor;
+
+        /// <summary>Panoyu Classic'e çevirir: bar ve kalan parça sayacı gizlenir, rekor yazılır.</summary>
+        public void ShowClassic(int bestScore)
+        {
+            _classic       = true;
+            _classicBest   = bestScore;
+            _classicScore  = 0;
+            _classicBeaten = false;
+
+            // Bar: MilestoneBoard'un doğrudan çocuğu olan kabıyla birlikte gizlenir
+            for (var t = _fillBarRect != null ? _fillBarRect : _fill != null ? _fill.transform : null; t != null; t = t.parent)
+                if (t.parent == transform) { t.gameObject.SetActive(false); break; }
+
+            // Kalan parça sayacı ve halkası (portrait'te havuzun yanına taşınmış olabilir)
+            if (_piecesText != null)
+            {
+                var ring = _piecesText.transform.parent != null ? _piecesText.transform.parent.Find("Image") : null;
+                if (ring != null) ring.gameObject.SetActive(false);
+                _piecesText.gameObject.SetActive(false);
+            }
+
+            if (_thresholdText != null) _classicNumberColor = _thresholdText.color;
+
+            Loc.OnChanged -= HandleLanguageChanged;
+            Loc.OnChanged += HandleLanguageChanged;
+            UpdateClassicTexts();
+        }
+
+        /// <summary>Her yerleştirmeden sonra; rekor geçildiği an küçük bir kutlama yapar.</summary>
+        public void SetClassicScore(int score)
+        {
+            if (!_classic) return;
+            _classicScore = score;
+            if (!_classicBeaten && _classicBest > 0 && score > _classicBest)
+            {
+                _classicBeaten = true;
+                if (_thresholdText != null)
+                {
+                    _thresholdText.transform.DOKill(true);
+                    _thresholdText.transform.DOPunchScale(Vector3.one * 0.25f, 0.45f, 6, 0.6f);
+                }
+            }
+            UpdateClassicTexts();
+        }
+
+        private void UpdateClassicTexts()
+        {
+            if (_titleText != null)
+                _titleText.text = Loc.Get(_classicBeaten ? "Classic.NewBest" : "Classic.Best");
+
+            if (_thresholdText != null)
+            {
+                int shown = _classicBeaten ? _classicScore : _classicBest;
+                _thresholdText.text  = shown > 0 ? shown.ToString("N0") : "—";
+                _thresholdText.color = _classicBeaten ? _colorClassicRecord : _classicNumberColor;
+            }
+        }
+
         private void HandleLanguageChanged()
         {
+            if (_classic) { UpdateClassicTexts(); return; }
             if (_hasState) UpdateTexts(_lastState);
             else if (_titleText != null) _titleText.text = Loc.Get("Milestone.Title");
         }

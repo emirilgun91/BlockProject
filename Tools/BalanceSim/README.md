@@ -15,7 +15,11 @@ Unity'nin kendi Roslyn derleyicisi ve .NET 6 runtime'ı ile çalışır, ayrı .
 ./run.sh trace Mid 1          # tek oyuncunun run run dökümü
 ./run.sh fidelity 8           # Unity'de gerçek sınıflarla tekrar oynatmak için hamle kaydı
 ./run.sh export               # out/report_data.json → report/template.html
+./run.sh classic 3000         # Classic Mode: tek oyun skor/satır/süre dağılımı (başarım eşikleri)
+./run.sh classic 1000 rotate  # karşılaştırma varyantları: rotate (döndürme açık), all (kilitli şekiller de), nofit (yeniden çekme yok)
 ```
+
+`classic` oyundaki Classic kurallarını modeller (`GameMode.Classic`): milestone/kart/upgrade yok, döndürme kapalı, parça rastgele yönde gelir, yalnızca başta açık şekiller, sığmayan parça 2 kez yeniden çekilir. Çıktı `out/classic.json`; eşik başına "tek oyunda ulaşma %" `AchievementTracker`'daki Classic eşiklerinin kaynağıdır.
 
 Rapor: `report/template.html` içindeki `/*__DATA__*/null` yerine `out/report_data.json` konarak `report.html` üretilir.
 

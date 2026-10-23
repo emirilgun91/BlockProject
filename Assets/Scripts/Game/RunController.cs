@@ -78,6 +78,9 @@ namespace RogueBlockBlast.Game
         // ── Card state ───────────────────────────────────────────────────────
         private readonly RunCardState _cardState = new RunCardState();
 
+        /// <summary>Classic Mode: milestone, kart, upgrade, coin yok; döndürme kapalı (bkz. <see cref="GameMode"/>).</summary>
+        private static bool Classic => GameMode.IsClassic;
+
         // ── State ────────────────────────────────────────────────────────────
         private int _score = 0;
         private int _coins = 0;
@@ -112,14 +115,25 @@ namespace RogueBlockBlast.Game
             if (PoolView != null) PoolView.OnSlotClicked = SelectPool;
             UpgradeRegistry.Instance?.Init(_upgradeLibrary);
             ShapeUpgradeRegistry.Instance.Load(ShapeLibrary.Shapes);
-            int poolBonus = Mathf.RoundToInt(
-                UpgradeRegistry.Instance?.GetEffect(
-                    _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
-            );
-            _milestoneSystem = new MilestoneSystem(MilestoneConfig, MilestoneConfig.PoolLimit + poolBonus);
-            _milestoneSystem.OnMilestoneReached   += HandleMilestoneReached;
-            _milestoneSystem.OnPoolLimitExhausted += HandlePoolLimitExhausted;
-            MilestoneView?.Bind(_milestoneSystem);
+            // Classic'te milestone sistemi hiç kurulmaz: her çağrı zaten `?.` ile
+            // yapılıyor, pencere sayacı / kart ekranı / zafer kendiliğinden kapanır.
+            if (Classic)
+            {
+                // Milestone panosu rekoru gösterir; kart envanteri hiç kullanılmaz.
+                MilestoneView?.ShowClassic(SaveStore.GetInt(GameOverUI.BestScoreKey, 0));
+                if (CardInventoryUI.Instance != null) CardInventoryUI.Instance.gameObject.SetActive(false);
+            }
+            else
+            {
+                int poolBonus = Mathf.RoundToInt(
+                    UpgradeRegistry.Instance?.GetEffect(
+                        _upgradeLibrary?.Get("upgrade_pool_capacity")) ?? 0f
+                );
+                _milestoneSystem = new MilestoneSystem(MilestoneConfig, MilestoneConfig.PoolLimit + poolBonus);
+                _milestoneSystem.OnMilestoneReached   += HandleMilestoneReached;
+                _milestoneSystem.OnPoolLimitExhausted += HandlePoolLimitExhausted;
+                MilestoneView?.Bind(_milestoneSystem);
+            }
 
             ComboView?.Bind(_comboSystem);
             _comboSystem.OnComboReset += HandleHyperfocusPenalty;
@@ -170,8 +184,7 @@ namespace RogueBlockBlast.Game
 
             if (_board == null || _currentPiece == null) return;
             if (!GameStateController.InputAllowed) { _inputLockedFrame = Time.frameCount; return; }
-            bool canRotate = !(_cardState.HasFirstPicks &&
-                               _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
+            bool canRotate = !IsRotationLocked;
 
             if (Keyboard.current != null)
             {
@@ -375,9 +388,7 @@ namespace RogueBlockBlast.Game
         public void RotateCurrentPiece(int direction)
         {
             if (_currentPiece == null || !GameStateController.InputAllowed) return;
-            bool canRotate = !(_cardState.HasFirstPicks &&
-                               _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
-            if (!canRotate) return;
+            if (IsRotationLocked) return;
             _currentRot = direction >= 0 ? NextRot(_currentRot) : PrevRot(_currentRot);
             TutorialEvents.Rotated();
         }
@@ -1003,6 +1014,7 @@ namespace RogueBlockBlast.Game
             RunEvents.PiecePlaced(new PlacementReport(
                 cleared, clearedRows, clearedCols, snapshots, boardEmptied,
                 _comboSystem.Multiplier, _comboSystem.IsMaxCharge, _score));
+            if (Classic) ReportClassicProgress(cleared);
 
             if (gainedScore != 0)
             {
@@ -1056,6 +1068,29 @@ namespace RogueBlockBlast.Game
             _poolDirty = true;
         }
 
+        // ── Classic ilerlemesi (başarımlar) ──────────────────────────────────
+
+        /// <summary>İki yerleştirme arasından en fazla bu kadar saniye oyun süresine sayılır.</summary>
+        private const float ClassicIdleCap = 60f;
+        private float _classicActiveSeconds;
+        private float _classicLastPlaceTime;
+        private int   _classicLines;
+
+        /// <summary>
+        /// Classic'te RunEvents susar (bkz. <see cref="RunEvents"/>); Classic başarımları
+        /// bu ayrı kanaldan beslenir. Süre "aktif oyun süresi"dir: Time.time pause'da
+        /// durur, uzun bir bekleme de en fazla <see cref="ClassicIdleCap"/> sayılır —
+        /// oyunu açık bırakıp beklemek süre başarımını doldurmasın.
+        /// </summary>
+        private void ReportClassicProgress(int cleared)
+        {
+            _classicActiveSeconds += Mathf.Min(Time.time - _classicLastPlaceTime, ClassicIdleCap);
+            _classicLastPlaceTime  = Time.time;
+            _classicLines         += cleared;
+            MilestoneView?.SetClassicScore(_score);
+            ClassicEvents.Progress(_score, _classicLines, _classicActiveSeconds);
+        }
+
         /// <summary>
         /// Döndürme kilidi ipucunu tazeler. First Picks döndürmeyi kapatıyor ve
         /// bunu yalnızca kart metni söylüyordu — oyuncu Q/E'ye basıp hiçbir şey
@@ -1105,7 +1140,8 @@ namespace RogueBlockBlast.Game
             GameStateController.Reset();
             GameOverUI.Instance?.Hide();
             DOTween.SetTweensCapacity(200,125);
-            var reg = UpgradeRegistry.Instance;
+            // Classic upgrade'leri okumaz: herkes aynı kurallarla oynar, rekorlar kıyaslanabilir.
+            var reg = Classic ? null : UpgradeRegistry.Instance;
             int baseMaxCharge  = 3;
             int barExpansion   = Mathf.RoundToInt(
                 reg?.GetEffect(_upgradeLibrary?.Get("upgrade_combo_bar")) ?? 0f);
@@ -1137,13 +1173,16 @@ namespace RogueBlockBlast.Game
             BoardView.Build(_board);
             RefreshRotateHint();   // yeni run: kilit yok, ipucu normale dönsün
             _poolRerollsRemaining = Mathf.RoundToInt(
-                UpgradeRegistry.Instance?.GetEffect(
+                reg?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_pool_reroll")) ?? 0f
             );
             _cardRerollsRemaining = Mathf.RoundToInt(
-                UpgradeRegistry.Instance?.GetEffect(
+                reg?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_card_reroll")) ?? 0f
             );
+            _classicActiveSeconds = 0f;
+            _classicLastPlaceTime = Time.time;
+            _classicLines         = 0;
             bool hasPoolReroll = _poolRerollsRemaining > 0;
             _poolRerollButton?.SetVisible(hasPoolReroll);
             _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
@@ -1175,7 +1214,9 @@ namespace RogueBlockBlast.Game
 
             for (int i = 0; i < 3; i++)
             {
-                var piece = ShapeSpawnService.GetRandomWeighted(ShapeLibrary, spawnFilter);
+                var piece = Classic
+                    ? ShapeSpawnService.GetRandomClassic(ShapeLibrary, _board)
+                    : ShapeSpawnService.GetRandomWeighted(ShapeLibrary, spawnFilter);
                 if (piece != null)
                     _piecePool.Add(piece);
             }
@@ -1192,7 +1233,7 @@ namespace RogueBlockBlast.Game
             // demek. Gerekçesiz bırakıldığında panel "OYUN BİTTİ" yazıyor ve
             // oyuncu neden kaybettiğini öğrenemiyordu.
             if (!skipValidCheck && !HasAnyValidMoveInPool())
-                OnGameOver(IsRotationLocked
+                OnGameOver(IsFirstPicksLocked
                     ? GameOverReason.CannotPlace   // First Picks: geldiği haliyle sığmıyor
                     : GameOverReason.NoMoves);
 
@@ -1306,8 +1347,9 @@ namespace RogueBlockBlast.Game
         private void SaveRunResults()
         {
             float maxCombo = (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f;
-            LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
-            GameOverUI.RecordBestScore(_score);
+            // Ana menüdeki "Last Run" roguelike run'ını özetliyor (coin dahil); Classic onu ezmesin.
+            if (!Classic) LastRunPanel.SaveLastRun(_score, _coins, maxCombo);
+            GameOverUI.RecordBestScore(_score);   // Classic'in rekoru ayrı anahtarda (GameOverUI.BestScoreKey)
         }
 
         private void OnPoolRerollClicked()
@@ -1329,9 +1371,16 @@ namespace RogueBlockBlast.Game
             // Run zaten bittiyse (ya da bu hamlede kazanıldıysa) kurtarma hakkı harcanmasın.
             if (_gameOverFired || _victoryPending) return;
 
+            // Classic'te kurtarma hakkı yok: hiçbir parça sığmıyorsa oyun biter.
+            if (Classic)
+            {
+                OnGameOver(GameOverReason.NoMoves);
+                return;
+            }
+
             // First Picks döndürmeyi kapattığı için sıkıştıysak reroll/revive ile uğraşma:
             // yeni havuz da aynı kısıtla gelir. Oyunu kilitlemek yerine burada bitir.
-            if (IsRotationLocked)
+            if (IsFirstPicksLocked)
             {
                 OnGameOver(GameOverReason.CannotPlace);
                 return;
@@ -1565,7 +1614,10 @@ namespace RogueBlockBlast.Game
         /// yalnızca R0'da yerleştirebilir — havuzda hamle var mı sorusu da buna göre
         /// yanıtlanmalı, yoksa "döndürsen sığar" diye hamle sayılan bir durumda oyun kilitlenir.
         /// </summary>
-        private bool IsRotationLocked =>
+        private bool IsRotationLocked => Classic || IsFirstPicksLocked;
+
+        /// <summary>Kilidi First Picks mi koydu — game over gerekçesi buna göre seçilir.</summary>
+        private bool IsFirstPicksLocked =>
             _cardState != null &&
             _cardState.HasFirstPicks &&
             _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount;

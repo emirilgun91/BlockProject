@@ -122,6 +122,10 @@ namespace RogueBlockBlast.Game.Tutorial
         // ── Unity ────────────────────────────────────────────────────────────
         private void Start()
         {
+            // Tutorial milestone/kart/döndürme anlatıyor; Classic'te hiçbiri yok.
+            // Classic'te açılmaz ve ilerlemesi de değişmez — ilk roguelike run'da yine çıkar.
+            if (RogueBlockBlast.Core.GameMode.IsClassic) { enabled = false; return; }
+
             bool introPending = _alwaysShow || !TutorialIntroTour.IsCompleted;
             if (!_alwaysShow && IsCompleted && !introPending) { enabled = false; return; }
 

@@ -72,11 +72,18 @@ namespace BalanceSim
             return false;
         }
 
-        public static float FitProbability(ulong occ, List<(ShapeDef s, float p)> dist, bool locked)
+        public static float FitProbability(ulong occ, List<(ShapeDef s, float p)> dist, bool locked, bool classic = false)
         {
             float f = 0f;
             foreach (var (s, p) in dist)
-                if (AnyFits(occ, locked ? s.Masks[0] : s.Distinct)) f += p;
+            {
+                if (classic)
+                {
+                    // Classic: sıradaki parça rastgele bir rotasyonla gelir
+                    for (int r = 0; r < 4; r++) if (AnyFits(occ, s.Masks[r])) f += p * 0.25f;
+                }
+                else if (AnyFits(occ, locked ? s.Masks[0] : s.Distinct)) f += p;
+            }
             return f;
         }
     }
@@ -197,7 +204,7 @@ namespace BalanceSim
             v -= P.WHoles * BoardEval.Holes(occ);
             if (P.UseFit)
             {
-                float f = BoardEval.FitProbability(occ, dist, r.CS.RotationLocked);
+                float f = BoardEval.FitProbability(occ, dist, r.CS.RotationLocked, r.C.Classic && !r.C.ClassicRotate);
                 v += P.WFit * f * f;
             }
             if (BoardEval.AnyFits(occ, BoardEval.Squares3)) v += P.WBig;
@@ -210,6 +217,7 @@ namespace BalanceSim
             r.SpawnDistribution(dist);
             need = MathF.Max(1f, r.MS.NextThreshold - r.Score);
             perPiece = MathF.Max(need / MathF.Max(1, r.MS.Remaining), 1f);
+            if (r.C.Classic) { need = 1e9f; perPiece = 40f; }   // hedef eşik yok: puan tavansız sayılır
 
             int n = r.Pool.Count;
             int depth = Math.Min(P.Depth, n);
@@ -227,7 +235,7 @@ namespace BalanceSim
                     {
                         if ((node.Used & (1 << pi)) != 0) continue;
                         var piece = r.Pool[pi];
-                        if (!seenShape.Add(piece.S.Idx)) continue;
+                        if (!seenShape.Add(piece.S.Idx * 4 + piece.Rot)) continue;
                         float eff = piece.Tile + r.ShapeScoreBonus[piece.S.Idx];
                         foreach (var mask in r.MasksFor(piece))
                         {

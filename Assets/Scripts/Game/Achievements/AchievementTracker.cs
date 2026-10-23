@@ -27,6 +27,14 @@ namespace RogueBlockBlast.Game.Achievements
         private const int   BlackCatLossStreak   = 5;
         private const float MonochromeTolerance  = 0.02f;
 
+        // Classic eşikleri BalanceSim `classic` ile seçildi (tek oyunda ulaşma oranı,
+        // orta seviye / iyi oyuncu): 5K %15 / %71, 100 satır %2 / %48, 20K %0 / %22,
+        // 20 dk aktif oyun %0 / %33.
+        private const int   ClassicScoreEasy   = 5_000;
+        private const int   ClassicScoreHard   = 20_000;
+        private const int   ClassicLines       = 100;
+        private const float ClassicNoRushSecs  = 20f * 60f;
+
         public static AchievementTracker Instance { get; private set; }
 
         // ── Run durumu ───────────────────────────────────────────────────────
@@ -61,6 +69,7 @@ namespace RogueBlockBlast.Game.Achievements
             RunEvents.OnGambleResolved   += HandleGamble;
             RunEvents.OnRunEnded         += HandleRunEnded;
             TutorialEvents.OnRotated     += HandleRotated;
+            ClassicEvents.OnProgress     += HandleClassicProgress;
         }
 
         private void OnDisable()
@@ -73,6 +82,7 @@ namespace RogueBlockBlast.Game.Achievements
             RunEvents.OnGambleResolved   -= HandleGamble;
             RunEvents.OnRunEnded         -= HandleRunEnded;
             TutorialEvents.OnRotated     -= HandleRotated;
+            ClassicEvents.OnProgress     -= HandleClassicProgress;
         }
 
         private void OnDestroy()
@@ -192,6 +202,15 @@ namespace RogueBlockBlast.Game.Achievements
             if (score <= 0 && piecesPlaced >= ZeroHeroMinPieces)
                 AchievementService.Unlock(AchievementIds.ZeroHero);
             SaveStore.Save();   // run sonu: debounce bekleyen sayaçları hemen yaz
+        }
+
+        /// <summary>Classic Mode — RunEvents orada sustuğu için tek kaynak bu.</summary>
+        private void HandleClassicProgress(int score, int lines, float activeSeconds)
+        {
+            if (score >= ClassicScoreEasy)           AchievementService.Unlock(AchievementIds.ClassicScore5K);
+            if (score >= ClassicScoreHard)           AchievementService.Unlock(AchievementIds.ClassicScore20K);
+            if (lines >= ClassicLines)               AchievementService.Unlock(AchievementIds.ClassicLines100);
+            if (activeSeconds >= ClassicNoRushSecs)  AchievementService.Unlock(AchievementIds.ClassicNoRush);
         }
 
         // ── Yardımcılar ──────────────────────────────────────────────────────

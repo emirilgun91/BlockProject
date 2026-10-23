@@ -42,6 +42,14 @@ namespace BalanceSim
         public int[] CoinOverride;        // aşama başına coin ödülü
         public float GainScale = 1f;      // şekil skor yükseltmesinin etkisi
         public bool  StopAtVictory = true;
+
+        /// <summary>Classic Mode (GameMode.Classic): milestone/kart/upgrade yok, döndürme kapalı,
+        /// her parça rastgele bir rotasyonla gelir, yalnızca başta açık şekiller çıkar ve
+        /// tahtaya sığmayan parça ClassicFitRetries kez yeniden çekilir.</summary>
+        public bool  Classic;
+        public int   ClassicFitRetries = 2;   // ShapeSpawnService.ClassicFitRetries
+        public bool  ClassicRotate;           // karşılaştırma: döndürme açık
+        public bool  ClassicAllShapes;        // karşılaştırma: kilitli şekiller de çıkar
     }
 
     public sealed class Profile
@@ -68,7 +76,7 @@ namespace BalanceSim
         public int EffectiveWeight(ShapeDef s) => Math.Max(2, s.BaseWeight + WeightLvl[s.Idx] * 5);
     }
 
-    public sealed class Piece { public ShapeDef S; public float Tile; }
+    public sealed class Piece { public ShapeDef S; public float Tile; public int Rot; }
 
     public sealed class Combo
     {
@@ -284,6 +292,12 @@ namespace BalanceSim
             MS.OnReached = HandleMilestoneReached;
             MS.OnExhausted = () => OnGameOver(Reason.PoolExhausted);
             Combo.OnReset = () => { if (CS.HasHyperfocus && CS.HyperfocusPenaltyShapes > 0) MS.DeductPieces(CS.HyperfocusPenaltyShapes); };
+            if (C.Classic)
+            {
+                // Classic: pencere sayacı yok, run yalnızca hamle kalmayınca biter
+                MS = new MilestoneSys(G, int.MaxValue / 2);
+                MS.OnExhausted = null;
+            }
 
             Combo.MaxCharge = Math.Max(1, 3 + (int)Math.Round(P.Effect(G, "upgrade_combo_bar")));
             Combo.Base = MathF.Max(1f, 1f + P.Effect(G, "upgrade_starting_combo"));
@@ -300,12 +314,15 @@ namespace BalanceSim
         // ── Spawn ───────────────────────────────────────────────────────────
         int ShapeWeight(ShapeDef s)
         {
+            if (C.Classic) return s.BaseWeight;
             int w = P.EffectiveWeight(s);
             if (ShapeHasEffect[s.Idx]) w = Math.Max(1, w + (int)Math.Round(ShapeWeightDelta[s.Idx]));
             return w;
         }
 
-        bool SpawnAllowed(ShapeDef s) => P.ShapeAvailable(s) && (!CS.HasDietPlan || s.Size < CS.DietPlanMaxSize);
+        bool SpawnAllowed(ShapeDef s) => C.Classic
+            ? C.ClassicAllShapes || !s.Locked
+            : P.ShapeAvailable(s) && (!CS.HasDietPlan || s.Size < CS.DietPlanMaxSize);
 
         Piece RandomPiece()
         {
@@ -317,6 +334,7 @@ namespace BalanceSim
             {
                 if (!SpawnAllowed(s)) continue;
                 cum += ShapeWeight(s);
+                if (roll < cum && C.Classic) return new Piece { S = s, Tile = s.BaseTile, Rot = R.Range(0, 4) };
                 if (roll < cum) return new Piece { S = s, Tile = s.BaseTile + (s.TileAt(P.ScoreLvl[s.Idx]) - s.BaseTile) * C.GainScale };
             }
             return null;
@@ -334,13 +352,18 @@ namespace BalanceSim
         public void GenerateNewPool(bool skipValidCheck = false)
         {
             Pool.Clear();
-            for (int i = 0; i < 3; i++) { var p = RandomPiece(); if (p != null) Pool.Add(p); }
+            for (int i = 0; i < 3; i++)
+            {
+                var p = RandomPiece();
+                for (int t = 0; t < C.ClassicFitRetries && p != null && !BoardEval.AnyFits(Occ, MasksFor(p)); t++) p = RandomPiece();
+                if (p != null) Pool.Add(p);
+            }
             if (CS.HasNeonCable) ResetNeonCablePositions();
             if (!skipValidCheck && !HasAnyValidMove())
                 OnGameOver(CS.RotationLocked ? Reason.CannotPlace : Reason.NoMoves);
         }
 
-        public ulong[] MasksFor(Piece p) => CS.RotationLocked ? p.S.Masks[0] : p.S.Distinct;
+        public ulong[] MasksFor(Piece p) => C.Classic && !C.ClassicRotate ? p.S.Masks[p.Rot] : CS.RotationLocked ? p.S.Masks[0] : p.S.Distinct;
 
         public bool HasAnyValidMove()
         {
@@ -460,7 +483,7 @@ namespace BalanceSim
             }
 
             Score += gained;
-            MS.OnScoreChanged(Score);
+            if (!C.Classic) MS.OnScoreChanged(Score);
 
             Pool.RemoveAt(pi);
             if (Pool.Count == 0)

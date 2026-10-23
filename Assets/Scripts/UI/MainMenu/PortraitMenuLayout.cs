@@ -104,6 +104,9 @@ namespace RogueBlockBlast.UI
             // Menü: alt yarıda ortalı, büyütülmüş
             Set("LeftPanel/MenuList", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 250f), new Vector2(450f, 500f), _menuScale);
+            // Classic butonu (ve mobilde gizlenen Quit) listenin boyunu değiştiriyor
+            if (_quitButton != null && Application.isMobilePlatform) _quitButton.SetActive(false);
+            MainMenuController.FitMenuList(Find("LeftPanel/MenuList"), keepTop: false);
 
             // Sosyal şerit: en altta, genişliğe sığdırılır
             var social = Find("LeftPanel/SocialStrip");

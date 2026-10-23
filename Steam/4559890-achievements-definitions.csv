@@ -39,3 +39,7 @@ ACH_SECRET_STIFF,,Client,true,false,,0,0
 ACH_SECRET_CLOSE_CALL,,Client,true,false,,0,0
 ACH_SECRET_LUCKY,,Client,true,false,,0,0
 ACH_SECRET_BLACK_CAT,,Client,true,false,,0,0
+ACH_CLASSIC_SCORE_5K,,Client,false,false,,0,0
+ACH_CLASSIC_SCORE_20K,,Client,false,false,,0,0
+ACH_CLASSIC_LINES_100,,Client,false,false,,0,0
+ACH_SECRET_CLASSIC_NO_RUSH,,Client,true,false,,0,0

@@ -2,6 +2,7 @@
 //   baseline <runs>              yükseltmesiz zorluk eğrisi (persona başına)
 //   cards <runs>                 kart etki analizi (her kart ilk seçimde zorlanır)
 //   meta <players> <maxRuns>     tam meta ilerleme (coin → mağaza → sonraki run)
+//   classic <runs> [rotate|all|nofit]  Classic Mode tek oyun dağılımları (başarım eşikleri)
 //   all                          hepsini çalıştırır, out/ altına JSON yazar
 using System;
 using System.Collections.Concurrent;
@@ -93,6 +94,7 @@ namespace BalanceSim
                 case "chain": Chain(a1 > 0 ? a1 : 800); break;
                 case "scenarios": Scenarios(a1 > 0 ? a1 : 100, args.Length > 2 ? args[2] : null); break;
                 case "tune": Tune(args.Length > 1 ? args[1] : "Skilled", a2 > 0 ? a2 : 300); break;
+                case "classic": Classic(a1 > 0 ? a1 : 1000, args.Length > 2 ? args[2] : ""); break;
             }
             Console.WriteLine($"[done {cmd} in {sw.Elapsed.TotalSeconds:0.0}s]");
             return 0;
@@ -212,6 +214,48 @@ namespace BalanceSim
                 Console.WriteLine("   why    " + string.Join(" ", c.Reasons.Select(kv => $"{kv.Key}:{kv.Value}")));
             }
             Write("baseline.json", curves);
+        }
+
+        // ── Classic Mode: tek oyun dağılımları (başarım eşiklerini kalibre etmek için) ──
+        public sealed class ClassicCurve
+        {
+            public string Persona; public int Runs, CapHits;
+            public Dist Score, Lines, Minutes, Placements, MaxCombo;
+            public Dictionary<string, double> ReachPct = new();   // eşik → tek oyunda ulaşma %
+        }
+
+        static void Classic(int n, string variant)
+        {
+            int[] scoreMarks = { 2500, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000, 100000, 150000, 200000 };
+            int[] lineMarks = { 25, 50, 75, 100, 150, 200 };
+            int[] minuteMarks = { 5, 10, 15, 20, 30 };
+            var curves = new List<ClassicCurve>();
+            foreach (var bp in Personas.All())
+            {
+                var l = RunMany(n, i => (new Profile(G), new Config { Classic = true, MaxPlacements = 20000, ClassicRotate = variant.Contains("rotate"), ClassicAllShapes = variant.Contains("all"), ClassicFitRetries = variant.Contains("nofit") ? 0 : 2 }, bp, (ulong)(i * 7919 + 11)));
+                var mins = l.Select(s => RunSeconds(s, bp) / 60.0).ToList();
+                var c = new ClassicCurve
+                {
+                    Persona = bp.Name, Runs = l.Count, CapHits = l.Count(s => s.Reason == Reason.Cap),
+                    Score = D(l.Select(s => (double)s.Score), l.Count),
+                    Lines = D(l.Select(s => (double)s.Lines), l.Count),
+                    Minutes = D(mins, l.Count),
+                    Placements = D(l.Select(s => (double)s.Placements), l.Count),
+                    MaxCombo = D(l.Select(s => (double)s.MaxCombo), l.Count),
+                };
+                foreach (int m in scoreMarks) c.ReachPct[$"score{m}"] = 100.0 * l.Count(s => s.Score >= m) / l.Count;
+                foreach (int m in lineMarks) c.ReachPct[$"lines{m}"] = 100.0 * l.Count(s => s.Lines >= m) / l.Count;
+                foreach (int m in minuteMarks) c.ReachPct[$"min{m}"] = 100.0 * mins.Count(x => x >= m) / l.Count;
+                curves.Add(c);
+
+                Console.WriteLine($"{bp.Name,-8} score p25 {c.Score.P25:0} med {c.Score.Median:0} p75 {c.Score.P75:0} p90 {c.Score.P90:0} | " +
+                                  $"lines med {c.Lines.Median:0} p90 {c.Lines.P90:0} | min med {c.Minutes.Median:0.0} p90 {c.Minutes.P90:0.0} | " +
+                                  $"combo med x{c.MaxCombo.Median:0.0} | cap {c.CapHits}");
+                Console.WriteLine("   score% " + string.Join(" ", scoreMarks.Select(m => $"{m / 1000.0:0.#}k:{c.ReachPct[$"score{m}"]:0.#}")));
+                Console.WriteLine("   lines% " + string.Join(" ", lineMarks.Select(m => $"{m}:{c.ReachPct[$"lines{m}"]:0.#}")));
+                Console.WriteLine("   min%   " + string.Join(" ", minuteMarks.Select(m => $"{m}:{c.ReachPct[$"min{m}"]:0.#}")));
+            }
+            Write(string.IsNullOrEmpty(variant) ? "classic.json" : $"classic_{variant}.json", curves);
         }
 
         // ── Doğruluk: hamle kaydı → Unity'de gerçek sınıflarla tekrar oynatılır ──

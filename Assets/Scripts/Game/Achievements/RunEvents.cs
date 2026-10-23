@@ -35,9 +35,14 @@ namespace RogueBlockBlast.Game.Achievements
     /// <summary>
     /// RunController'ın "şu oldu" diye haber verdiği hub. <c>TutorialEvents</c> ile
     /// aynı fikir: RunController achievement sistemini tanımaz, abone yoksa bedava.
+    ///
+    /// Classic Mode'da hiçbir olay yayılmaz: roguelike başarımları ve ömür boyu
+    /// sayaçlar Classic'le dolmasın. Classic'in kendi başarımları <see cref="ClassicEvents"/>'ten beslenir.
     /// </summary>
     public static class RunEvents
     {
+        private static bool Silent => GameMode.IsClassic;
+
         public static event Action                  OnRunStarted;
         public static event Action<PlacementReport> OnPiecePlaced;
         /// <summary>(etiket — "Stage 10", hepsi bitti mi, pencerede kalan şekil — mevcut dahil, pencere boyu)</summary>
@@ -47,13 +52,26 @@ namespace RogueBlockBlast.Game.Achievements
         public static event Action<bool>            OnGambleResolved;   // kazandı mı
         public static event Action<int, int>        OnRunEnded;         // (skor, yerleştirilen şekil)
 
-        public static void RunStarted()                    => OnRunStarted?.Invoke();
-        public static void PiecePlaced(PlacementReport r)  => OnPiecePlaced?.Invoke(r);
+        public static void RunStarted()                    { if (!Silent) OnRunStarted?.Invoke(); }
+        public static void PiecePlaced(PlacementReport r)  { if (!Silent) OnPiecePlaced?.Invoke(r); }
         public static void MilestoneReached(string label, bool allCleared, int piecesRemaining, int windowSize)
-            => OnMilestoneReached?.Invoke(label, allCleared, piecesRemaining, windowSize);
-        public static void CardPicked(CardSO card, int inventoryCount) => OnCardPicked?.Invoke(card, inventoryCount);
-        public static void DeadPoolSurvived()              => OnDeadPoolSurvived?.Invoke();
-        public static void GambleResolved(bool won)        => OnGambleResolved?.Invoke(won);
-        public static void RunEnded(int score, int pieces) => OnRunEnded?.Invoke(score, pieces);
+            { if (!Silent) OnMilestoneReached?.Invoke(label, allCleared, piecesRemaining, windowSize); }
+        public static void CardPicked(CardSO card, int inventoryCount) { if (!Silent) OnCardPicked?.Invoke(card, inventoryCount); }
+        public static void DeadPoolSurvived()              { if (!Silent) OnDeadPoolSurvived?.Invoke(); }
+        public static void GambleResolved(bool won)        { if (!Silent) OnGambleResolved?.Invoke(won); }
+        public static void RunEnded(int score, int pieces) { if (!Silent) OnRunEnded?.Invoke(score, pieces); }
+    }
+
+    /// <summary>
+    /// Classic Mode'un tek olayı: her yerleştirmeden sonra o oyunun skoru, temizlenen
+    /// satır sayısı ve aktif oyun süresi (sn). <see cref="RunEvents"/> Classic'te sustuğu
+    /// için Classic başarımları yalnızca buradan beslenir.
+    /// </summary>
+    public static class ClassicEvents
+    {
+        public static event Action<int, int, float> OnProgress;   // (skor, satır, aktif saniye)
+
+        public static void Progress(int score, int lines, float activeSeconds)
+            => OnProgress?.Invoke(score, lines, activeSeconds);
     }
 }

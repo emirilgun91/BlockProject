@@ -76,12 +76,16 @@ namespace RogueBlockBlast.UI
         {
             var font = FindFont();
 
-            BuildChip("RotateHint", _padding, font, "Q", "E",
-                      out _capQ, out _capQText, out _capE, out _capEText, out _label);
+            var rotateChip = BuildChip("RotateHint", _padding, font, "Q", "E",
+                                       out _capQ, out _capQText, out _capE, out _capEText, out _label);
+
+            // Classic'te döndürme yok: Q/E çipi gizlenir, parça değiştirme çipi onun yerine iner.
+            bool classic = RogueBlockBlast.Core.GameMode.IsClassic;
+            if (classic) rotateChip.gameObject.SetActive(false);
 
             // Gamepad'de havuz 1/2/3 tuşlarıyla değil LT/RT ile gezilir; bu da yazmalı.
             // Döndürme çipinin hemen üstünde, yalnızca gamepad kullanılırken görünür.
-            _pieceChip = BuildChip("PieceHint", _padding + new Vector2(0f, CapSize + 16f + 10f), font,
+            _pieceChip = BuildChip("PieceHint", classic ? _padding : _padding + new Vector2(0f, CapSize + 16f + 10f), font,
                                    "LT", "RT", out _, out _capLtText, out _, out _capRtText, out _pieceLabel);
         }
 

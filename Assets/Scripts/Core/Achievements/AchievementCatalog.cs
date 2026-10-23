@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace RogueBlockBlast.Core.Achievements
 {
-    public enum AchievementCategory { Progress, Score, Skill, Cards, Meta, Lifetime, Secret }
+    public enum AchievementCategory { Progress, Score, Skill, Cards, Meta, Lifetime, Secret, Classic }
 
     /// <summary>
     /// Bir achievement'ın tanımı. <see cref="Id"/> Steamworks'teki "API Name" ile
@@ -103,6 +103,12 @@ namespace RogueBlockBlast.Core.Achievements
         public const string CloseCall  = "ACH_SECRET_CLOSE_CALL";
         public const string Lucky      = "ACH_SECRET_LUCKY";
         public const string BlackCat   = "ACH_SECRET_BLACK_CAT";
+
+        // ── Classic Mode (tek oyun; eşikler BalanceSim `classic` ile kalibre) ──
+        public const string ClassicScore5K  = "ACH_CLASSIC_SCORE_5K";
+        public const string ClassicScore20K = "ACH_CLASSIC_SCORE_20K";
+        public const string ClassicLines100 = "ACH_CLASSIC_LINES_100";
+        public const string ClassicNoRush   = "ACH_SECRET_CLASSIC_NO_RUSH";
     }
 
     /// <summary>
@@ -120,6 +126,7 @@ namespace RogueBlockBlast.Core.Achievements
         private const AchievementCategory M = AchievementCategory.Meta;
         private const AchievementCategory L = AchievementCategory.Lifetime;
         private const AchievementCategory X = AchievementCategory.Secret;
+        private const AchievementCategory Cl = AchievementCategory.Classic;
 
         public static readonly IReadOnlyList<AchievementDef> All = new[]
         {
@@ -173,6 +180,11 @@ namespace RogueBlockBlast.Core.Achievements
             new AchievementDef(AchievementIds.CloseCall,  X, "Close Call",     "Get saved when no piece fits, then reach the next milestone.",         hidden: true),
             new AchievementDef(AchievementIds.Lucky,      X, "Lady Luck",      "Win the Gambler's roll 3 times in one run.",                         hidden: true),
             new AchievementDef(AchievementIds.BlackCat,   X, "Black Cat",      "Lose the Gambler's roll 5 times in a row.",                          hidden: true),
+
+            new AchievementDef(AchievementIds.ClassicScore5K,  Cl, "Old School",   "Score 5,000 points in a single Classic game."),
+            new AchievementDef(AchievementIds.ClassicScore20K, Cl, "Classic Ace",  "Score 20,000 points in a single Classic game."),
+            new AchievementDef(AchievementIds.ClassicLines100, Cl, "Zen",          "Clear 100 lines in a single Classic game."),
+            new AchievementDef(AchievementIds.ClassicNoRush,   Cl, "No Rush",      "Play a single Classic game for 20 minutes.",                        hidden: true),
         };
 
         private static Dictionary<string, AchievementDef> _byId;

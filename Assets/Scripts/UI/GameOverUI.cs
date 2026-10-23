@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using RogueBlockBlast.Core;
 using RogueBlockBlast.Game;
 using TMPro;
 using RogueBlockBlast.Core.Save;
@@ -46,7 +47,8 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _fadeSpeed = 5f;
 
         // ── Kayıt anahtarı ───────────────────────────────────────────────────
-        private const string BestScoreKey = "BestScore";
+        /// <summary>Classic'in rekoru ayrı tutulur: kartlı run'ların skoru onunla kıyaslanamaz.</summary>
+        public static string BestScoreKey => GameMode.IsClassic ? "Classic_BestScore" : "BestScore";
 
         /// <summary>
         /// Rekoru kaydeder; yeni rekorsa true döner.
@@ -133,7 +135,11 @@ namespace RogueBlockBlast.UI
             // Kazanılan Blockcoin — RunStatsTracker'dan değil, run'ın kendi sayacından
             // gelir (milestone ödülleri + Bounty Hunter + Perfect Clear hepsi orada toplanır).
             if (_coinsEarnedText != null)
+            {
                 _coinsEarnedText.text = coinsEarned.ToString("N0");
+                // Classic coin vermiyor: kutunun tamamı (SB_Coin) gizlenir
+                _coinsEarnedText.transform.parent.gameObject.SetActive(!GameMode.IsClassic);
+            }
  
             // ── Show ─────────────────────────────────────────────────────────
             RefreshUpgradeButton();
@@ -169,7 +175,8 @@ namespace RogueBlockBlast.UI
             if (_upgradeButton == null) return;
             var overlay = ShapeShopOverlay.Instance;
             if (overlay != null && !_overlayHooked) { overlay.Closed += RefreshUpgradeButton; _overlayHooked = true; }
-            bool show = overlay != null && overlay.HasAffordableUpgrade;
+            // Classic upgrade kullanmıyor; oradan dükkâna yönlendirmek yanıltıcı olur
+            bool show = overlay != null && overlay.HasAffordableUpgrade && !GameMode.IsClassic;
             _upgradeButton.gameObject.SetActive(show);
 
             // Dikkat çeksin ama yalvarmasın: yavaş, küçük bir nabız. timeScale 0 iken de oynar.

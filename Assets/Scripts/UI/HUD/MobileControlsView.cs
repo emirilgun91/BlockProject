@@ -57,6 +57,8 @@ namespace RogueBlockBlast.UI
             _rotateRect = NewButton("RotateButton", parent, new Vector2(1f, 0f), _rotatePosition, _rotateSize,
                                     () => { _run?.RotateCurrentPiece(+1); Punch(_rotateRect); });
             AddIcon(_rotateRect, RotateIcon, 0.62f);
+            // Classic'te döndürme yok
+            if (RogueBlockBlast.Core.GameMode.IsClassic) _rotateRect.gameObject.SetActive(false);
 
             // Duraklat
             var pauseRect = NewButton("PauseButton", parent, new Vector2(1f, 1f), _pausePosition, _pauseSize,

@@ -2,7 +2,7 @@
 
 Steam yalnızca **achieved** (renkli) ikonu istiyor; "Automatically generate unachieved icons" açık olduğu için gri hâlini kendisi üretiyor.
 
-40 ikonu tek görselde istemek detayı bozar. 5 parti hâlinde, her seferinde **8 ikonluk 4×2 ızgara** üret. Her partide önce STİL bloğunu, sonra o partinin listesini yapıştır. Çıkan görseli 8 kareye kes, her kareyi 256×256 PNG olarak `API_ADI_ACHIEVED.png` adıyla kaydet (ör. `ACH_FIRST_CLEAR_ACHIEVED.png`) ve Steam'deki Achievement Icons alanına toplu yükle.
+44 ikonu tek görselde istemek detayı bozar. İlk 40 için 5 parti hâlinde (Classic'in 4 ikonu ayrı: Parti 6), her seferinde **8 ikonluk 4×2 ızgara** üret. Her partide önce STİL bloğunu, sonra o partinin listesini yapıştır. Çıkan görseli 8 kareye kes, her kareyi 256×256 PNG olarak `API_ADI_ACHIEVED.png` adıyla kaydet (ör. `ACH_FIRST_CLEAR_ACHIEVED.png`) ve Steam'deki Achievement Icons alanına toplu yükle.
 
 ---
 
@@ -92,6 +92,21 @@ The 8 icons, left to right, top row then bottom row:
 6. ACH_SECRET_CLOSE_CALL — a block piece hanging over the edge of a cliff of blocks, saved by a glowing hand-shaped beam.
 7. ACH_SECRET_LUCKY — a four-leaf clover made of green blocks beside a block die showing six.
 8. ACH_SECRET_BLACK_CAT — a cute black cat silhouette made of dark blocks with glowing amber eyes beside a block die showing one.
+```
+
+## Parti 6 — Classic Mode (4 ikon)
+
+Classic sonradan eklendi; yalnızca 4 ikon olduğu için **4×1 şerit** üretilir. STİL bloğundaki "8 square … 4x2 grid" ifadesini "4 square … 4x1 row" olarak değiştirerek yapıştır. Classic'in ayırt edici işareti: çerçevenin rim glow'u mor yerine **sakin camgöbeği (#5fd8e8)**. Classic sade ve sakin bir mod, bu ikonlar da daha az patlamalı, daha dingin olmalı. Gizli olan (No Rush) kırmızı-magenta rim alır, Parti 5'teki gibi.
+
+```
+Match the exact style of the previous sheets, but make 4 icons in a 4x1 row.
+These are for the calm "Classic" mode: give icons 1-3 a soft cyan (#5fd8e8) rim glow instead of purple, and keep the mood calm and clean: fewer sparks, gentle glow, uncluttered.
+Icon 4 is a secret achievement: give it the red-magenta (#ff6b7a) secret rim glow instead.
+The 4 icons, left to right:
+1. ACH_CLASSIC_SCORE_5K — a retro arcade-style 8x8 block board seen head-on with a single completed row glowing softly, a small amber block-coin resting on top. Simple, nostalgic, "old school".
+2. ACH_CLASSIC_SCORE_20K — an ace playing-card shape built from cyan and amber blocks, a calm radiant halo behind it, one small star at the top corner. The most premium of the four: slightly brighter frame.
+3. ACH_CLASSIC_LINES_100 — a zen stone cairn made of three stacked rounded blocks (violet, blue, green) balanced perfectly, a few thin horizontal light lines drifting past like calm water.
+4. ACH_SECRET_CLASSIC_NO_RUSH — a sleepy turtle whose shell is made of glossy square blocks, a small analog clock made of blocks beside it, a few soft round dots floating above the turtle like sleep bubbles (no letters).
 ```
 
 ---

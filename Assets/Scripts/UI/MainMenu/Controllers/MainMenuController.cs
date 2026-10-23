@@ -48,6 +48,15 @@ namespace RogueBlockBlast.UI
             if (_btnUpgrades  != null) _btnUpgrades.OnClicked  = OnUpgradesClicked;
             if (_btnSettings  != null) _btnSettings.OnClicked  = OnSettingsClicked;
             if (_btnQuit      != null) _btnQuit.OnClicked      = OnQuitClicked;
+
+            // Gamepad: menünün tamamı taban kapsam, ilk seçim New Run. Paneller
+            // (Shape Shop / Upgrades / Settings) açılınca kendi kapsamlarını üstüne koyar.
+            if (_btnNewRun != null)
+            {
+                var canvas = _btnNewRun.GetComponentInParent<Canvas>();
+                var root   = canvas != null ? canvas.rootCanvas.gameObject : gameObject;
+                UINav.Push(root, _btnNewRun.GetComponent<UnityEngine.UI.Selectable>());
+            }
         }
 
         private void OnDestroy()

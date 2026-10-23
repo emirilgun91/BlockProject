@@ -45,7 +45,11 @@ namespace RogueBlockBlast.UI
         private bool      _locked;
         private int       _freeLeft = -1;
         private TMP_Text  _label;
+        private TMP_Text  _capQText, _capEText;
         private float     _flashQ, _flashE;
+
+        private RectTransform _pieceChip;
+        private TMP_Text      _capLtText, _capRtText, _pieceLabel;
 
         private void Start()
         {
@@ -57,19 +61,37 @@ namespace RogueBlockBlast.UI
             if (_locked) ApplyLockVisual();
 
             Refresh();
-            Loc.OnChanged += Refresh;
+            Loc.OnChanged     += Refresh;
+            InputMode.Changed += Refresh;
         }
 
-        private void OnDestroy() => Loc.OnChanged -= Refresh;
+        private void OnDestroy()
+        {
+            Loc.OnChanged     -= Refresh;
+            InputMode.Changed -= Refresh;
+        }
 
         // ── Görsel kurulum ───────────────────────────────────────────────────
         private void Build()
         {
             var font = FindFont();
 
-            var root = NewRect("RotateHint", (RectTransform)transform);
+            BuildChip("RotateHint", _padding, font, "Q", "E",
+                      out _capQ, out _capQText, out _capE, out _capEText, out _label);
+
+            // Gamepad'de havuz 1/2/3 tuşlarıyla değil LT/RT ile gezilir; bu da yazmalı.
+            // Döndürme çipinin hemen üstünde, yalnızca gamepad kullanılırken görünür.
+            _pieceChip = BuildChip("PieceHint", _padding + new Vector2(0f, CapSize + 16f + 10f), font,
+                                   "LT", "RT", out _, out _capLtText, out _, out _capRtText, out _pieceLabel);
+        }
+
+        private RectTransform BuildChip(string name, Vector2 position, TMP_FontAsset font, string keyA, string keyB,
+                                        out Image capA, out TMP_Text textA, out Image capB, out TMP_Text textB,
+                                        out TMP_Text label)
+        {
+            var root = NewRect(name, (RectTransform)transform);
             root.anchorMin = root.anchorMax = root.pivot = new Vector2(0f, 0f);
-            root.anchoredPosition = _padding;
+            root.anchoredPosition = position;
             root.sizeDelta = new Vector2(300f, 56f);
 
             var bg = root.gameObject.AddComponent<Image>();
@@ -89,21 +111,22 @@ namespace RogueBlockBlast.UI
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
 
-            _capQ = BuildCap(root, "Q", font);
-            _capE = BuildCap(root, "E", font);
+            capA = BuildCap(root, keyA, font, out textA);
+            capB = BuildCap(root, keyB, font, out textB);
 
             var labelRect = NewRect("Label", root);
-            _label = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
-            if (font != null) _label.font = font;
-            _label.fontSize             = _fontSize;
-            _label.color                = _textColor;
-            _label.alignment            = TextAlignmentOptions.MidlineLeft;
-            _label.raycastTarget        = false;
-            _label.enableWordWrapping   = false;
+            label = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
+            if (font != null) label.font = font;
+            label.fontSize             = _fontSize;
+            label.color                = _textColor;
+            label.alignment            = TextAlignmentOptions.MidlineLeft;
+            label.raycastTarget        = false;
+            label.enableWordWrapping   = false;
             labelRect.gameObject.AddComponent<LayoutElement>().minHeight = CapSize;
+            return root;
         }
 
-        private Image BuildCap(RectTransform parent, string key, TMP_FontAsset font)
+        private Image BuildCap(RectTransform parent, string key, TMP_FontAsset font, out TMP_Text label)
         {
             var capRect = NewRect("Cap_" + key, parent);
             var img = capRect.gameObject.AddComponent<Image>();
@@ -130,6 +153,7 @@ namespace RogueBlockBlast.UI
             text.alignment     = TextAlignmentOptions.Center;
             text.raycastTarget = false;
 
+            label = text;
             return img;
         }
 
@@ -160,6 +184,19 @@ namespace RogueBlockBlast.UI
         {
             if (_label == null) return;
 
+            // Tuş kapakları son kullanılan cihazı izler: Q/E ya da gamepad'in omuz tuşları.
+            bool pad = InputMode.UsingGamepad;
+            _capQText.text = pad ? InputMode.Glyph(PadButton.LeftShoulder)  : "Q";
+            _capEText.text = pad ? InputMode.Glyph(PadButton.RightShoulder) : "E";
+
+            if (_pieceChip != null)
+            {
+                _pieceChip.gameObject.SetActive(pad);
+                _capLtText.text  = InputMode.Glyph(PadButton.LeftTrigger);
+                _capRtText.text  = InputMode.Glyph(PadButton.RightTrigger);
+                _pieceLabel.text = Loc.GetOr("Hud.SwitchPiece", "Change piece");
+            }
+
             // First Picks döndürmeyi kapatıyor. İpucu chip'i normal görünmeye devam
             // ederse oyuncu Q/E'ye basıp hiçbir şey olmamasını bug sanıyor — kilit
             // tuşların üstünde gösterilmeli, kart metninde değil.
@@ -171,7 +208,7 @@ namespace RogueBlockBlast.UI
                 return;
             }
 
-            _label.text = _mentionScrollWheel
+            _label.text = _mentionScrollWheel && !pad
                 ? Loc.GetOr("Hud.RotateHintWheel", "Rotate  ·  mouse wheel")
                 : Loc.GetOr("Hud.RotateHint",      "Rotate");
         }
@@ -236,6 +273,8 @@ namespace RogueBlockBlast.UI
                 if (kb.qKey.wasPressedThisFrame) _flashQ = FlashTime;
                 if (kb.eKey.wasPressedThisFrame) _flashE = FlashTime;
             }
+            if (InputMode.Pressed(PadButton.LeftShoulder))  _flashQ = FlashTime;
+            if (InputMode.Pressed(PadButton.RightShoulder)) _flashE = FlashTime;
 
             if (_locked) return;   // kilitliyken tuşa basmak parlamamalı
 

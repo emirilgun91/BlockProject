@@ -112,10 +112,12 @@ namespace RogueBlockBlast.UI
             else Open();
         }
 
+        /// <summary>ESC ya da gamepad'in Start (Menu / Options) tuşu — ikisi de aynı işi yapar.</summary>
         private static bool EscapePressed()
         {
 #if ENABLE_INPUT_SYSTEM
-            return Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+            return Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame
+                || InputMode.Pressed(PadButton.Start);
 #else
             return Input.GetKeyDown(KeyCode.Escape);
 #endif
@@ -135,6 +137,10 @@ namespace RogueBlockBlast.UI
             SetActive(_confirmBox, false);
             RefreshFeedbackButton();
             _pending = PendingAction.None;
+
+            // Gamepad: Resume seçili gelir, B devam ettirir. Ayarlar ve onay kutusu
+            // kendi kapsamlarını üstüne açar; kapanınca seçim buraya döner.
+            if (_root != null) UINav.Push(_root, _resumeButton, Resume);
         }
 
         /// <summary>
@@ -191,6 +197,7 @@ namespace RogueBlockBlast.UI
                 return;
             }
             SetActive(_confirmBox, true);
+            UINav.Push(_confirmBox, _confirmNo, CancelPending);
         }
 
         private void CancelPending()

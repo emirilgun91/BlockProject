@@ -141,6 +141,9 @@ namespace RogueBlockBlast.UI
             Game.GameStateController.LockInput();
             _root.SetActive(true);
             _fadingIn = true;
+
+            // Gamepad: "Yeni Run" seçili gelir; Upgrade Now ve Ana Menü gezinmeyle seçilir.
+            UINav.Push(_root, _retryButton);
  
             if (_canvasGroup != null)
                 _canvasGroup.alpha = 0f;
@@ -194,6 +197,7 @@ namespace RogueBlockBlast.UI
             Time.timeScale = 1f;
             Game.GameStateController.UnlockInput();
             _fadingIn = false;
+            UINav.Pop(_root);
             
         }
 

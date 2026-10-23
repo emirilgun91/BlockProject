@@ -426,6 +426,7 @@ namespace RogueBlockBlast.UI
             _buttonsGroup.interactable = true;
             _buttonsGroup.blocksRaycasts = true;
             EventSystem.current?.SetSelectedGameObject(_newRunButton.gameObject);
+            UINav.Push(gameObject, _newRunButton);   // B'yi bu ekran kendisi işliyor (Update)
         }
 
         /// <summary>Animasyonu sonuna atlatır (tıklama / tuş).</summary>

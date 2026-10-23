@@ -48,6 +48,9 @@ namespace RogueBlockBlast.UI
                 CoinWallet.Instance.OnBalanceChanged += UpdateCoinText;
 
             BuildCards();
+
+            // Gamepad: B = geri butonu (ana menüde paneli, oyun sahnesinde overlay'i kapatır).
+            UINav.Push(gameObject, back: OnBackButton);
         }
 
         private void OnDisable()

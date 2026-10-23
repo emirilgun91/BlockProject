@@ -73,6 +73,8 @@ namespace RogueBlockBlast.Game.Tutorial
         private RectTransform _card;
         private CanvasGroup   _cardGroup;
         private TMP_Text      _titleText, _bodyText, _counterText, _nextLabel, _skipLabel, _keysLabel;
+        private TMP_Text      _capLeft, _capRight;
+        private Button        _nextButton;
         private RectTransform _keysRow;
         private readonly List<Image> _dots = new List<Image>();
 
@@ -95,12 +97,15 @@ namespace RogueBlockBlast.Game.Tutorial
             tour.Font  = font;
             tour.Build();
             tour.Next();
+            // Gamepad: A = İleri (seçili buton), B = Atla.
+            UINav.Push(go, tour._nextButton, tour.Finish);
             return tour;
         }
 
         private void OnDestroy()
         {
             Loc.OnChanged -= RefreshTexts;
+            InputMode.Changed -= RefreshTexts;
             if (_locked) { GameStateController.UnlockInput(); _locked = false; }
         }
 
@@ -126,9 +131,15 @@ namespace RogueBlockBlast.Game.Tutorial
                 if (on) PlaceFrame(_frames[i], _dim.CurrentHoles[i]);
             }
 
-            var kb = Keyboard.current;
+            // İleri butonu seçiliyken Enter'ı EventSystem zaten "submit" olarak ona
+            // iletiyor; burada da sayılırsa bir basış iki durak atlatıyordu.
+            var  kb           = Keyboard.current;
+            bool nextSelected = _nextButton != null &&
+                                UnityEngine.EventSystems.EventSystem.current != null &&
+                                UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == _nextButton.gameObject;
             if (kb != null && Time.unscaledTime - _startedAt > 0.4f &&
-                (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame))
+                (kb.spaceKey.wasPressedThisFrame ||
+                 (!nextSelected && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))))
                 Next();
         }
 
@@ -196,7 +207,9 @@ namespace RogueBlockBlast.Game.Tutorial
 
             _titleText.text = Loc.GetOr(step.TitleKey, step.TitleFallback);
             string body = Loc.GetOr(step.BodyKey, step.BodyFallback);
+            bool pad = InputMode.UsingGamepad && !Touch;
             if (Touch) body = Loc.GetOr(step.BodyKey + ".Touch", body);
+            else if (pad) body = PadText.Format(Loc.GetOr(step.BodyKey + ".Pad", body));
             _bodyText.text = body;
 
             _counterText.text = $"{_index + 1}/{_steps.Count}";
@@ -206,10 +219,17 @@ namespace RogueBlockBlast.Game.Tutorial
             _skipLabel.text = Loc.GetOr("Tutorial.Intro.Skip", "Skip");
             _skipLabel.transform.parent.gameObject.SetActive(!last);
 
-            // Tuş kapakları yalnızca klavye/fare için ve yalnızca döndürme durağında.
+            // Tuş kapakları yalnızca klavye/fare ve gamepad için, yalnızca döndürme durağında.
             bool keys = step.ShowKeys && !Touch;
             _keysRow.gameObject.SetActive(keys);
-            if (keys) _keysLabel.text = Loc.GetOr("Hud.RotateHintWheel", "Rotate  ·  mouse wheel");
+            if (keys)
+            {
+                _capLeft.text  = pad ? InputMode.Glyph(PadButton.LeftShoulder)  : "Q";
+                _capRight.text = pad ? InputMode.Glyph(PadButton.RightShoulder) : "E";
+                _keysLabel.text = pad
+                    ? Loc.GetOr("Hud.RotateHint", "Rotate")
+                    : Loc.GetOr("Hud.RotateHintWheel", "Rotate  ·  mouse wheel");
+            }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(_card);
         }
@@ -468,6 +488,7 @@ namespace RogueBlockBlast.Game.Tutorial
 
             BuildCard();
             Loc.OnChanged += RefreshTexts;
+            InputMode.Changed += RefreshTexts;
 
             if (!_locked) { GameStateController.LockInput(); _locked = true; }
         }
@@ -524,8 +545,8 @@ namespace RogueBlockBlast.Game.Tutorial
             kl.spacing = 12f; kl.childAlignment = TextAnchor.MiddleLeft;
             kl.childControlWidth = true; kl.childControlHeight = true;
             kl.childForceExpandWidth = false; kl.childForceExpandHeight = false;
-            NewKeyCap(_keysRow, "Q");
-            NewKeyCap(_keysRow, "E");
+            _capLeft  = NewKeyCap(_keysRow, "Q");
+            _capRight = NewKeyCap(_keysRow, "E");
             _keysLabel = NewText("KeysLabel", _keysRow, 28f, BodyCol, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             _keysLabel.enableWordWrapping = false;
 
@@ -554,6 +575,7 @@ namespace RogueBlockBlast.Game.Tutorial
             skip.onClick.AddListener(Finish);
             var next = NewButton("Next", foot, 220f, 72f, Accent, new Color(0.03f, 0.06f, 0.12f, 1f), 32f, out _nextLabel);
             next.onClick.AddListener(Next);
+            _nextButton = next;
         }
 
         private Button NewButton(string name, RectTransform parent, float w, float h, Color fill, Color textColor,
@@ -584,7 +606,7 @@ namespace RogueBlockBlast.Game.Tutorial
             return btn;
         }
 
-        private void NewKeyCap(RectTransform parent, string letter)
+        private TMP_Text NewKeyCap(RectTransform parent, string letter)
         {
             var rt = NewRect("Cap" + letter, parent);
             var le = rt.gameObject.AddComponent<LayoutElement>();
@@ -603,6 +625,7 @@ namespace RogueBlockBlast.Game.Tutorial
             if (Font != null) t.font = Font;
             t.text = letter; t.fontSize = 36f; t.color = Color.white; t.fontStyle = FontStyles.Bold;
             t.alignment = TextAlignmentOptions.Center; t.raycastTarget = false;
+            return t;
         }
 
         private TMP_Text NewText(string name, RectTransform parent, float size, Color color, FontStyles style, TextAlignmentOptions align)

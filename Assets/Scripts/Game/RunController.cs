@@ -169,7 +169,7 @@ namespace RogueBlockBlast.Game
             TrackDragPress();
 
             if (_board == null || _currentPiece == null) return;
-            if (!GameStateController.InputAllowed) return;
+            if (!GameStateController.InputAllowed) { _inputLockedFrame = Time.frameCount; return; }
             bool canRotate = !(_cardState.HasFirstPicks &&
                                _cardState.FirstPicksUsedThisMilestone < _cardState.FirstPicksFreeCount);
 
@@ -198,6 +198,12 @@ namespace RogueBlockBlast.Game
                 else if (scroll < 0f) _currentRot = PrevRot(_currentRot);
             }
 
+            // Gamepad: fare yerine hücre tabanlı imleç (bkz. HandleGamepad).
+            bool pad = InputMode.UsingGamepad;
+            if (pad) HandleGamepad(canRotate);
+            // Y ile yenilenen havuz ölü çıkıp run'ı bitirmiş olabilir
+            if (_currentPiece == null || !GameStateController.InputAllowed) return;
+
             _ghost.Clear();
             _ghostPositionBonus.Clear();
             _ghostIsFreeDrop = false;
@@ -210,13 +216,14 @@ namespace RogueBlockBlast.Game
             var  pointer      = Pointer.current;
             bool dragPressed  = _dragToPlace && _dragArmed && pointer != null && pointer.press.isPressed;
             bool dragReleased = _dragToPlace && _dragArmed && pointer != null && pointer.press.wasReleasedThisFrame;
-            bool showGhost    = _dragToPlace
-                ? (dragPressed || dragReleased) && IsLiftedPointerOverBoard()
-                : BoardView.IsMouseOverBoard(MainCamera);
+            bool showGhost    = pad ||
+                (_dragToPlace
+                    ? (dragPressed || dragReleased) && IsLiftedPointerOverBoard()
+                    : BoardView.IsMouseOverBoard(MainCamera));
 
             if (showGhost)
             {
-                var cell = ResolvePlacementAnchor();
+                var cell = pad ? ResolvePadAnchor() : ResolvePlacementAnchor();
 
                 if (cell.HasValue)
                 {
@@ -248,9 +255,11 @@ namespace RogueBlockBlast.Game
                         }
                     }
 
-                    bool placeNow = _dragToPlace
-                        ? dragReleased
-                        : Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+                    bool placeNow = pad
+                        ? InputMode.Pressed(PadButton.South) && Time.frameCount - _inputLockedFrame > 1
+                        : _dragToPlace
+                            ? dragReleased
+                            : Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
 
                     if (placeNow && canPlace)
                         DoPlace(anchor);
@@ -258,8 +267,8 @@ namespace RogueBlockBlast.Game
             }
 
             // Ayarlar ▸ Ghost Preview kapalıysa önizleme çizilmez (tıklama yine çalışır).
-            // Sürükle-bırakta parça yalnızca ghost olarak görünüyor; orada kapatılmaz.
-            if (!GameSettings.GhostPreview && !_dragToPlace)
+            // Sürükle-bırakta ve gamepad'de parça yalnızca ghost olarak görünüyor; orada kapatılmaz.
+            if (!GameSettings.GhostPreview && !_dragToPlace && !pad)
             {
                 _ghost.Clear();
                 _ghostPositionBonus.Clear();
@@ -481,6 +490,108 @@ namespace RogueBlockBlast.Game
                 }
             }
 
+            _lastAnchor      = result;
+            _lastAnchorPiece = _currentPiece;
+            _lastAnchorRot   = _currentRot;
+            return result;
+        }
+
+        // ── Gamepad ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Gamepad imlecinin üstünde durduğu hücre. Fareyle aynı kural: parçanın
+        /// kutusunun orta hücresi bu hücreye oturur (<see cref="ResolvePadAnchor"/>).
+        /// Run başında tahtanın ortası; yerleştirmeden sonra yerinde kalır —
+        /// oyuncu genelde bir sonraki parçayı yakına koyar.
+        /// </summary>
+        private Vector2Int _padCursor = new Vector2Int(-1, -1);
+
+        /// <summary>
+        /// Input'un en son kilitli olduğu kare. Kartı seçen / pause'u kapatan A, kilidi
+        /// aynı karede açıyor; Update sırası şanslıysa aynı basış bir de parça yerleştiriyordu.
+        /// A yalnızca kilit en az bir tam kare önce açıldıysa tahtaya gider.
+        /// </summary>
+        private int _inputLockedFrame;
+        private readonly InputMode.RepeatState _padRepeat = new InputMode.RepeatState();
+
+        /// <summary>
+        /// Sol çubuk / d-pad imleci gezdirir, LB/RB döndürür (Q/E ile aynı yön ve
+        /// First Picks kilidi), LT/RT havuzdaki parçalar arasında geçer, Y havuzu
+        /// yeniler. A ile yerleştirme Update'teki ortak yoldan geçer.
+        /// </summary>
+        private void HandleGamepad(bool canRotate)
+        {
+            // Menü kapsamı yokken A tahtanındır: HUD'da (ör. reroll butonu) seçili
+            // kalmış bir kontrol varsa A onu da tıklatıyordu.
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.currentSelectedGameObject != null && !UINav.HasScope)
+                es.SetSelectedGameObject(null);
+
+            var step = _padRepeat.Step();
+            if (step != Vector2Int.zero)
+            {
+                if (_padCursor.x < 0) _padCursor = new Vector2Int(_board.Width / 2, _board.Height / 2);
+                _padCursor += step;
+            }
+
+            if (canRotate)
+            {
+                if (InputMode.Pressed(PadButton.LeftShoulder))
+                {
+                    _currentRot = PrevRot(_currentRot);
+                    TutorialEvents.Rotated();
+                }
+                if (InputMode.Pressed(PadButton.RightShoulder))
+                {
+                    _currentRot = NextRot(_currentRot);
+                    TutorialEvents.Rotated();
+                }
+            }
+
+            if (InputMode.Pressed(PadButton.LeftTrigger))  CyclePool(-1);
+            if (InputMode.Pressed(PadButton.RightTrigger)) CyclePool(+1);
+
+            if (InputMode.Pressed(PadButton.North) &&
+                _poolRerollButton != null && _poolRerollButton.gameObject.activeInHierarchy)
+                OnPoolRerollClicked();
+        }
+
+        private void CyclePool(int direction)
+        {
+            int count = _piecePool.Count;
+            if (count == 0) return;
+            int from = _selectedPoolIndex < 0 ? 0 : _selectedPoolIndex;
+            SelectPool((from + direction + count) % count);
+        }
+
+        /// <summary>
+        /// Gamepad imlecinden yerleştirme noktası. Fareden farkı: yakındaki geçerli
+        /// konuma yapışma yok — imleç adım adım gidiyor ve ghost tam imlecin altında
+        /// durmalı, yoksa imleç kıpırdarken ghost yerinde sayıyordu. İmleç parçanın
+        /// sığabileceği aralığa kırpılır: kenarda boşa giden adım kalmaz.
+        /// </summary>
+        private Vector2Int? ResolvePadAnchor()
+        {
+            int w = _board.Width, h = _board.Height;
+            var cells = _currentPiece.GetCells(_currentRot);
+
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minY = int.MaxValue, maxY = int.MinValue;
+            foreach (var c in cells)
+            {
+                if (c.x < minX) minX = c.x; if (c.x > maxX) maxX = c.x;
+                if (c.y < minY) minY = c.y; if (c.y > maxY) maxY = c.y;
+            }
+
+            int refX = Mathf.FloorToInt((minX + maxX + 1) * 0.5f);
+            int refY = Mathf.FloorToInt((minY + maxY + 1) * 0.5f);
+
+            if (_padCursor.x < 0) _padCursor = new Vector2Int(w / 2, h / 2);
+            _padCursor = new Vector2Int(
+                Mathf.Clamp(_padCursor.x, -minX + refX, w - 1 - maxX + refX),
+                Mathf.Clamp(_padCursor.y, -minY + refY, h - 1 - maxY + refY));
+
+            var result = new Vector2Int(_padCursor.x - refX, _padCursor.y - refY);
             _lastAnchor      = result;
             _lastAnchorPiece = _currentPiece;
             _lastAnchorRot   = _currentRot;

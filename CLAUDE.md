@@ -138,6 +138,32 @@ Steam App ID: **4559890** (`SteamPlatform.AppId`; the demo, 5192270, is no longe
 
 `RunController.ResolvePlacementAnchor()` puts the centre of the piece's bounding box under the cursor. Before this, the piece's `(0,0)` cell sat under the cursor, so pieces landed up and to the right of where the player aimed, and rotating around `(0,0)` made them jump away. It works from `BoardView.TryGetMouseCellPoint`, which gives the cursor position in continuous cell units. The ray hits the *visible* tile surface (`SurfaceZ`, which includes the TileSkirt lift), not `z = 0`. The anchor is cell-based: the piece box's middle cell (`floor((min+max+1)/2)` per axis) sits on the cell under the cursor, so the piece steps exactly when the cursor crosses a cell border. An earlier version rounded the continuous box centre plus a 0.12 hysteresis, so pieces with an even size jumped mid-cell or near the cell's far edge. If that spot is blocked, the anchor snaps to the nearest valid anchor within `_placementSnapRadius` (default 1.05 cells). `BoardView.TryGetClampedCellUnderMouse` is no longer used by gameplay.
 
+### Gamepad
+
+The whole game is playable with a gamepad, with Steam Deck Verified as the target. Mouse and keyboard behaviour is unchanged. Everything lives in `UI/Gamepad/` and needs no scene setup: `InputMode.Bootstrap` creates a `DontDestroyOnLoad` object before the first scene loads, holding `InputMode` and `UINav`.
+
+- **`InputMode`**: tracks the last device used. `UsingGamepad` flips to true on any gamepad button or stick press, and back to false on a key press, mouse click or scroll, or a mouse move of more than 6 px. Listen to `Changed` to refresh hints. While a gamepad is in use the cursor is hidden. The game starts in gamepad mode when Steam sets `SteamDeck=1` or `SteamTenfoot=1`. Button names come from `Glyph(PadButton)`: Xbox names by default, L1/R1/L2/R2 on the Deck, and ×○□△ on a `DualShockGamepad`. `GlyphRich` returns a bold, coloured version for TMP text. `RepeatState` gives 4-way, held-repeat steps from the left stick and d-pad.
+- **`PadText.Format`**: replaces `{A} {B} {X} {Y} {LB} {RB} {LT} {RT}` in translated strings with the connected pad's button names. Gamepad variants of strings use the key suffix `.Pad`, just as touch variants use `.Touch` (`Tutorial.Place.Pad`, `Tutorial.Rotate.Pad`, `Tutorial.Intro.*.Body.Pad`).
+- **Gameplay** (`RunController.HandleGamepad` / `ResolvePadAnchor`):
+  - The left stick or d-pad moves a cell cursor. Like the mouse, it puts the piece box's middle cell on the cursor cell, but it never snaps to a nearby valid spot. The cursor is clamped to where the current piece fits, so no step at the board edge is wasted.
+  - A places the piece. LB/RB rotate, the same as Q/E, and respect the First Picks lock. LT/RT cycle through the pool. Y presses the pool reroll button, which shows a Y badge.
+  - The ghost is always drawn in gamepad mode, even when Ghost Preview is off.
+  - A is ignored for one frame after input unlocks. Otherwise the A that picked a card or closed the pause menu also placed a piece.
+- **Menus (`UINav`)**: each panel calls `UINav.Push(root, first, back)` when it opens. The top scope owns focus:
+  - In gamepad mode a control inside that scope is always selected. If automatic navigation escapes the scope, the selection jumps back.
+  - B calls the scope's `back` action.
+  - A scope is dropped when its root goes inactive (or on `Pop`), and the scope underneath gets back its last selection.
+  - The focused control gets a pulsing focus ring, drawn on its own overlay canvas at sorting order 32000. Many of the project's buttons only react to mouse hover.
+  - A selection inside a `ScrollRect` is scrolled into view.
+  - `PanelManager` uses `PushIfAbsent`, so a panel's own scope, pushed from `OnEnable`, wins (Settings: B = Apply; Shape Shop: B = back).
+  - Pause: Start toggles it like ESC. Its first control is Resume and B resumes. The quit confirmation and the reset-progress confirmation start on "No".
+  - Game Over starts on New Run. The victory screen starts on New Run, and its own `Update` handles B.
+  - The intro tour: A = Next, B = Skip.
+- **Card selection** (`PhysicalCardPresenter`) uses a `manual` scope. EventSystem selection stays empty, left/right moves the hover lift between cards, A picks and Y rerolls (the reroll label shows the Y button name). `UINav.IsTop` is true only if the scope was also on top at the end of the previous frame. Without that, the A that resumed from pause would also pick a card.
+- **`MenuButtonView`** had no `Selectable`, so the main menu could not be navigated. It now adds a `Selectable` (no transition) and maps select/submit to its hover and click. Locked buttons are not interactable, so navigation skips them.
+- **HUD hints**: `RotateHintView` shows LB/RB instead of Q/E, plus a second chip (LT/RT · `Hud.SwitchPiece`) shown only in gamepad mode. The tutorial banner and the intro tour switch to their `.Pad` text when the device changes.
+- Not covered: the card inventory's hover tooltips (no gamepad way to browse owned cards) and the old UGUI `CardSelectionUI` fallback panel.
+
 ### Ghost preview & line-clear hint
 
 The ghost is drawn in the piece's own colour, opaque and blended toward the empty-cell colour (`BoardView._ghostStrength`). It is flat: `TileView.IsGhostPreview` tells `TileSkirt` not to draw a side face, so it never reads as a placed block. An invalid placement turns the empty ghost cells grey and makes the overlapping cells blink red. Grey is used because a red warning would be indistinguishable from a red piece.

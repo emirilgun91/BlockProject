@@ -1,6 +1,7 @@
 using RogueBlockBlast.Core.Localization;
 using TMPro;
 using RogueBlockBlast.Core.Save;
+using RogueBlockBlast.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -161,6 +162,7 @@ namespace RogueBlockBlast.Game.Tutorial
             TutorialEvents.OnMilestoneReached += HandleMilestone;
             TutorialEvents.OnCardPicked       += HandleCardPicked;
             Loc.OnChanged                     += RefreshText;
+            InputMode.Changed                 += RefreshText;
         }
 
         private void Unsubscribe()
@@ -171,6 +173,7 @@ namespace RogueBlockBlast.Game.Tutorial
             TutorialEvents.OnMilestoneReached -= HandleMilestone;
             TutorialEvents.OnCardPicked       -= HandleCardPicked;
             Loc.OnChanged                     -= RefreshText;
+            InputMode.Changed                 -= RefreshText;
         }
 
         // ── Akış ─────────────────────────────────────────────────────────────
@@ -269,7 +272,9 @@ namespace RogueBlockBlast.Game.Tutorial
             string text = Loc.GetOr(step.Key, step.Fallback);
             // Dokunmatik: "<anahtar>.Touch" varsa o kullanılır ("Q/E'ye bas" yerine
             // "döndür butonuna dokun"); yoksa normal metin.
+            // Gamepad: "<anahtar>.Pad" — tuş adları bağlı gamepad'e göre yazılır, cihaz değişince yenilenir.
             if (_touchText) text = Loc.GetOr(step.Key + ".Touch", text);
+            else if (InputMode.UsingGamepad) text = PadText.Format(Loc.GetOr(step.Key + ".Pad", text));
             _text.text = text;
         }
 

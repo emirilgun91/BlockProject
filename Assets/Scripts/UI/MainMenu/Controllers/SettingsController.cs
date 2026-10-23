@@ -152,6 +152,10 @@ namespace RogueBlockBlast.UI
             Bind(true);
             RefreshAll();
             Loc.OnChanged += RefreshAll;
+
+            // Gamepad: ilk kontrol üstteki satır; B, ESC gibi değişiklikleri koruyarak kapatır
+            // (değerler zaten canlı uygulanıyor — B ile hepsini geri almak sürpriz olurdu).
+            UINav.Push(gameObject, back: OnApply);
         }
 
         private void OnDisable()
@@ -489,6 +493,11 @@ namespace RogueBlockBlast.UI
         private void ShowResetConfirm(bool visible)
         {
             if (_resetProgressConfirm != null) _resetProgressConfirm.SetActive(visible);
+
+            // Onay kutusu açıkken gezinme onun içinde kalır, ilk seçim "Hayır" — geri alınamaz işlem.
+            if (_resetProgressConfirm == null) return;
+            if (visible) UINav.Push(_resetProgressConfirm, _resetProgressConfirmNo, () => ShowResetConfirm(false));
+            else         UINav.Pop(_resetProgressConfirm);
         }
 
         /// <summary>

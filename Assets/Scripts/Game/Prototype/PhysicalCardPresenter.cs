@@ -160,11 +160,13 @@ namespace RogueBlockBlast.Game.Prototype
             }
 
             CardSelectionUI.Instance.ExternalPresenter = this;
+            InputMode.Changed += RefreshRerollLabel;
             Debug.Log("[PhysicalCards] Dünya-uzayı kart sunucusu bağlandı.");
         }
 
         private void OnDestroy()
         {
+            InputMode.Changed -= RefreshRerollLabel;
             if (CardSelectionUI.Instance != null &&
                 ReferenceEquals(CardSelectionUI.Instance.ExternalPresenter, this))
             {
@@ -176,6 +178,7 @@ namespace RogueBlockBlast.Game.Prototype
 
         private void Update()
         {
+            UpdateGamepad();
             UpdateHover();
             UpdateDim();
             UpdateRerollButton();
@@ -306,6 +309,11 @@ namespace RogueBlockBlast.Game.Prototype
                 _cards.Add(physical);
                 _cardData.Add(card);
             }
+
+            // Gamepad: ilk açılışta ortadaki kart odakta; reroll'da oyuncunun baktığı yuva korunur.
+            if (!isReroll) _padIndex = _cards.Count / 2;
+            _padIndex = Mathf.Clamp(_padIndex, 0, Mathf.Max(0, _cards.Count - 1));
+            UINav.Push(gameObject, manual: true);
         }
 
         public void Dismiss(CardSO picked)
@@ -332,6 +340,7 @@ namespace RogueBlockBlast.Game.Prototype
             _hovered  = null;
             _onPicked = null;
             HideRerollButton();
+            UINav.Pop(gameObject);
 
             // Perde kartlarla birlikte çekilir — kartlar uçarken oyun geri gelir.
             _dimTarget = 0f;
@@ -421,11 +430,24 @@ namespace RogueBlockBlast.Game.Prototype
             _rerollShown = true;
             _rerollCanvas.gameObject.SetActive(true);
             _rerollButton.interactable = remaining > 0;
-            _rerollLabel.text = $"↻  {Loc.Get("Upgrade.upgrade_card_reroll.Name")}  ×{remaining}";
+            _rerollRemaining = remaining;
+            RefreshRerollLabel();
+            if (punch) _rerollPunch = 1f;
+        }
+
+        private int _rerollRemaining;
+
+        /// <summary>Gamepad kullanılırken etiketin başında tuşu (Y) yazar.</summary>
+        private void RefreshRerollLabel()
+        {
+            if (_rerollLabel == null) return;
+            string text = $"↻  {Loc.Get("Upgrade.upgrade_card_reroll.Name")}  ×{_rerollRemaining}";
+            if (InputMode.UsingGamepad) text = $"{InputMode.GlyphRich(PadButton.North)}   {text}";
+            _rerollLabel.text = text;
+
             // Genişlik metne göre: çevirilerin uzunluğu dilden dile çok değişiyor
             float w = _rerollLabel.GetPreferredValues(_rerollLabel.text).x;
             _rerollRect.sizeDelta = new Vector2(Mathf.Clamp(w + 72f, 260f, 900f), _rerollRect.sizeDelta.y);
-            if (punch) _rerollPunch = 1f;
         }
 
         private void HideRerollButton()
@@ -684,9 +706,43 @@ namespace RogueBlockBlast.Game.Prototype
 
         // ── Hover ────────────────────────────────────────────────────────────
 
+        // ── Gamepad ──────────────────────────────────────────────────────────
+        // Kartlar EventSystem'de seçilmez (UINav "manual" kapsam): sol/sağ odaktaki
+        // kartı değiştirir, odak hover kalkışıyla gösterilir, A seçer, Y yeniler.
+
+        private int _padIndex;
+        private readonly InputMode.RepeatState _padRepeat = new InputMode.RepeatState();
+
+        private void UpdateGamepad()
+        {
+            // Pause menüsü kart seçiminin üstünde açıksa A onun butonlarına aittir.
+            if (_cards.Count == 0 || !InputMode.UsingGamepad || !UINav.IsTop(gameObject)) return;
+
+            int step = _padRepeat.Step().x;
+            if (step != 0) _padIndex = (_padIndex + step + _cards.Count) % _cards.Count;
+            _padIndex = Mathf.Clamp(_padIndex, 0, _cards.Count - 1);
+
+            if (InputMode.Pressed(PadButton.South) && _padIndex < _cardData.Count)
+                OnCardClicked(_cardData[_padIndex]);
+            else if (InputMode.Pressed(PadButton.North) && _rerollShown &&
+                     _rerollButton != null && _rerollButton.interactable)
+                OnRerollPressed();
+        }
+
         private void UpdateHover()
         {
             if (_cards.Count == 0 || EventSystem.current == null) return;
+
+            if (InputMode.UsingGamepad)
+            {
+                var focused = _cards[Mathf.Clamp(_padIndex, 0, _cards.Count - 1)];
+                if (ReferenceEquals(focused, _hovered)) return;
+                _hovered?.SetHovered(false);
+                _hovered = focused;
+                _hovered?.SetHovered(true);
+                return;
+            }
+
             if (Mouse.current == null) return;
 
             PhysicalCard under = null;

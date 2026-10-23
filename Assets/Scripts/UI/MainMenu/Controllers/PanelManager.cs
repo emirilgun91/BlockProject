@@ -44,6 +44,9 @@ namespace RogueBlockBlast.UI
 
             _currentPanel = panel;
             panel.gameObject.SetActive(true);
+            // Gamepad: panel odağa girer, B kapatır. Panelin kendi kontrolcüsü (Ayarlar,
+            // Shape Shop) OnEnable'da daha ayrıntılı bir kapsam açtıysa o geçerli kalır.
+            UINav.PushIfAbsent(panel.gameObject, back: CloseCurrentPanel);
             panel.alpha          = 0f;
             panel.interactable   = false;
             panel.blocksRaycasts = false;
@@ -69,6 +72,7 @@ namespace RogueBlockBlast.UI
         public void ClosePanel(CanvasGroup panel)
         {
             if (panel == null) return;
+            UINav.Pop(panel.gameObject);   // fade beklenmeden alttaki menüye dönülür
 
             panel.interactable   = false;
             panel.blocksRaycasts = false;

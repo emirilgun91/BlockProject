@@ -29,7 +29,8 @@ namespace RogueBlockBlast.UI
     ///   └── ArrowText (TMP)
     /// </summary>
     public sealed class MenuButtonView : MonoBehaviour,
-        IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+        IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
+        ISelectHandler, IDeselectHandler, ISubmitHandler
     {
         [Header("References")]
         [SerializeField] private RectTransform _rect;
@@ -81,7 +82,12 @@ namespace RogueBlockBlast.UI
                 scale.y = 0f;
                 _accentBar.localScale = scale;
             }
-           
+
+            // Gamepad gezinmesi için bir Selectable gerekir; bu butonlar yalnızca
+            // pointer olaylarıyla çalışıyordu ve EventSystem onları hiç seçemiyordu.
+            // Görsel geri bildirimi hover animasyonu verir (OnSelect), geçiş efekti yok.
+            if (!TryGetComponent<Selectable>(out _))
+                gameObject.AddComponent<Selectable>().transition = Selectable.Transition.None;
         }
 
         private IEnumerator Start()
@@ -107,6 +113,14 @@ namespace RogueBlockBlast.UI
         // ── Lock ─────────────────────────────────────────────────────────────
 
         private void EvaluateLockState()
+        {
+            ResolveLockState();
+
+            // Kilitli buton gamepad gezinmesinde atlanır.
+            if (TryGetComponent<Selectable>(out var selectable)) selectable.interactable = !_isLocked;
+        }
+
+        private void ResolveLockState()
         {
             if (_isComingSoon)
             {
@@ -188,6 +202,19 @@ namespace RogueBlockBlast.UI
             AudioManager.Instance?.PlaySFX(Click);
             OnClicked?.Invoke();
         }
+
+        // ── Gamepad ──────────────────────────────────────────────────────────
+        // Seçim, hover'la aynı görünür. Yalnızca gamepad'de: fareyle tıklanan buton
+        // da seçili kalır ve fare çekilince hover animasyonu geri sarılmalı.
+
+        public void OnSelect(BaseEventData e)
+        {
+            if (InputMode.UsingGamepad) OnPointerEnter(null);
+        }
+
+        public void OnDeselect(BaseEventData e) => OnPointerExit(null);
+
+        public void OnSubmit(BaseEventData e) => OnPointerClick(null);
 
         private void OnDisable()
         {

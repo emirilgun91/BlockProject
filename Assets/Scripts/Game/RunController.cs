@@ -9,6 +9,7 @@ using RogueBlockBlast.Game.Tutorial;
 using RogueBlockBlast.UI;
 using RogueBlockBlast.UI.FX;
 using RogueBlockBlast.Core.Save;
+using RogueBlockBlast.Core.Settings;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.InputSystem;
@@ -52,16 +53,6 @@ namespace RogueBlockBlast.Game
         [SerializeField] private AudioClip mainLoopMusic;
         [Header("Milestone")]
         [SerializeField] private MilestoneConfigSO MilestoneConfig;
-
-        [Header("Demo")]
-        [Tooltip("AÇIK: bu skor eşiğine sahip milestone'a ulaşınca demo bitiş paneli " +
-                 "açılır ve run sona erer. Tam sürümde kapatın.")]
-        [SerializeField] private bool _demoBuild = false;
-
-        [Tooltip("Demoyu bitiren milestone'un skor eşiği. MilestoneConfig'te " +
-                 "20000 = 'Stage 6'. Eşik üzerinden bakılır çünkü etiketler " +
-                 "(Stage 8'den sonra Stage 10'a atlıyor) güvenilir bir sıra vermiyor.")]
-        [SerializeField] private int _demoEndScoreThreshold = 20000;
 
         // ── Core systems ─────────────────────────────────────────────────────
         private BoardModel      _board;
@@ -266,6 +257,16 @@ namespace RogueBlockBlast.Game
                 }
             }
 
+            // Ayarlar ▸ Ghost Preview kapalıysa önizleme çizilmez (tıklama yine çalışır).
+            // Sürükle-bırakta parça yalnızca ghost olarak görünüyor; orada kapatılmaz.
+            if (!GameSettings.GhostPreview && !_dragToPlace)
+            {
+                _ghost.Clear();
+                _ghostPositionBonus.Clear();
+                _ghostIsFreeDrop = false;
+                ghostPlaceable = true;
+            }
+
             float ghostTileValue = _currentPiece?.TileValue ?? 0f;
             if (_currentPiece != null)
             {
@@ -277,7 +278,7 @@ namespace RogueBlockBlast.Game
             Color? ghostOverride = null;
             if (_ghostIsFreeDrop)
             {
-                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 7f);
+                float pulse = GameSettings.NoBlinking ? 0.5f : 0.5f + 0.5f * Mathf.Sin(Time.time * 7f);
                 ghostOverride = Color.Lerp(
                     new Color(0.35f, 1f, 0.62f, 0.75f),
                     new Color(0.85f, 1f, 0.90f, 0.95f),
@@ -508,6 +509,7 @@ namespace RogueBlockBlast.Game
             _linePreviewCols.Clear();
 
             bool enabled = _linePreviewDelay >= 0f
+                           && GameSettings.HighlightClearingLines
                            && ghostPlaceable
                            && _ghost.Count > 0
                            && Time.time - _turnStartTime >= _linePreviewDelay;
@@ -564,6 +566,31 @@ namespace RogueBlockBlast.Game
         {
             if (!PlacementSystem.CanPlace(_board, _currentPiece, anchor, _currentRot))
                 return;
+
+            _inPlacement = true;
+            try
+            {
+                DoPlaceCore(anchor);
+            }
+            finally
+            {
+                _inPlacement = false;
+
+                // Ceza havuzu bitirdiyse ama aynı hamlede milestone geldiyse
+                // pencere sıfırlanmıştır: yalnızca hâlâ 0 ise run biter.
+                if (_exhaustPending)
+                {
+                    _exhaustPending = false;
+                    if ((_milestoneSystem?.PiecesRemaining ?? 1) <= 0)
+                        OnGameOver(GameOverReason.PoolExhausted);
+                }
+
+                FlushMilestoneOutcome();
+            }
+        }
+
+        private void DoPlaceCore(Vector2Int anchor)
+        {
 
             // ── Card pre-checks (evaluated before board state changes) ────────
             bool isGhostDrop = _cardState.HasGhostDrop &&
@@ -945,6 +972,11 @@ namespace RogueBlockBlast.Game
             GameOverUI.Instance?.Hide();
             Time.timeScale = 1f;
             _upgradeRevivesUsed = 0;
+            _runStartTime        = Time.time;
+            _victoryPending      = false;
+            _exhaustPending      = false;
+            _pendingCards        = null;
+            _pendingNewCard      = null;
             _turnStartTime       = Time.time;
             _linePreviewStrength = 0f;
             _freeDeadPoolReroll = 0;
@@ -1064,6 +1096,10 @@ namespace RogueBlockBlast.Game
             // yakalayabilir, panel iki defa açılmamalı.
             if (_gameOverFired) return;
 
+            // Son aşama bu hamlede geçildiyse oyuncu kazandı: aynı hamlede gelen
+            // ölü havuz / biten pencere zaferi game over'a çevirmemeli.
+            if (_victoryPending) return;
+
             // ── Son doğrulama: gerçekten hamlesiz miyiz? ──────────────────────
             // "Hamle kalmadı" gerekçeleri tahtanın o anki hâline bakılarak verilir,
             // ama tahtayı yerleştirmeden SONRA değiştiren kartlar var: Selective
@@ -1099,10 +1135,62 @@ namespace RogueBlockBlast.Game
             }
         }
 
+        // ── Zafer ────────────────────────────────────────────────────────────
+
+        /// <summary>Run süresi zafer ekranı için — Time.time pause ve kart seçiminde durur.</summary>
+        private float _runStartTime;
+
+        /// <summary>
+        /// Son aşama geçildi. Run burada biter: oyun bir an daha akar (tahtada
+        /// dalga, sarsıntı), sonra zafer ekranı açılır ve oyunu durdurur.
+        /// </summary>
+        private void OnVictory()
+        {
+            if (_gameOverFired) return;
+            _gameOverFired = true;   // soft-lock taraması ve game over artık devre dışı
+
+            int best = SaveStore.GetInt("BestScore", 0);
+            bool newRecord = _score > best;
+
+            RunEvents.RunEnded(_score, RunStatsTracker.Instance?.PiecesPlaced ?? 0);
+            SaveRunResults();
+
+            BoardOverlayFX.Instance.PlayPerfectClearWave(BoardView, _board.Width, _board.Height);
+            FindFirstObjectByType<RogueBlockBlast.Game.Prototype.BoardCameraRig>()?.AddTrauma(0.9f);
+            FrameFeedbackController.Instance?.OnLineClear(4);
+            AudioManager.Instance?.PlaySFX(LineClearSFX);
+
+            var owned = new HashSet<string>(CardInventoryUI.Instance?.GetSelectedCardIds() ?? Enumerable.Empty<string>());
+            var cards = CardPool.Where(c => c != null && owned.Contains(c.Id)).ToList();
+
+            var stats = new VictoryScreen.Stats
+            {
+                Score     = _score,
+                Lines     = RunStatsTracker.Instance?.LinesCleared ?? 0,
+                Pieces    = RunStatsTracker.Instance?.PiecesPlaced ?? 0,
+                Coins     = _coins,
+                Stages    = MilestoneConfig.TotalMilestones,
+                MaxCombo  = Mathf.Max(_comboSystem.BaseMultiplier, (RunStatsTracker.Instance?.MaxCombo ?? 10) / 10f),
+                Seconds   = Time.time - _runStartTime,
+                NewRecord = newRecord,
+                Cards     = cards
+            };
+
+            VictoryScreen.Show(stats,
+                onNewRun: () =>
+                {
+                    // GameOverUI ile aynı: açık sahneyi yeniden yükle (portrait / landscape)
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(
+                        UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+                },
+                onMainMenu: () => SceneTransition.Instance?.LoadScene("MainMenu"),
+                slamClip: MilestoneView != null ? MilestoneView.MilestoneReachClip : null);
+        }
+
         /// <summary>
         /// Run sonucunu kalıcı kayda yazar: ana menüdeki "Last run" özeti ve
         /// en yüksek skor. Run'ın nasıl bittiğinden bağımsız çağrılır —
-        /// Game Over da demo bitişi de aynı yoldan geçer.
+        /// Game Over da zafer ekranı da aynı yoldan geçer.
         /// </summary>
         private void SaveRunResults()
         {
@@ -1127,8 +1215,8 @@ namespace RogueBlockBlast.Game
         // ── Dead Pool ────────────────────────────────────────────────────────
         private void HandleDeadPool()
         {
-            // Run zaten bittiyse kurtarma hakkı harcanmasın.
-            if (_gameOverFired) return;
+            // Run zaten bittiyse (ya da bu hamlede kazanıldıysa) kurtarma hakkı harcanmasın.
+            if (_gameOverFired || _victoryPending) return;
 
             // First Picks döndürmeyi kapattığı için sıkıştıysak reroll/revive ile uğraşma:
             // yeni havuz da aynı kısıtla gelir. Oyunu kilitlemek yerine burada bitir.
@@ -1259,38 +1347,6 @@ namespace RogueBlockBlast.Game
             MilestoneView?.PlayMilestoneReachedFX();
             FrameFeedbackController.Instance?.OnMilestone();
 
-            // ── Demo sonu ─────────────────────────────────────────────────────
-            // Ödül ve kutlama efekti oynatıldıktan SONRA bakılır: oyuncu son
-            // aşamayı kazandığını görsün, panel bunun üstüne gelsin. Kart
-            // seçimi hiç açılmaz — run burada biter.
-            if (_demoBuild && data.ScoreThreshold >= _demoEndScoreThreshold)
-            {
-                var demoPanel = DemoEndPanel.Instance;
-
-                if (demoPanel != null)
-                {
-                    // Bayrak yalnızca panel gerçekten açıldıysa set edilir.
-                    // Aksi hâlde run "bitti" sayılır ama hiçbir ekran açılmaz;
-                    // oyuncu oynamaya devam eder ve gerçekten öldüğünde
-                    // OnGameOver bu bayrak yüzünden sessizce geri döner —
-                    // yani Game Over ekranı hiç gelmez.
-                    _gameOverFired = true;
-
-                    // Run burada bitiyor ve Game Over ekranı hiç açılmıyor —
-                    // "Last run" ve "Best score" kayıtlarını bu yüzden burada
-                    // elle yazıyoruz, yoksa demo biten oyuncunun skoru kaybolur.
-                    SaveRunResults();
-
-                    demoPanel.Show();
-                    return;
-                }
-
-                Debug.LogError(
-                    "[RunController] Demo sonuna ulaşıldı ama sahnede DemoEndPanel yok. " +
-                    "Run normal akışına devam ediyor. Paneli kurmak için: " +
-                    "Tools ▸ RogueBlockBlast ▸ Demo ▸ Build End Panel");
-            }
-
             CardSO newlyUnlockedCard = null;
             if (UnlockRegistry.Instance != null &&
                 UnlockRegistry.Instance.IsFirstMilestoneReach(data.Label))
@@ -1312,16 +1368,61 @@ namespace RogueBlockBlast.Game
                     SaveStore.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
             }
 
-            if (CardPool != null && CardPool.Count > 0)
+            // Son aşama: kart seçimi yok, run zaferle biter.
+            if (_milestoneSystem.AllMilestonesCleared)
+            {
+                _victoryPending = true;
+            }
+            else if (CardPool != null && CardPool.Count > 0)
             {
                 // Filter out cards that are excluded by active card effects (e.g. mutual exclusions)
-                var availableCards = CardPool.Where(c => c != null && !IsCardExcluded(c)).ToList();
-                CardSelectionUI.Instance?.Show(availableCards, OnCardPicked, newlyUnlockedCard, _cardRerollsRemaining);
+                _pendingCards       = CardPool.Where(c => c != null && !IsCardExcluded(c)).ToList();
+                _pendingNewCard     = newlyUnlockedCard;
             }
+
+            // Yerleştirme sürerken açılmaz: aynı hamlede game over gelebilir
+            // (yeni havuz sığmıyor, pencere bitti). Ekran DoPlace sonunda açılır.
+            if (!_inPlacement) FlushMilestoneOutcome();
+        }
+
+        // ── Yerleştirme sonu kararları ───────────────────────────────────────
+        // Milestone ve game over aynı DoPlace içinde birbirinden habersiz
+        // tetikleniyordu: game over paneli açıkken kart seçimi de açılabiliyor,
+        // Safe Zone cezası havuzu bitirince aynı hamlede gelen milestone'a
+        // rağmen run bitiyordu. Kararlar artık hamle bitince, sırayla verilir.
+
+        private bool          _inPlacement;
+        private bool          _exhaustPending;
+        private bool          _victoryPending;
+        private List<CardSO>  _pendingCards;
+        private CardSO        _pendingNewCard;
+
+        private void FlushMilestoneOutcome()
+        {
+            if (_victoryPending)
+            {
+                _victoryPending = false;
+                _pendingCards   = null;
+                OnVictory();
+                return;
+            }
+
+            if (_pendingCards == null) return;
+            var cards   = _pendingCards;
+            var newCard = _pendingNewCard;
+            _pendingCards   = null;
+            _pendingNewCard = null;
+
+            // Game over'dan sonra kart seçimi açılmaz.
+            if (_gameOverFired) return;
+            CardSelectionUI.Instance?.Show(cards, OnCardPicked, newCard, _cardRerollsRemaining);
         }
 
         private void HandlePoolLimitExhausted()
         {
+            // Hamle sürerken (Safe Zone / Hyperfocus cezası) hemen bitirme: aynı
+            // hamlede milestone gelirse pencere sıfırlanır ve run devam etmeli.
+            if (_inPlacement) { _exhaustPending = true; return; }
             OnGameOver(GameOverReason.PoolExhausted);
         }
 

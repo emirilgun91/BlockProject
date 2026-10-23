@@ -130,6 +130,20 @@ namespace RogueBlockBlast.UI
             GameSettings.EnsureLoaded();
             Loc.Init();
             BuildResolutionList();
+
+            // Sürükleme payı yalnızca dokunmatik sürükle-bırakta anlamlı: PC'de
+            // satırı gizle (değer korunur, mobil sürüm aynı paneli kullanacak).
+            if (!Application.isMobilePlatform) HideRow(_dragOffsetSlider);
+        }
+
+        /// <summary>Kontrolün satırını (builder'ın "Row_..." nesnesi) kapatır.</summary>
+        private static void HideRow(Component control)
+        {
+            if (control == null) return;
+            for (var t = control.transform; t != null; t = t.parent)
+            {
+                if (t.name.StartsWith("Row_")) { t.gameObject.SetActive(false); return; }
+            }
         }
 
         private void OnEnable()

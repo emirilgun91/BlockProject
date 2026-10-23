@@ -48,7 +48,6 @@ namespace RogueBlockBlast.Game.Trailer
             /// <summary>Sırayla seçilmesi istenen kart Id'leri (sunulmuşsa). Boşsa tercih listesi.</summary>
             public string[] CardPlan = Array.Empty<string>();
             public bool   ShowCursor = true;
-            public bool   DisableDemoLimit = true;
             /// <summary>1 = normal insan hızı; büyüdükçe fare hareketleri ve beklemeler kısalır.</summary>
             public float  Pace = 1f;
             /// <summary>Planlayıcı çok-satırlı temizlemeye ne kadar oynasın (gösteri).</summary>
@@ -139,7 +138,6 @@ namespace RogueBlockBlast.Game.Trailer
         static readonly FieldInfo fRot      = Fld("_currentRot");
         static readonly FieldInfo fCur      = Fld("_currentPiece");
         static readonly FieldInfo fScore    = Fld("_score");
-        static readonly FieldInfo fDemo     = Fld("_demoBuild");
         static readonly FieldInfo fOver     = Fld("_gameOverFired");
         static readonly FieldInfo fDirty    = Fld("_poolDirty");
         static readonly FieldInfo fDrag     = Fld("_dragToPlace");
@@ -245,7 +243,6 @@ namespace RogueBlockBlast.Game.Trailer
                 yield return null;
             }
 
-            if (Spec.DisableDemoLimit) fDemo.SetValue(_rc, false);
             fDrag.SetValue(_rc, false);
             SetupMouse();
 
@@ -255,7 +252,6 @@ namespace RogueBlockBlast.Game.Trailer
             {
                 UnityEngine.Random.InitState(Spec.Seed);
                 mNewRun.Invoke(_rc, null);
-                if (Spec.DisableDemoLimit) fDemo.SetValue(_rc, false);
                 // Giriş animasyonu bitmeden oynamak karoları bozuyordu; bitmesini bekle
                 yield return Wait(3.0f);
                 if (!string.IsNullOrEmpty(Spec.ForceFirstShape)) ForceFirstPool(Spec.ForceFirstShape);

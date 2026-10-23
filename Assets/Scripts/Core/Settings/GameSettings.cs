@@ -180,6 +180,12 @@ namespace RogueBlockBlast.Core.Settings
             set { EnsureLoaded(); if (Set(ref _reduceFlashing, value, K_ReduceFlashing)) OnAccessibilityChanged?.Invoke(); }
         }
 
+        /// <summary>Tam ekran flaşların çarpanı: Reduce Flashing açıkken 0.2.</summary>
+        public static float FlashStrength => ReduceFlashing ? 0.2f : 1f;
+
+        /// <summary>Yanıp sönme (nabız) kapalı mı — Reduce Motion ya da Reduce Flashing.</summary>
+        public static bool NoBlinking => ReduceMotion || ReduceFlashing;
+
         // ── Gameplay ─────────────────────────────────────────────────────────
         /// <summary>Parça sürüklerken hayalet önizleme göster.</summary>
         public static bool GhostPreview

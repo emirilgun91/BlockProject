@@ -114,14 +114,14 @@ namespace RogueBlockBlast.UI.FX
             _vignette.enabled = true;
             _vignette.color   = new Color(1f, 1f, 1f, 0f);
             DOTween.Sequence()
-                .Append(_vignette.DOFade(0.75f, 0.06f))              // sert beyaz flaş
+                .Append(_vignette.DOFade(0.75f * GameSettings.FlashStrength, 0.06f))   // sert beyaz flaş
                 .Append(_vignette.DOColor(new Color(gold.r, gold.g * 0.85f, gold.b * 0.4f, 0.30f), 0.20f))
                 .AppendInterval(0.40f)
                 .Append(_vignette.DOFade(0f, 0.45f))
                 .OnComplete(() => _vignette.enabled = false);
 
             _burst.enabled = true;
-            _burst.color   = new Color(1f, 1f, 1f, 0.9f);
+            _burst.color   = new Color(1f, 1f, 1f, 0.9f * GameSettings.FlashStrength);
             _burst.transform.localScale = Vector3.one * 0.2f;
             DOTween.Sequence()
                 .Join(_burst.transform.DOScale(2.6f, 0.55f).SetEase(Ease.OutCubic))

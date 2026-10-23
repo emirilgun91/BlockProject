@@ -40,55 +40,55 @@ MonoBehaviour:
     Label: Stage 8
   - ScoreThreshold: 65000
     CoinReward: 6000
-    Label: Stage 10
+    Label: Stage 9
   - ScoreThreshold: 95000
     CoinReward: 7500
-    Label: Stage 11
+    Label: Stage 10
   - ScoreThreshold: 145000
     CoinReward: 10000
-    Label: Stage 12
+    Label: Stage 11
   - ScoreThreshold: 215000
     CoinReward: 14000
-    Label: Stage 13
+    Label: Stage 12
   - ScoreThreshold: 310000
     CoinReward: 16000
-    Label: Stage 14
+    Label: Stage 13
   - ScoreThreshold: 440000
     CoinReward: 24000
-    Label: Stage 15
+    Label: Stage 14
   - ScoreThreshold: 620000
     CoinReward: 32000
-    Label: Stage 16
+    Label: Stage 15
   - ScoreThreshold: 850000
     CoinReward: 40000
-    Label: Stage 17
+    Label: Stage 16
   - ScoreThreshold: 1150000
     CoinReward: 50000
-    Label: Stage 18
+    Label: Stage 17
   - ScoreThreshold: 1500000
     CoinReward: 70000
-    Label: Stage 19
+    Label: Stage 18
   - ScoreThreshold: 1950000
     CoinReward: 90000
-    Label: Stage 20
+    Label: Stage 19
   - ScoreThreshold: 2500000
     CoinReward: 100000
-    Label: Stage 21
+    Label: Stage 20
   - ScoreThreshold: 3200000
     CoinReward: 110000
-    Label: Stage 22
+    Label: Stage 21
   - ScoreThreshold: 4000000
     CoinReward: 120000
-    Label: Stage 23
+    Label: Stage 22
   - ScoreThreshold: 5000000
     CoinReward: 135000
-    Label: Stage 24
+    Label: Stage 23
   - ScoreThreshold: 6200000
     CoinReward: 150000
-    Label: Stage 25
+    Label: Stage 24
   - ScoreThreshold: 7500000
     CoinReward: 150000
-    Label: Stage 26
+    Label: Stage 25
   - ScoreThreshold: 10000000
     CoinReward: 150000
-    Label: Stage 27
+    Label: Stage 26

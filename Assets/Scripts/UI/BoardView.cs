@@ -244,11 +244,11 @@ namespace RogueBlockBlast.UI
             // Ghost Drop gibi kartlar geçerli önizlemeyi kendi rengiyle boyayabilir:
             // oyuncu bedava yerleştirmeyi TIKLAMADAN ÖNCE görmeli, sonrasında
             // öğrenmesi kartı oynanamaz kılıyordu.
-            float pulse = GameSettings.ReduceMotion
+            float pulse = GameSettings.NoBlinking
                 ? 0.5f
                 : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _ghostPulseSpeed);
             float ghostMix = _ghostStrength + (pulse - 0.5f) * _ghostPulseAmount;
-            float conflictBlink = GameSettings.ReduceMotion
+            float conflictBlink = GameSettings.NoBlinking
                 ? 1f
                 : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _ghostPulseSpeed * 2.2f);
 

@@ -203,7 +203,7 @@ namespace RogueBlockBlast.Game.Achievements
             return false;
         }
 
-        /// <summary>"Stage 10" → 10. Etiketler sırayla artmıyor (8'den 10'a atlıyor), o yüzden sayıyla değil etiketle bakılır.</summary>
+        /// <summary>"Stage 10" → 10. Aşama numarası etiketten okunur (MilestoneConfig sırayla 1–26).</summary>
         private static int ParseStageNumber(string label)
         {
             if (string.IsNullOrEmpty(label)) return 0;

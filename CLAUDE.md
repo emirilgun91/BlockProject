@@ -47,7 +47,7 @@ These live across scene loads and use PlayerPrefs for persistence. Always access
 
 - **`CoinWallet`** — Balance, `Earn/Spend/CanAfford`. Fires `OnBalanceChanged`.
 - **`UpgradeRegistry`** — Upgrade levels (buy/sell), PlayerPrefs key `Upgrade_Level_{id}`. `GetEffect(upgradeSO)` returns `level × EffectValuePerLevel`.
-- **`UnlockRegistry`** — Shape/card/milestone unlock state, PlayerPrefs keys `Unlocked_Card_{id}`, `Unlocked_Shape_{id}`, `MilestoneFirstReach_{label}`.
+- **`UnlockRegistry`** — Shape/card/milestone unlock state, PlayerPrefs keys `Unlocked_Card_{id}`, `Unlocked_Shape_{id}`, `MilestoneFirstReach_{label}`. `_unlockedShapes` holds only *purchased* shapes, so "is this shape available" is `IsShapeUnlocked(id) || !IsShapeKnownAsLocked(id)`. The locked-shape list is filled only by `RegisterLockedShapes` (RunController and the Shape Shop both call it); `Init` must not clear it, or cards for unbought shapes get offered.
 - **`ShapeCardEffectRegistry`** — Run-scoped registry of active shape-card effects (score bonus, weight delta per shape). **Must be `Reset()` at `NewRun`** — `RunController` does this.
 - **`AudioManager`** — `PlayMusic` / `PlaySFX`.
 
@@ -118,14 +118,14 @@ Progress lives in **`SaveStore`** (`Core/Save/`, namespace `RogueBlockBlast.Core
 - The API mirrors PlayerPrefs (`GetInt/SetInt/GetFloat/GetString/GetBool/DeleteKey/Save`) and the keys are the old PlayerPrefs keys (`CoinWallet_Balance`, `Upgrade_Level_*`, `Unlocked_*`, `MilestoneFirstReach_*`, `ShapeScore_*`, `ShapeWeight_*`, `Ach_*`, `Tutorial_*`, `BestScore`, `LastRun_*`, `MaxMilestoneReached`). New progress data goes through `SaveStore`, never PlayerPrefs.
 - Loaded once (`BeforeSceneLoad`). `Set*` only marks it dirty; a hidden `[SaveStore]` runner writes after `DebounceSeconds` (5 s), on focus loss / pause / quit, or when `SaveStore.Save()` is called. Coin changes and shop purchases call `Save()` straight away.
 - Writes are atomic: `save.json.tmp` then `File.Replace` (keeps `save.json.bak`). Loading falls back to `.bak`, then `.tmp`; an unreadable file is copied to `save.json.corrupt` first.
-- **Migration from the demo**: when there is no save file and any of a few sentinel PlayerPrefs keys exists, `legacyImport` is switched on. Each key missing from the file is then read from PlayerPrefs the first time it is asked for, once (`legacyChecked`; `DeleteKey` also counts, so deleted values don't come back). It is lazy because PlayerPrefs cannot list its keys and shape/card/upgrade ids come from scene ScriptableObjects. Old PlayerPrefs keys are never deleted by the migration.
+- **Legacy PlayerPrefs import** (from the old demo era; with the new productName it finds nothing): when there is no save file and any of a few sentinel PlayerPrefs keys exists, `legacyImport` is switched on. Each key missing from the file is then read from PlayerPrefs the first time it is asked for, once (`legacyChecked`; `DeleteKey` also counts, so deleted values don't come back). It is lazy because PlayerPrefs cannot list its keys and shape/card/upgrade ids come from scene ScriptableObjects. Old PlayerPrefs keys are never deleted by the migration.
 - `SaveDataService.ResetProgress` calls `SaveStore.DeleteAll()` (empties the file, turns migration off), then still wipes PlayerPrefs and writes the settings back.
 - The editor uses the same `persistentDataPath` as a build on this machine. **Tools ▸ RogueBlockBlast ▸ Save Data** has *Show save.json* and *Delete save.json only (re-run migration)*.
-- Changing `productName` (now "Blockflow Demo") moves both this folder and the PlayerPrefs registry key, so a rename needs a migration that reads the old folder / old registry key, and the Steam Auto-Cloud path has to change with it.
+- `productName` is "Blockflow" (was "Blockflow Demo" until the demo was dropped). The rename moved both this folder and the PlayerPrefs registry key; demo progress is deliberately **not** carried over to the full game. Any future rename moves them again and needs the Steam Auto-Cloud path changed with it.
 
 ### Steam & achievements
 
-Steam App IDs: full game **4559890** (`SteamPlatform.FullGameAppId`), demo **5192270** (`SteamPlatform.DemoAppId`). `SteamPlatform.IsDemo` picks `AppId`; set it to false (and put 4559890 in `steam_appid.txt`) before a full-game build. A wrong ID makes `RestartAppIfNecessary` close the build and launch the other app through Steam. `steam_appid.txt` in the project root is for editor runs; don't ship it (put one next to the exe only to test a local build outside Steam). Steamworks.NET is a UPM git package. The Steam code compiles only with `STEAMWORKS_NET` (set for Standalone; not for Android, which builds without Steam). Every Steam call sits behind that define, so keep a no-op `#else` for anything other code calls.
+Steam App ID: **4559890** (`SteamPlatform.AppId`; the demo, 5192270, is no longer built and its code is gone). A wrong ID makes `RestartAppIfNecessary` close the build and launch the other app through Steam. `steam_appid.txt` in the project root is for editor runs; don't ship it (put one next to the exe only to test a local build outside Steam). Steamworks.NET is a UPM git package. The Steam code compiles only with `STEAMWORKS_NET` (set for Standalone; not for Android, which builds without Steam). Every Steam call sits behind that define, so keep a no-op `#else` for anything other code calls.
 
 - **`SteamPlatform`** (`Game/Achievements/`) creates itself before the first scene, calls `RestartAppIfNecessary` in builds, `SteamAPI.InitEx`, runs callbacks every frame and shuts down on quit. If init fails it logs why and the game runs without Steam.
 - **`AchievementService`** (`Core/Achievements/`) is the only entry point: `Unlock(id)` and `AddStat(stat, delta)`. State is stored locally (`Ach_Unlocked_*`, `Ach_Stat_*` in `SaveStore`) and pushed to Steam when the backend is ready. `Sync()` runs both ways when Steam connects, so unlocks made offline are not lost and Steam unlocks come back after a progress reset.
@@ -171,19 +171,34 @@ MilestoneSystem.OnMilestoneReached(coins, data)
   → RunController.HandleMilestoneReached
       CoinWallet.Earn(coins × multiplier)
       UnlockRegistry.IsFirstMilestoneReach → maybe unlock a locked card
-      CardSelectionUI.Show(cardPool, OnCardPicked, newlyUnlockedCard, cardRerolls)
+      last milestone → _victoryPending, else → _pendingCards
+  → FlushMilestoneOutcome()   (at the end of DoPlace; immediately outside a placement)
+      victory → OnVictory() → VictoryScreen
+      game over already fired → no card screen
+      else CardSelectionUI.Show(cards, OnCardPicked, newlyUnlockedCard, cardRerolls)
         player picks → CardEffectApplier.Apply(card, ...)
           IsShapeCard → ShapeCardEffectRegistry.Register(card)
           else → modifies comboSystem / globalScoreMultiplier / deadPoolRerolls / coinBonus
         CardInventoryUI.AddCard(card)
 ```
 
+**End-of-placement decisions.** `DoPlace` wraps `DoPlaceCore` and sets `_inPlacement`. Inside a placement, a milestone only *records* its outcome and pool exhaustion (Safe Zone / Hyperfocus `DeductPieces`) only sets `_exhaustPending`; both are resolved in `DoPlace`'s `finally`. That order is what keeps a Game Over and the card screen from opening together, and lets a milestone reached by the same placement save a run whose window a penalty just emptied. `OnGameOver` and `HandleDeadPool` return early while `_victoryPending`: once the last stage is cleared, a dead pool in the same placement cannot turn the win into a Game Over.
+
+**Card rerolls are per run.** `RunController._cardRerollsRemaining` is passed to `CardSelectionUI.Show` and read back from `CardSelectionUI.RerollsRemaining` in `OnCardPicked`. The 2.5D presenter draws the reroll button (screen space, anchored above the card fan by `PlaceRerollButton`).
+
+### Victory
+
+Clearing the last milestone (Stage 26) ends the run with **`VictoryScreen`** (`UI/VictoryScreen.cs`) instead of a card pick. It builds its own canvas and sprites, so it needs no scene setup and works in `GamePortrait` too. The sequence is spread over time: flash + board wave + camera trauma while the game still runs, then the game pauses (`timeScale = 0`), the title drops in letter by letter in the logo colours, confetti cannons fire, the stats count up (score, max combo, lines, pieces, run time, coins), a NEW RECORD stamp lands, the run's cards pop in, and finally New Run / Main Menu appear. Any click, key or gamepad button after 1.3 s skips to the end. `VictoryScreen.IsShowing` stops the pause menu from opening on ESC. Strings: `Victory.*` in `Game.csv`; the stat labels reuse `GameOver.*`.
+
 ### Dead Pool Handling (priority order)
 
 1. `upgrade_dead_pool_revive` upgrade charges (up to level times per run)
 2. `_freeDeadPoolReroll` (1 free reroll per run, currently initialized to 0 in `NewRun`)
 3. `_cardDeadPoolReroll` charges from `ExtraDeadPoolReroll` card effect (costs 300 score)
-4. `OnGameOver(NoMoves)`
+4. Momentum Shield (combo ≥ its threshold; resets combo to base)
+5. `OnGameOver(NoMoves)`
+
+Each rescue goes through `TryRescue`: the new pool is generated **without** the validity check, and if it does not fit either, `HandleDeadPool` runs again for the next charge. The pool that refills after the last piece of a pool, and Pool Reroll, are also generated unchecked and leave the decision to `HandleDeadPool` (a checked `GenerateNewPool` opened Game Over directly and skipped every rescue). The "RUN SAVED" banner only plays when the rescue pool fits.
 
 ### UI Pattern
 
@@ -214,7 +229,8 @@ The pause menu, both settings panels, the HUD boards, the pool slots and the inv
 - **`GameSettings`** (static) — single source of truth for all settings, PlayerPrefs-backed, with `OnChanged` / `OnAudioChanged` / `OnDisplayChanged` / `OnAccessibilityChanged` events. Covers audio, display (fullscreen/resolution/vsync/fps), gameplay toggles, and accessibility. `ReduceMotion` overrides `ScreenShake` (returns 0) and caps `VfxIntensity`; the raw values stay readable via `ScreenShakeRaw` / `VfxIntensityRaw` so sliders keep their position.
 - **`SettingsBootstrap`** — `[RuntimeInitializeOnLoadMethod]`, self-instantiating. Applies display settings before the first scene, applies audio once `AudioManager` exists, and ducks audio on focus loss.
 - **`SaveDataService.ResetProgress()`** — wipes PlayerPrefs then re-persists settings (PlayerPrefs has no key enumeration, so "delete all, write settings back" is the only complete reset). Also clears the runtime caches of `CoinWallet` / `UpgradeRegistry` / `UnlockRegistry` / `ShapeUpgradeRegistry`.
-- **`SettingsController`** — every serialized field is optional; unbound controls are silently skipped. Takes a snapshot on open so Cancel can restore.
+- **`SettingsController`** — every serialized field is optional; unbound controls are silently skipped. Takes a snapshot on open so Cancel can restore. The Touch Drag Offset row hides itself on non-mobile platforms.
+- Every setting shown in the panels does something: Ghost Preview (desktop only; drag-to-place always shows the ghost), Highlight Clearing Lines (`UpdateLinePreview`), Show FPS (`FpsCounter`, self-instantiating overlay), Reduce Flashing (`GameSettings.FlashStrength` scales full-screen flashes, `GameSettings.NoBlinking` stops ghost pulses). Grid Lines, Haptics, Colorblind and Large Text were removed from the panels (rows switched off in the scenes, dropped from `SettingsPanelBuilder`) because nothing consumed them; their `GameSettings` keys still exist.
 
 ### Localization
 

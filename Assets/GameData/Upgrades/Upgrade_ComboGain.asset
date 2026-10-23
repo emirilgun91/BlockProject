@@ -19,5 +19,5 @@ MonoBehaviour:
   UnlockStageIndex: 6
   MaxLevel: 5
   CostPerLevel: d0070000102700003075000050c3000080380100
-  EffectType: 6
+  EffectType: 3
   EffectValuePerLevel: 0.03

@@ -207,6 +207,9 @@ namespace RogueBlockBlast.UI
             _fillBarBaseCaptured = true;
         }
 
+        /// <summary>Milestone sesi — zafer ekranı başlık çakılırken aynısını kullanır.</summary>
+        public AudioClip MilestoneReachClip => MilestoneReach;
+
         public void PlayMilestoneReachedFX()
         {
             AudioManager.Instance.PlaySFX(MilestoneReach);

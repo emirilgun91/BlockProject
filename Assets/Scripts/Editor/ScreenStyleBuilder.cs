@@ -37,7 +37,6 @@ namespace RogueBlockBlast.EditorTools
 
             GameOver(canvas);
             CardScreen(canvas);
-            DemoEnd(canvas);
 
             Commit(scene);
             Debug.Log("[ScreenStyle] Game Over ve kart seçim ekranı UI kitine çevrildi.");
@@ -91,42 +90,6 @@ namespace RogueBlockBlast.EditorTools
             // "GAME OVER" duyurusunun arkasındaki karartma
             var announce = canvas.Find("GameOver_Txt");
             if (announce != null) Tint(Find(announce, "Backdrop (1)"), UiTheme.WithAlpha(UiTheme.Scrim, 0.96f));
-        }
-
-        /// <summary>
-        /// Demo bitiş paneli (DemoEndPanelBuilder kurar). Dış "Window" eski kenar
-        /// rengini taşıyordu; görünmez yapılır, çerçeveyi "Inner" pencere görseliyle çizer.
-        /// İstek listesi birincil buton — demonun asıl çağrısı o.
-        /// </summary>
-        static void DemoEnd(Transform canvas)
-        {
-            var root = canvas.Find("DemoEndPanel");
-            if (root == null) return;
-
-            var content = Find(root, "Content");
-            Tint(content, UiTheme.WithAlpha(UiTheme.Scrim, 0.94f));
-            Tint(Find(content, "Window"), Color.clear);
-            var inner = Find(content, "Window/Inner");
-            Frame(inner, "Skin_Window");
-
-            Txt(Find(inner, "Title"), 46, UiTheme.Text, spacing: 4);
-            Txt(Find(inner, "Body"), 30, UiTheme.WithAlpha(UiTheme.Text, 0.85f), bold: false);
-
-            var row = Find(inner, "Buttons");
-            Btn(Find(row, "MainMenuButton"), UiKit.Style.Secondary, UiTheme.Text);
-            Btn(Find(row, "WishlistButton"), UiKit.Style.Primary,   Color.white);
-            Btn(Find(row, "FeedbackButton"), UiKit.Style.Secondary, UiTheme.Text);
-
-            // Satır, genişliği Image'ın tercih boyundan alıyor; sliced buton görselinin
-            // tercih boyu yalnızca köşe payı kadar — butonlar ince bir şeride
-            // dönüşüyordu. Boyut sabitlenir.
-            foreach (Transform b in row)
-            {
-                var le = b.GetComponent<LayoutElement>() ?? b.gameObject.AddComponent<LayoutElement>();
-                le.preferredWidth = 260; le.preferredHeight = 72;
-                le.minWidth = 260; le.minHeight = 72;
-                Mark(le);
-            }
         }
 
         static void CardScreen(Transform canvas)

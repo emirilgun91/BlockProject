@@ -499,13 +499,14 @@ namespace RogueBlockBlast.EditorTools
             refs.Fps     = CycleRow(content, "Settings.Display.FpsLimit", out refs.FpsLabel);
             refs.ShowFps = ToggleRow(content, "Settings.Display.ShowFps");
 
+            // Grid Lines, Haptics, Colorblind, Large Text kaldırıldı: hiçbiri oyunda bir
+            // şeye bağlı değildi (2.5D tahtada ızgara yok, PC'de titreşim yok; UI Scale
+            // büyük yazının işini görüyor, renk körlüğü modu ayrı bir özellik).
             // GAMEPLAY
             Section(content, "Settings.Section.Gameplay");
             refs.Ghost       = ToggleRow(content, "Settings.Gameplay.Ghost");
             refs.Highlight   = ToggleRow(content, "Settings.Gameplay.Highlight");
-            refs.Grid        = ToggleRow(content, "Settings.Gameplay.Grid");
             refs.ConfirmQuit = ToggleRow(content, "Settings.Gameplay.ConfirmQuit");
-            refs.Haptics     = ToggleRow(content, "Settings.Gameplay.Haptics");
             refs.DragOffset  = SliderRow(content, "Settings.Gameplay.DragOffset", out _, 0f, 2f);
 
             // ACCESSIBILITY
@@ -514,9 +515,7 @@ namespace RogueBlockBlast.EditorTools
             refs.ReduceFlashing = ToggleRow(content, "Settings.Access.ReduceFlashing");
             refs.Shake   = SliderRow(content, "Settings.Access.ScreenShake", out refs.ShakeV);
             refs.Vfx     = SliderRow(content, "Settings.Access.Vfx",         out refs.VfxV);
-            refs.Colorblind = CycleRow(content, "Settings.Access.Colorblind", out refs.ColorblindLabel);
             refs.UiScale = SliderRow(content, "Settings.Access.UiScale", out refs.UiScaleV, 0.8f, 1.4f);
-            refs.LargeText = ToggleRow(content, "Settings.Access.LargeText");
 
             // LANGUAGE
             Section(content, "Settings.Section.Language");

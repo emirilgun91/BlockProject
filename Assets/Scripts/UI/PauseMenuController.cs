@@ -92,6 +92,7 @@ namespace RogueBlockBlast.UI
         private void Update()
         {
             if (!EscapePressed()) return;
+            if (VictoryScreen.IsShowing) return;   // run bitti; ESC zafer ekranını atlatır
 
             // Ayarlar açıksa önce onu kapat
             if (_settingsPanel != null && _settingsPanel.activeSelf)

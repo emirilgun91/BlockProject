@@ -1,0 +1,9 @@
+{
+  "AsIsAvgStage": 9.607,
+  "FixedAvgStage": 9.647,
+  "NoReviveAvgStage": 8.68925,
+  "AsIsRevivesUsed": 0.49025,
+  "FixedRevivesUsed": 0.506,
+  "FreshPoolDeathPct": 1.375,
+  "DiedWithReviveUnusedPct": 1.275
+}

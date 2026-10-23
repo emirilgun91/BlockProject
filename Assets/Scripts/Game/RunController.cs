@@ -879,8 +879,12 @@ namespace RogueBlockBlast.Game
             // ── Pool management ───────────────────────────────────────────────
             _piecePool.RemoveAt(_selectedPoolIndex);
 
+            // Kontrolsüz üretilir: yeni havuz hiç sığmıyorsa karar aşağıdaki
+            // dead-pool kontrolüne kalır. Kontrol burada yapılınca game over
+            // doğrudan açılıyor, revive / Momentum Shield / kart reroll'u hiç
+            // denenmiyordu.
             if (_piecePool.Count == 0)
-                GenerateNewPool();
+                GenerateNewPool(skipValidCheck: true);
             else
             {
                 _selectedPoolIndex = 0;
@@ -1114,13 +1118,18 @@ namespace RogueBlockBlast.Game
             _poolRerollsRemaining--;
             _poolRerollButton?.UpdateCount(_poolRerollsRemaining);
             _milestoneSystem?.EnsureMinimumRemaining(6);
-            GenerateNewPool(skipValidCheck: false);
+            GenerateNewPool(skipValidCheck: true);
             _poolDirty = true;
+            // Yenilenen havuz sığmıyorsa kurtarma hakları önce denenir
+            if (!HasAnyValidMoveInPool()) HandleDeadPool();
         }
 
         // ── Dead Pool ────────────────────────────────────────────────────────
         private void HandleDeadPool()
         {
+            // Run zaten bittiyse kurtarma hakkı harcanmasın.
+            if (_gameOverFired) return;
+
             // First Picks döndürmeyi kapattığı için sıkıştıysak reroll/revive ile uğraşma:
             // yeni havuz da aynı kısıtla gelir. Oyunu kilitlemek yerine burada bitir.
             if (IsRotationLocked)
@@ -1133,28 +1142,21 @@ namespace RogueBlockBlast.Game
                 UpgradeRegistry.Instance?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_dead_pool_revive")) ?? 0f);
 
+            // Her kurtarma yeni havuzu geçerlilik kontrolü OLMADAN üretir: kontrol
+            // GenerateNewPool içinde yapılsaydı ölü gelen havuz doğrudan game over
+            // açar, kalan kurtarma hakları hiç denenmezdi. Yeni havuz da sığmazsa
+            // sıradaki hak denenir (TryRescue → HandleDeadPool).
             if (reviveLevel > 0 && _upgradeRevivesUsed < reviveLevel)
             {
                 _upgradeRevivesUsed++;
-                _milestoneSystem?.EnsureMinimumRemaining(6);
-                GenerateNewPool();
-                if (!HasAnyValidMoveInPool())
-                    OnGameOver(GameOverReason.NoMoves);
-                else
-                    RunEvents.DeadPoolSurvived();
-                _poolDirty = true;
+                TryRescue();
                 return;
             }
 
             if (_freeDeadPoolReroll > 0)
             {
                 _freeDeadPoolReroll--;
-                _milestoneSystem?.EnsureMinimumRemaining(6);
-                GenerateNewPool();
-                if (!HasAnyValidMoveInPool())
-                    OnGameOver(GameOverReason.NoMoves);
-                else
-                    RunEvents.DeadPoolSurvived();
+                TryRescue();
                 return;
             }
 
@@ -1163,13 +1165,7 @@ namespace RogueBlockBlast.Game
                 _cardDeadPoolReroll--;
                 _score -= CardRerollCost;
                 ScoreView?.AddScoreGain(_score, -CardRerollCost);
-                _milestoneSystem?.EnsureMinimumRemaining(6);
-                GenerateNewPool();
-                if (!HasAnyValidMoveInPool())
-                    OnGameOver(GameOverReason.NoMoves);
-                else
-                    RunEvents.DeadPoolSurvived();
-                _poolDirty = true;
+                TryRescue();
                 return;
             }
 
@@ -1185,16 +1181,9 @@ namespace RogueBlockBlast.Game
                     Loc.GetOr("Event.RunSavedSub", "Momentum Shield"));
                 FrameFeedbackController.Instance?.OnLineClear(3);
 
+                // Çarpan tabana iner; tekrar sıkışırsa kalkan yeniden tetiklenmez
                 _comboSystem.ForceResetToBase();
-                _milestoneSystem?.EnsureMinimumRemaining(6);
-                GenerateNewPool();
-                if (!HasAnyValidMoveInPool())
-                {
-                    OnGameOver(GameOverReason.NoMoves);
-                    return;
-                }
-                RunEvents.DeadPoolSurvived();
-                _poolDirty = true;
+                TryRescue();
                 return;
             }
 
@@ -1202,6 +1191,18 @@ namespace RogueBlockBlast.Game
             // hiçbir şekil tahtaya sığmıyor. Kilit dalı yukarıda ayrıldığı için
             // burada gerekçe her zaman NoMoves.
             OnGameOver(GameOverReason.NoMoves);
+        }
+
+        /// <summary>Kurtarma hakkı harcandı: yeni havuz ver, o da sığmazsa sıradaki hakka geç.</summary>
+        private void TryRescue()
+        {
+            _milestoneSystem?.EnsureMinimumRemaining(6);
+            GenerateNewPool(skipValidCheck: true);
+            _poolDirty = true;
+            if (HasAnyValidMoveInPool())
+                RunEvents.DeadPoolSurvived();
+            else
+                HandleDeadPool();
         }
 
         // ── Milestone Handlers ───────────────────────────────────────────────
@@ -1443,6 +1444,11 @@ namespace RogueBlockBlast.Game
         // ── Card picked ──────────────────────────────────────────────────────
         private void OnCardPicked(CardSO card)
         {
+            // Kart reroll hakkı run başına: seçim ekranında harcanan hak geri
+            // yazılmazsa her milestone'da baştan doluyordu.
+            if (CardSelectionUI.Instance != null)
+                _cardRerollsRemaining = CardSelectionUI.Instance.RerollsRemaining;
+
             if (card == null) return;
 
             bool hadNeonCable    = _cardState.HasNeonCable;

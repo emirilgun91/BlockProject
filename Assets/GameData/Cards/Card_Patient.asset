@@ -22,7 +22,7 @@ MonoBehaviour:
     Value: 0
     Description: Score x2 after 3 clear-less placements
   BaseWeight: 30
-  IsUnique: 0
+  IsUnique: 1
   LockedByDefault: 0
   RequiredShapeId: 
   IsShapeCard: 0

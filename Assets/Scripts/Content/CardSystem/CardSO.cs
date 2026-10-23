@@ -69,8 +69,13 @@ namespace RogueBlockBlast.Content
                 // 2. Shape bağımlılığı (genel)
                 if (!string.IsNullOrEmpty(RequiredShapeId))
                 {
-                    bool shapeUnlocked = UnlockRegistry.Instance != null &&
-                                        UnlockRegistry.Instance.IsShapeUnlocked(RequiredShapeId);
+                    // Kayıt yalnızca satın alınarak açılan şekilleri tutar. Varsayılan
+                // açık bir şekil (4Gen, L) hiç "açılmadığı" için bu kontrol hep
+                // false dönüyor, Card_Shape_4gen / Card_Shape_L hiç çıkmıyordu.
+                var reg = UnlockRegistry.Instance;
+                bool shapeUnlocked = reg != null &&
+                                     (reg.IsShapeUnlocked(RequiredShapeId) ||
+                                      !reg.IsShapeKnownAsLocked(RequiredShapeId));
                     if (!shapeUnlocked) return false;
                 }
 

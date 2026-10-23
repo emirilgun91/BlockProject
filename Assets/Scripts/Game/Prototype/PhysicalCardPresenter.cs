@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using RogueBlockBlast.Content;
+using RogueBlockBlast.Core.Localization;
 using RogueBlockBlast.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -27,8 +29,8 @@ namespace RogueBlockBlast.Game.Prototype
     /// kuruluyor ve kameranın sağ/yukarı eksenlerinde diziliyor; kadraj ne
     /// olursa olsun boyut ve konum sabit kalıyor.
     ///
-    /// Prototip kapsamı: reroll butonu ve "yeni kart" rozeti henüz dünya
-    /// uzayında çizilmiyor.
+    /// Reroll butonu ekran uzayında, yelpazenin altında çizilir (Card Reroll
+    /// yükseltmesi). Prototip kapsamı: "yeni kart" rozeti henüz yok.
     /// </summary>
     public sealed class PhysicalCardPresenter : MonoBehaviour, ICardPresenter
     {
@@ -168,12 +170,15 @@ namespace RogueBlockBlast.Game.Prototype
             {
                 CardSelectionUI.Instance.ExternalPresenter = null;
             }
+
+            if (_rerollCanvas != null) Destroy(_rerollCanvas.gameObject);
         }
 
         private void Update()
         {
             UpdateHover();
             UpdateDim();
+            UpdateRerollButton();
         }
 
         /// <summary>
@@ -257,7 +262,21 @@ namespace RogueBlockBlast.Game.Prototype
             int                   rerollsRemaining,
             Action                onReroll)
         {
-            ClearImmediate();
+            Vector3 dispenser = _camera != null ? FanOrigin - CamUp * _dispenserDrop : Vector3.zero;
+
+            // Reroll: eski el dağıtıcıya geri döner, yenisi arkasından gelir.
+            // ClearImmediate ile silmek kartları bir karede yok ediyordu — oyuncu
+            // elin değiştiğini değil, ekranın titrediğini görüyordu.
+            bool isReroll = _cards.Count > 0;
+            if (isReroll)
+            {
+                foreach (var c in _cards) c?.Leave(dispenser, shrink: false, duration: 0.3f);
+                _cards.Clear();
+                _cardData.Clear();
+                _hovered = null;
+            }
+            else ClearImmediate();
+
             _onPicked = onPicked;
 
             if (cards == null || cards.Count == 0 || _camera == null) return;
@@ -265,24 +284,23 @@ namespace RogueBlockBlast.Game.Prototype
             ResolveCardMetrics();
 
             EnsureDim();
-            if (_hudGroup != null) _hudBaseAlpha = _hudGroup.alpha;
+            if (!isReroll && _hudGroup != null) _hudBaseAlpha = _hudGroup.alpha;
             _dimTarget = 1f;
 
-            if (rerollsRemaining > 0)
-            {
-                Debug.Log(
-                    $"[PhysicalCards] {rerollsRemaining} reroll hakkı var ama dünya-uzayı " +
-                    "reroll butonu henüz yok (prototip kapsamı dışı).");
-            }
+            // Hak bitince buton kaybolmaz, sönük kalır: oyuncu neden basamadığını görsün.
+            if (rerollsRemaining > 0 || (isReroll && _rerollShown))
+                ShowRerollButton(rerollsRemaining, onReroll, punch: isReroll);
+            else
+                HideRerollButton();
 
-            Vector3 dispenser = FanOrigin - CamUp * _dispenserDrop;
+            float dealDelay = isReroll ? 0.22f : 0f;
 
             for (int i = 0; i < cards.Count; i++)
             {
                 var card = cards[i];
                 if (card == null) continue;
 
-                var physical = Spawn(card, i, cards.Count, dispenser);
+                var physical = Spawn(card, i, cards.Count, dispenser, dealDelay);
                 if (physical == null) continue;
 
                 _cards.Add(physical);
@@ -313,9 +331,166 @@ namespace RogueBlockBlast.Game.Prototype
             _cardData.Clear();
             _hovered  = null;
             _onPicked = null;
+            HideRerollButton();
 
             // Perde kartlarla birlikte çekilir — kartlar uçarken oyun geri gelir.
             _dimTarget = 0f;
+        }
+
+        // ── Reroll butonu ────────────────────────────────────────────────────
+        // Ekran uzayında, yelpazenin altında. Sunucunun kendi çocuğu değil:
+        // ClearImmediate sunucunun altındaki her şeyi siliyor.
+
+        private Canvas      _rerollCanvas;
+        private CanvasGroup _rerollGroup;
+        private Button      _rerollButton;
+        private TMP_Text    _rerollLabel;
+        private RectTransform _rerollRect;
+        private Action      _onReroll;
+        private bool        _rerollShown;
+        private float       _rerollAlpha, _rerollPunch;
+
+        private void EnsureRerollButton()
+        {
+            if (_rerollCanvas != null) return;
+
+            var go = new GameObject("Card Reroll Button");
+            _rerollCanvas = go.AddComponent<Canvas>();
+            _rerollCanvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            _rerollCanvas.sortingOrder = 500;   // HUD ve karartmanın üstünde
+            var scaler = go.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight  = 0.5f;
+            go.AddComponent<GraphicRaycaster>();
+            _rerollGroup = go.AddComponent<CanvasGroup>();
+
+            var sprites = RerollSprites.Get();
+
+            var btnGo = new GameObject("Reroll", typeof(RectTransform));
+            _rerollRect = (RectTransform)btnGo.transform;
+            _rerollRect.SetParent(go.transform, false);
+            // Yelpazenin üstü: altta havuz slotları ve sayaç var, buton onlara biniyordu.
+            _rerollRect.anchorMin = _rerollRect.anchorMax = new Vector2(0.5f, 0.86f);
+            _rerollRect.pivot     = new Vector2(0.5f, 0.5f);
+            _rerollRect.sizeDelta = new Vector2(380f, 76f);
+
+            var fill = btnGo.AddComponent<Image>();
+            fill.sprite = sprites.fill; fill.type = Image.Type.Sliced;
+
+            var rimGo = new GameObject("Rim", typeof(RectTransform));
+            var rimRect = (RectTransform)rimGo.transform;
+            rimRect.SetParent(_rerollRect, false);
+            rimRect.anchorMin = Vector2.zero; rimRect.anchorMax = Vector2.one;
+            rimRect.offsetMin = rimRect.offsetMax = Vector2.zero;
+            var rim = rimGo.AddComponent<Image>();
+            rim.sprite = sprites.rim; rim.type = Image.Type.Sliced; rim.raycastTarget = false;
+
+            var labelGo = new GameObject("Label", typeof(RectTransform));
+            var labelRect = (RectTransform)labelGo.transform;
+            labelRect.SetParent(_rerollRect, false);
+            labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(24f, 0f); labelRect.offsetMax = new Vector2(-24f, 0f);
+            _rerollLabel = labelGo.AddComponent<TextMeshProUGUI>();
+            _rerollLabel.fontSize = 30f;
+            _rerollLabel.fontStyle = FontStyles.Bold;
+            _rerollLabel.alignment = TextAlignmentOptions.Center;
+            _rerollLabel.color = UiTheme.Text;
+            _rerollLabel.enableWordWrapping = false;
+            _rerollLabel.overflowMode = TextOverflowModes.Ellipsis;
+            _rerollLabel.raycastTarget = false;
+
+            _rerollButton = btnGo.AddComponent<Button>();
+            _rerollButton.transition    = Selectable.Transition.None;
+            _rerollButton.targetGraphic = fill;
+            _rerollButton.onClick.AddListener(OnRerollPressed);
+
+            btnGo.AddComponent<KitButton>().Configure(
+                fill, rim, _rerollLabel,
+                UiTheme.AccentDeep, UiTheme.WithAlpha(UiTheme.Accent, 0.32f),
+                UiTheme.WithAlpha(UiTheme.Accent, 0.75f), UiTheme.Accent);
+
+            go.SetActive(false);
+        }
+
+        private void ShowRerollButton(int remaining, Action onReroll, bool punch)
+        {
+            EnsureRerollButton();
+            _onReroll    = onReroll;
+            _rerollShown = true;
+            _rerollCanvas.gameObject.SetActive(true);
+            _rerollButton.interactable = remaining > 0;
+            _rerollLabel.text = $"↻  {Loc.Get("Upgrade.upgrade_card_reroll.Name")}  ×{remaining}";
+            // Genişlik metne göre: çevirilerin uzunluğu dilden dile çok değişiyor
+            float w = _rerollLabel.GetPreferredValues(_rerollLabel.text).x;
+            _rerollRect.sizeDelta = new Vector2(Mathf.Clamp(w + 72f, 260f, 900f), _rerollRect.sizeDelta.y);
+            if (punch) _rerollPunch = 1f;
+        }
+
+        private void HideRerollButton()
+        {
+            _rerollShown = false;
+            _onReroll    = null;
+            if (_rerollButton != null) _rerollButton.interactable = false;
+        }
+
+        private void OnRerollPressed()
+        {
+            // Kartlar havadayken basılırsa yeni el eskisinin üstüne düşüyordu.
+            foreach (var c in _cards)
+                if (c != null && !c.IsInteractive) return;
+            _onReroll?.Invoke();
+        }
+
+        private void UpdateRerollButton()
+        {
+            if (_rerollCanvas == null) return;
+            _rerollAlpha = Mathf.MoveTowards(_rerollAlpha, _rerollShown ? 1f : 0f, Time.unscaledDeltaTime * 6f);
+            _rerollGroup.alpha = _rerollAlpha;
+            _rerollGroup.blocksRaycasts = _rerollShown;
+            if (!_rerollShown && _rerollAlpha <= 0f) _rerollCanvas.gameObject.SetActive(false);
+
+            // Basınca kısa bir sıçrama: hakkın harcandığı hissedilsin
+            _rerollPunch = Mathf.MoveTowards(_rerollPunch, 0f, Time.unscaledDeltaTime * 4f);
+            // (ölçeği KitButton yönetiyor, o yüzden sallanma rotasyonla)
+            float wobble = Mathf.Sin(_rerollPunch * Mathf.PI * 3f) * 7f * _rerollPunch;
+            _rerollRect.localRotation = Quaternion.Euler(0f, 0f, wobble);
+        }
+
+        /// <summary>Yuvarlak buton dolgusu ve kenarı — kod içinde üretilir, asset gerekmez.</summary>
+        private static class RerollSprites
+        {
+            private static Sprite _fill, _rim;
+
+            public static (Sprite fill, Sprite rim) Get()
+            {
+                if (_fill == null) { _fill = Rounded(0f); _rim = Rounded(3f); }
+                return (_fill, _rim);
+            }
+
+            private static Sprite Rounded(float thickness)
+            {
+                const int size = 96; const float radius = 40f; const int border = 46;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+                var px = new Color32[size * size];
+                float half = size * 0.5f - 1f;
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float cx = x + 0.5f - size * 0.5f, cy = y + 0.5f - size * 0.5f;
+                    float qx = Mathf.Abs(cx) - (half - radius), qy = Mathf.Abs(cy) - (half - radius);
+                    float d = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude
+                              + Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
+                    float a = thickness > 0f
+                        ? Mathf.Clamp01(0.5f - d) * Mathf.Clamp01(d + thickness + 0.5f)
+                        : Mathf.Clamp01(0.5f - d);
+                    px[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+                }
+                tex.SetPixels32(px); tex.Apply();
+                return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0,
+                                     SpriteMeshType.FullRect, new Vector4(border, border, border, border));
+            }
         }
 
         // ── Ölçü ─────────────────────────────────────────────────────────────
@@ -362,7 +537,7 @@ namespace RogueBlockBlast.Game.Prototype
 
         // ── Kart üretimi ─────────────────────────────────────────────────────
 
-        private PhysicalCard Spawn(CardSO card, int index, int total, Vector3 dispenser)
+        private PhysicalCard Spawn(CardSO card, int index, int total, Vector3 dispenser, float baseDelay = 0f)
         {
             var root = new GameObject($"Card_{index}_{card.Id}");
             root.transform.SetParent(transform, worldPositionStays: false);
@@ -435,7 +610,7 @@ namespace RogueBlockBlast.Game.Prototype
 
             physical.Deal(
                 dispenser,
-                delay: index * _dealStagger,
+                delay: baseDelay + index * _dealStagger,
                 duration: _dealDuration,
                 arcHeight: _dealArc,
                 spinDegrees: _dealSpin);

@@ -132,6 +132,12 @@ namespace RogueBlockBlast.UI
         public void Skip() => CloseAndResume(null);
 
         /// <summary>Reroll butonu onClick bağlantısı.</summary>
+        /// <summary>
+        /// Bu seçimden sonra kalan reroll hakkı. Hak run başına; RunController
+        /// seçim kapanınca buradan okuyup bir sonraki milestone'a taşır.
+        /// </summary>
+        public int RerollsRemaining => _rerollsRemaining;
+
         public void OnRerollClicked()
         {
             if (_rerollsRemaining <= 0) return;

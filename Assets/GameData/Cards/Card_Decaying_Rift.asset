@@ -30,7 +30,7 @@ MonoBehaviour:
     Value: 2
     Description: 
   BaseWeight: 40
-  IsUnique: 0
+  IsUnique: 1
   LockedByDefault: 0
   RequiredShapeId: 
   IsShapeCard: 0

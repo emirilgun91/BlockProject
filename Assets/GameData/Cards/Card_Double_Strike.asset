@@ -22,7 +22,7 @@ MonoBehaviour:
     Value: 0
     Description: 2+ line clears score x1.5
   BaseWeight: 30
-  IsUnique: 0
+  IsUnique: 1
   LockedByDefault: 0
   RequiredShapeId: 
   IsShapeCard: 0

@@ -76,7 +76,7 @@ namespace BalanceSim
 
             string cmd = args.Length > 0 ? args[0] : "all";
             int a1 = args.Length > 1 && int.TryParse(args[1], out var t1) ? t1 : 0;
-            int a2 = args.Length > 2 ? int.Parse(args[2]) : 0;
+            int a2 = args.Length > 2 && int.TryParse(args[2], out var t2) ? t2 : 0;
             var sw = Stopwatch.StartNew();
             switch (cmd)
             {
@@ -90,6 +90,8 @@ namespace BalanceSim
                 case "invest": Investments(a1 > 0 ? a1 : 1000); break;
                 case "fidelity": Fidelity(a1 > 0 ? a1 : 8); break;
                 case "export": Export(); break;
+                case "chain": Chain(a1 > 0 ? a1 : 800); break;
+                case "scenarios": Scenarios(a1 > 0 ? a1 : 100, args.Length > 2 ? args[2] : null); break;
                 case "tune": Tune(args.Length > 1 ? args[1] : "Skilled", a2 > 0 ? a2 : 300); break;
             }
             Console.WriteLine($"[done {cmd} in {sw.Elapsed.TotalSeconds:0.0}s]");
@@ -365,6 +367,100 @@ namespace BalanceSim
             Console.WriteLine("report_data.json written");
         }
 
+        // ── Chain Master: nereye kadar büyüyor, sınırlarsak ne olur ──────────
+        sealed class ChainBot : IBot
+        {
+            readonly Bot inner; bool first = true;
+            public ChainBot(Bot b) { inner = b; }
+            public Move Choose(Run r) => inner.Choose(r);
+            public bool WantPoolReroll(Run r) => inner.WantPoolReroll(r);
+            public int PickCard(Run r, List<CardDef> offer, bool canReroll)
+            {
+                // ilk seçimde zorla, sonra her teklif edildiğinde al (yığan oyuncu)
+                if (first) { first = false; offer[0] = G.Cards.First(c => c.Id == "Card_Chain_Master"); return 0; }
+                int i = offer.FindIndex(c => c.Id == "Card_Chain_Master");
+                return i >= 0 ? i : inner.PickCard(r, offer, canReroll);
+            }
+        }
+
+        public sealed class ChainRow { public string Variant, Persona; public int Level; public double AvgStage, ReachFinal, AccP50, AccP90, AccMax, StageNoChain; }
+
+        static void Chain(int n)
+        {
+            var rows = new List<ChainRow>();
+            var variants = new (string name, Func<Config> cfg)[]
+            {
+                ("oyundaki (sınırsız)", () => new Config()),
+                ("zincir kırılınca sıfırla", () => new Config { ChainMode = 1 }),
+                ("toplam +0.5 tavan", () => new Config { ChainMode = 2, ChainCap = 0.5f }),
+                ("toplam +1.0 tavan", () => new Config { ChainMode = 2, ChainCap = 1.0f }),
+                ("oyundaki + dolu bar BPC'yi izler", () => new Config { MaxChargeFollowsBpc = true }),
+            };
+            foreach (int lvl in new[] { 3, 8 })
+            foreach (var bp in new[] { Personas.Mid(), Personas.Skilled() })
+            {
+                Profile Prof() { var p = new Profile(G); foreach (var s in G.Shapes) p.ScoreLvl[s.Idx] = lvl; p.MaxMilestoneReached = 7; return p; }
+                var none = RunMany(n, i => (Prof(), new Config(), bp, (ulong)(i * 97 + lvl)));
+                double s0 = none.Average(x => x.Stage);
+                foreach (var (name, cfg) in variants)
+                {
+                    var l = RunManyBot(n, i => (Prof(), cfg(), (ulong)(i * 97 + lvl)), (b, r) => new ChainBot(b), bp);
+                    var acc = l.Select(x => (double)x.ChainAcc).OrderBy(x => x).ToList();
+                    var row = new ChainRow
+                    {
+                        Variant = name, Persona = bp.Name, Level = lvl, AvgStage = l.Average(x => x.Stage), StageNoChain = s0,
+                        ReachFinal = 100.0 * l.Count(x => x.Stage >= G.Milestones.Count) / l.Count,
+                        AccP50 = acc[acc.Count / 2], AccP90 = acc[(int)(acc.Count * 0.9)], AccMax = acc[^1]
+                    };
+                    rows.Add(row);
+                    Console.WriteLine($"Lv{lvl} {bp.Name,-7} {name,-34} stage {row.AvgStage,5:0.00} (kartsız {s0:0.00})  final %{row.ReachFinal,4:0}  bonus p50 +{row.AccP50:0.00} p90 +{row.AccP90:0.00} max +{row.AccMax:0.00}");
+                }
+            }
+            Write("chain.json", rows);
+        }
+
+        // ── Denge senaryoları: tam meta ilerleme, öneri paketleri ───────────
+        public sealed class ScenarioRow { public string Name, Persona; public double RunsMed, HoursMed, HoursP10, HoursP90, Att3, Att5, Att8, Att12, Jump, CoinShare, FirstS10; }
+
+        static int[] CoinCurve(double first, double growth) =>
+            Enumerable.Range(0, G.Milestones.Count).Select(i => (int)(Math.Round(first * Math.Pow(growth, i) / 10.0) * 10)).ToArray();
+
+        static void Scenarios(int players, string only = null)
+        {
+            var scen = new (string name, Func<Config> cfg, float price)[]
+            {
+                ("A: oyundaki hâl", () => new Config(), 1f),
+                ("B: combo azalan getiri (K=4)", () => new Config { ComboDimK = 4f }, 1f),
+                ("C: coin eğrisi 150×1.22^n", () => new Config { CoinOverride = CoinCurve(150, 1.22) }, 1f),
+                ("D: B + C", () => new Config { ComboDimK = 4f, CoinOverride = CoinCurve(150, 1.22) }, 1f),
+                ("E: D + skor yükseltme ×0.5", () => new Config { ComboDimK = 4f, CoinOverride = CoinCurve(150, 1.22), GainScale = 0.5f }, 1f),
+                ("F: E + Chain Master sıfırlanır + dolu bar BPC'yi izler", () => new Config { ComboDimK = 4f, CoinOverride = CoinCurve(150, 1.22), GainScale = 0.5f, ChainMode = 1, MaxChargeFollowsBpc = true }, 1f),
+                ("G: C + Chain Master toplam +1.0 tavan + dolu bar BPC'yi izler", () => new Config { CoinOverride = CoinCurve(150, 1.22), ChainMode = 2, ChainCap = 1.0f, MaxChargeFollowsBpc = true }, 1f),
+            };
+            MetaSetups = new List<(BotProfile, string)> { (Personas.Casual(), "cheapest"), (Personas.Mid(), "cheapest"), (Personas.Skilled(), "cheapest") };
+            var rows = new List<ScenarioRow>();
+            foreach (var (name, cfg, price) in scen)
+            {
+                if (only != null && !name.StartsWith(only)) continue;
+                MakeCfg = cfg; PriceScale = price; MetaTag = name;
+                Console.WriteLine($"### {name}  coins: {string.Join(",", (cfg().CoinOverride ?? G.Milestones.Select(m => m.Coin).ToArray()).Take(26))}");
+                Meta(players, 4000, "full");
+                foreach (var s in LastSummary)
+                    rows.Add(new ScenarioRow
+                    {
+                        Name = name, Persona = s.Persona, RunsMed = s.RunsComplete.Median, HoursMed = s.HoursComplete.Median,
+                        HoursP10 = s.HoursComplete.P10, HoursP90 = s.HoursComplete.P90,
+                        Att3 = s.Attempts[3].Mean, Att5 = s.Attempts[5].Mean, Att8 = s.Attempts[8].Mean, Att12 = s.Attempts[12].Mean,
+                        Jump = s.BiggestJump.Median, CoinShare = s.BestRunCoinShare.Median, FirstS10 = s.RunsBeforeBreakout.Median
+                    });
+            }
+            MakeCfg = () => new Config(); PriceScale = 1f; MetaTag = ""; MetaSetups = null;
+            Console.WriteLine();
+            foreach (var r in rows)
+                Console.WriteLine($"{r.Name,-56} {r.Persona,-7} runs {r.RunsMed,5:0} hours {r.HoursMed,5:0.0} [{r.HoursP10:0.0}-{r.HoursP90:0.0}]  att S3 {r.Att3:0.0} S5 {r.Att5:0.0} S8 {r.Att8:0.0} S12 {r.Att12:0.0}  jump {r.Jump:0} share %{r.CoinShare:0} S10@{r.FirstS10:0}");
+            Write("scenarios.json", rows);
+        }
+
         // ── Meta özet ───────────────────────────────────────────────────────
         static double Pct(List<double> s, double q)
         {
@@ -463,7 +559,8 @@ namespace BalanceSim
                 Console.WriteLine($"   noopOffer {s.NoopOfferPct:0.0}%  allNoop {s.AllNoopOfferPct:0.0}%  noopPick {s.NoopPickPct:0.0}%  freshPoolDeath {s.FreshPoolDeathPct:0.0}%  reviveUnused {s.DeathWithReviveUnusedPct:0.0}%  dry {s.LongestDrySpell.Median:0}  runMin {s.MedianRunMinutes:0.0}");
                 Console.WriteLine("   reasons " + string.Join(" ", s.ReasonPct.Select(kv => $"{kv.Key}:{kv.Value:0.0}%")));
             }
-            Write(demo ? "summary_demo.json" : "summary_full.json", res);
+            LastSummary = res;
+            if (MetaTag == "") Write(demo ? "summary_demo.json" : "summary_full.json", res);
         }
 
         // ── Tek oyuncunun run run dökümü ────────────────────────────────────
@@ -662,21 +759,21 @@ namespace BalanceSim
         sealed class UnlockShape : Item
         {
             public ShapeDef S;
-            public override int Cost(Profile p) => S.UnlockCost;
+            public override int Cost(Profile p) => (int)(S.UnlockCost * PriceScale);
             public override bool Available(Profile p) => S.Locked && !p.ShapeUnlocked[S.Idx];
             public override void Buy(Profile p) => p.ShapeUnlocked[S.Idx] = true;
         }
         sealed class ScoreUp : Item
         {
             public ShapeDef S;
-            public override int Cost(Profile p) => S.ScoreCostFor(p.ScoreLvl[S.Idx]);
+            public override int Cost(Profile p) => (int)(S.ScoreCostFor(p.ScoreLvl[S.Idx]) * PriceScale);
             public override bool Available(Profile p) => p.ShapeAvailable(S) && p.ScoreLvl[S.Idx] < 10;
             public override void Buy(Profile p) => p.ScoreLvl[S.Idx]++;
         }
         sealed class Upg : Item
         {
             public UpgradeDef U;
-            public override int Cost(Profile p) => U.CostFor(p.Upg[U.Idx] + 1);
+            public override int Cost(Profile p) => (int)(U.CostFor(p.Upg[U.Idx] + 1) * PriceScale);
             public override bool Available(Profile p) => p.UpgradeOpen(U) && p.Upg[U.Idx] < U.MaxLevel;
             public override void Buy(Profile p) => p.Upg[U.Idx]++;
         }
@@ -724,11 +821,18 @@ namespace BalanceSim
             return bought;
         }
 
+        // Senaryo deneyleri bunları değiştirir; varsayılan = oyundaki hâl
+        public static Func<Config> MakeCfg = () => new Config();
+        public static float PriceScale = 1f;
+        public static List<(BotProfile bp, string policy)> MetaSetups;
+        public static string MetaTag = "";
+        public static List<SetupSummary> LastSummary;
+
         static void Meta(int players, int maxRuns, string mode)
         {
             bool demo = mode == "demo";
             var logs = new ConcurrentBag<PlayerLog>();
-            var setups = new List<(BotProfile bp, string policy)>
+            var setups = MetaSetups ?? new List<(BotProfile bp, string policy)>
             {
                 (Personas.Casual(), "cheapest"), (Personas.Mid(), "cheapest"),
                 (Personas.Skilled(), "cheapest"), (Personas.Skilled(), "smart")
@@ -742,7 +846,7 @@ namespace BalanceSim
                 var rng = new Rng((ulong)(i * 2654435761L + bp.Name.Length * 97 + policy.Length));
                 var bot = MakeBot(bp, rng);
                 var p = new Profile(G);
-                var cfg = new Config { Demo = demo };
+                var cfg = MakeCfg(); cfg.Demo = demo;
                 var items = Catalog(policy);
                 var log = new PlayerLog { Persona = bp.Name, Policy = policy, Seed = i, FirstReachRun = new int[K + 1] };
                 double seconds = 0; int dry = 0; int bestStage = 0;
@@ -782,7 +886,7 @@ namespace BalanceSim
                 Console.WriteLine($"  [{d}/{jobs.Count}] {bp.Name}/{policy}#{i}: runs {log.Runs} complete@{log.RunsComplete} final@{log.RunsFinalStage} best {bestStage} hours {log.Hours:0.0}");
             });
             var all = logs.OrderBy(l => l.Persona).ThenBy(l => l.Policy).ThenBy(l => l.Seed).ToList();
-            Write(demo ? "meta_demo.json" : "meta_full.json", all);
+            if (MetaTag == "") Write(demo ? "meta_demo.json" : "meta_full.json", all);
             Summarize(all, demo);
         }
     }

@@ -32,6 +32,16 @@ namespace BalanceSim
         /// card reroll kullanılamaz, Shape_4gen/L kartları çıkmaz.</summary>
         public bool Legacy;
         public int MaxPlacements = 6000;
+
+        // ── Denge senaryoları (varsayılan = oyundaki hâl) ──
+        public float ComboCap;            // >0: çarpan tavanı
+        public float ComboDimK;           // >0: artış / (1 + (mult-base)/K)
+        public int   ChainMode;           // 0 oyundaki, 1 zincir kırılınca sıfırla, 2 toplamı ChainCap ile sınırla
+        public float ChainCap = 0.5f;
+        public bool  MaxChargeFollowsBpc; // dolu barda artış = max(BonusAtMax, BonusPerClear + 0.1)
+        public int[] CoinOverride;        // aşama başına coin ödülü
+        public float GainScale = 1f;      // şekil skor yükseltmesinin etkisi
+        public bool  StopAtVictory = true;
     }
 
     public sealed class Profile
@@ -70,22 +80,44 @@ namespace BalanceSim
         public Action OnReset;
         public bool IsMax => Charges >= MaxCharge;
 
+        // Senaryo ayarları (Config'ten); varsayılanları oyundaki davranış
+        public float Cap, DimK, ChainCap = 0.5f;
+        public int ChainMode;
+        public bool MaxFollowsBpc;
+        float chainThisStreak;
+        public float MaxChainAcc;
+
         public void OnLineClear(int n)
         {
             if (n <= 0) return;
             for (int i = 0; i < n; i++)
             {
                 if (Charges < MaxCharge) Charges++;
-                Mult += Charges >= MaxCharge ? BonusAtMax : BonusPerClear;
+                float bam = MaxFollowsBpc ? MathF.Max(BonusAtMax, BonusPerClear + 0.1f) : BonusAtMax;
+                float inc = Charges >= MaxCharge ? bam : BonusPerClear;
+                if (DimK > 0f) inc /= 1f + (Mult - Base) / DimK;
+                Mult += inc;
+                if (Cap > 0f && Mult > Cap) Mult = Cap;
             }
             consec++;
-            if (HasChain && ChainBonus > 0f) { BonusPerClear += ChainBonus; ChainAcc += ChainBonus; }
+            if (HasChain && ChainBonus > 0f)
+            {
+                float add = ChainBonus;
+                if (ChainMode == 2) add = MathF.Max(0f, MathF.Min(add, ChainCap - ChainAcc));
+                BonusPerClear += add; ChainAcc += add; chainThisStreak += add;
+                if (ChainAcc > MaxChainAcc) MaxChainAcc = ChainAcc;
+            }
         }
 
         public void OnPlacement(bool hadClear)
         {
             if (hadClear) return;
             consec = 0;
+            if (ChainMode == 1 && chainThisStreak > 0f)
+            {
+                // açıklamadaki gibi: zincir kırılınca biriken bonus geri alınır
+                BonusPerClear -= chainThisStreak; ChainAcc -= chainThisStreak; chainThisStreak = 0f;
+            }
             if (Charges > 0)
             {
                 if (Charges == 1 && HasShield && !shieldUsed) { shieldUsed = true; return; }
@@ -186,13 +218,13 @@ namespace BalanceSim
         }
     }
 
-    public enum Reason { None, NoMoves, CannotPlace, PoolExhausted, DemoEnd, Cap }
+    public enum Reason { None, NoMoves, CannotPlace, PoolExhausted, DemoEnd, Cap, Victory }
 
     /// <summary>Tek run'ın istatistikleri.</summary>
     public sealed class RunStats
     {
         public int Score, Stage, Placements, Clears, Lines, CardPicks, Coins;
-        public float MaxCombo = 1f;
+        public float MaxCombo = 1f, ChainAcc;
         public Reason Reason;
         public bool DiedOnFreshPool;       // yeni gelen 3'lü havuz hiç sığmadı
         public bool RevivesUnused;         // ölümde kullanılmamış revive/kalkan hakkı vardı
@@ -256,6 +288,8 @@ namespace BalanceSim
             Combo.Base = MathF.Max(1f, 1f + P.Effect(G, "upgrade_starting_combo"));
             Combo.BonusPerClear = 0.1f + P.Effect(G, "upgrade_combo_gain");
             Combo.Reset();
+            Combo.Cap = C.ComboCap; Combo.DimK = C.ComboDimK; Combo.ChainMode = C.ChainMode;
+            Combo.ChainCap = C.ChainCap; Combo.MaxFollowsBpc = C.MaxChargeFollowsBpc;
 
             PoolRerolls = (int)Math.Round(P.Effect(G, "upgrade_pool_reroll"));
             CardRerolls = (int)Math.Round(P.Effect(G, "upgrade_card_reroll"));
@@ -282,7 +316,7 @@ namespace BalanceSim
             {
                 if (!SpawnAllowed(s)) continue;
                 cum += ShapeWeight(s);
-                if (roll < cum) return new Piece { S = s, Tile = s.TileAt(P.ScoreLvl[s.Idx]) };
+                if (roll < cum) return new Piece { S = s, Tile = s.BaseTile + (s.TileAt(P.ScoreLvl[s.Idx]) - s.BaseTile) * C.GainScale };
             }
             return null;
         }
@@ -525,6 +559,7 @@ namespace BalanceSim
                 MS.SetPoolLimit(MS.Limit + CS.HoarderPoolBonus);
 
             float coinMult = 1f + P.Effect(G, "upgrade_coin_gain");
+            if (C.CoinOverride != null && idx < C.CoinOverride.Length) coinReward = C.CoinOverride[idx];
             int total = (int)Math.Round((coinReward + coinBonus) * coinMult);
             Coins += total;
 
@@ -542,6 +577,8 @@ namespace BalanceSim
             {
                 if (MS.Index > P.MaxMilestoneReached) P.MaxMilestoneReached = MS.Index;
             }
+            // RunController.OnVictory: son aşamada kart yok, run zaferle biter
+            if (MS.AllCleared && C.StopAtVictory) { GameOver = true; Why = Reason.Victory; return; }
             pendingCard = true;
         }
 
@@ -870,8 +907,8 @@ namespace BalanceSim
             Stats.Score = Score;
             Stats.Coins = Coins;
             Stats.Reason = Why;
-            if (Stats.Stage == 0) Stats.Stage = MS.Index;
             Stats.Stage = MS.Index;
+            Stats.ChainAcc = Combo.MaxChainAcc;
             return Stats;
         }
     }

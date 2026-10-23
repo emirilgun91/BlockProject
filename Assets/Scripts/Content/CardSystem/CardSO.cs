@@ -34,6 +34,11 @@ namespace RogueBlockBlast.Content
         [Tooltip("True ise başlangıçta kilitli — milestone'da unlock edilir.")]
         public bool LockedByDefault = false;
 
+        [Tooltip("Kilitli kart bu aşamaya (1 tabanlı: Stage 3 = 3) ilk kez ulaşılınca açılır. " +
+                 "0 = sabit aşama yok: aşamaya ilk ulaşışta kilitli kartlardan rastgele biri açılır.")]
+        [Min(0)]
+        public int UnlockAtStage = 0;
+
         [Tooltip("Bu kart hangi shape unlock edilince kullanılabilir olur. Boş bırakılırsa shape bağımlılığı yok.")]
         public string RequiredShapeId = "";
 

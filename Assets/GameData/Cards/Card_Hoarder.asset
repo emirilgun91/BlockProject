@@ -27,7 +27,8 @@ MonoBehaviour:
     Description: 
   BaseWeight: 25
   IsUnique: 1
-  LockedByDefault: 0
+  LockedByDefault: 1
+  UnlockAtStage: 3
   RequiredShapeId: 
   IsShapeCard: 0
   TargetShapeId: 

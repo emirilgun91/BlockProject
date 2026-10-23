@@ -1348,24 +1348,44 @@ namespace RogueBlockBlast.Game
             FrameFeedbackController.Instance?.OnMilestone();
 
             CardSO newlyUnlockedCard = null;
-            if (UnlockRegistry.Instance != null &&
-                UnlockRegistry.Instance.IsFirstMilestoneReach(data.Label))
+            var reg = UnlockRegistry.Instance;
+            if (reg != null)
             {
-                var lockedCards = CardPool
-                    .Where(c => c != null && c.LockedByDefault && !c.IsUnlocked)
-                    .ToList();
-
-                if (lockedCards.Count > 0)
+                // Sabit aşamalı kilitli kartlar (CardSO.UnlockAtStage). "<=" kasıtlı:
+                // takvim sonradan değişirse oyuncunun geride kalan kartı da açılır.
+                int stage = _milestoneSystem.CurrentMilestoneIndex;   // az önce geçilen aşama, 1 tabanlı
+                foreach (var c in CardPool
+                             .Where(c => c != null && c.LockedByDefault && c.UnlockAtStage > 0 &&
+                                         c.UnlockAtStage <= stage && !reg.IsCardUnlocked(c.Id))
+                             .OrderBy(c => c.UnlockAtStage))
                 {
-                    int pick = UnityEngine.Random.Range(0, lockedCards.Count);
-                    newlyUnlockedCard = lockedCards[pick];
-                    UnlockRegistry.Instance.UnlockCard(newlyUnlockedCard.Id);
-                    MilestoneView?.ShowNewCardEarned(RogueBlockBlast.Core.Localization.ContentLocalization.Name(newlyUnlockedCard));
+                    reg.UnlockCard(c.Id);
+                    newlyUnlockedCard ??= c;
+                    MilestoneView?.ShowNewCardEarned(RogueBlockBlast.Core.Localization.ContentLocalization.Name(c));
                 }
 
-                int current = SaveStore.GetInt("MaxMilestoneReached", 0);
-                if (_milestoneSystem.CurrentMilestoneIndex > current)
-                    SaveStore.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
+                if (reg.IsFirstMilestoneReach(data.Label))
+                {
+                    // Aşaması belirlenmemiş kilitli kartlar: aşamaya ilk ulaşışta rastgele biri
+                    if (newlyUnlockedCard == null)
+                    {
+                        var lockedCards = CardPool
+                            .Where(c => c != null && c.LockedByDefault && c.UnlockAtStage == 0 && !reg.IsCardUnlocked(c.Id))
+                            .ToList();
+
+                        if (lockedCards.Count > 0)
+                        {
+                            int pick = UnityEngine.Random.Range(0, lockedCards.Count);
+                            newlyUnlockedCard = lockedCards[pick];
+                            reg.UnlockCard(newlyUnlockedCard.Id);
+                            MilestoneView?.ShowNewCardEarned(RogueBlockBlast.Core.Localization.ContentLocalization.Name(newlyUnlockedCard));
+                        }
+                    }
+
+                    int current = SaveStore.GetInt("MaxMilestoneReached", 0);
+                    if (_milestoneSystem.CurrentMilestoneIndex > current)
+                        SaveStore.SetInt("MaxMilestoneReached", _milestoneSystem.CurrentMilestoneIndex);
+                }
             }
 
             // Son aşama: kart seçimi yok, run zaferle biter.
@@ -1377,7 +1397,9 @@ namespace RogueBlockBlast.Game
             {
                 // Filter out cards that are excluded by active card effects (e.g. mutual exclusions)
                 _pendingCards       = CardPool.Where(c => c != null && !IsCardExcluded(c)).ToList();
-                _pendingNewCard     = newlyUnlockedCard;
+                // Yeni açılan kart, karşılıklı dışlanan bir kartla (Line Master / Tunnel
+                // Vision) çakışıyorsa bu seçimde öne konmaz; açılmış olarak kalır.
+                _pendingNewCard     = newlyUnlockedCard != null && !IsCardExcluded(newlyUnlockedCard) ? newlyUnlockedCard : null;
             }
 
             // Yerleştirme sürerken açılmaz: aynı hamlede game over gelebilir

@@ -184,6 +184,8 @@ MilestoneSystem.OnMilestoneReached(coins, data)
 
 **End-of-placement decisions.** `DoPlace` wraps `DoPlaceCore` and sets `_inPlacement`. Inside a placement, a milestone only *records* its outcome and pool exhaustion (Safe Zone / Hyperfocus `DeductPieces`) only sets `_exhaustPending`; both are resolved in `DoPlace`'s `finally`. That order is what keeps a Game Over and the card screen from opening together, and lets a milestone reached by the same placement save a run whose window a penalty just emptied. `OnGameOver` and `HandleDeadPool` return early while `_victoryPending`: once the last stage is cleared, a dead pool in the same placement cannot turn the win into a Game Over.
 
+**Locked cards.** A card with `LockedByDefault` and `CardSO.UnlockAtStage > 0` unlocks when a milestone at or beyond that stage is reached (`<=`, so a card skipped by a schedule change still unlocks); it is then offered first in that card pick (unless Line Master / Tunnel Vision exclusion blocks it). Locked cards with `UnlockAtStage = 0` keep the old rule: a random one unlocks on the first reach of any stage. Current schedule: Hoarder S3, Tunnel Vision S6, Line Master S9, Chain Master S10, Slow Burn S13.
+
 **Card rerolls are per run.** `RunController._cardRerollsRemaining` is passed to `CardSelectionUI.Show` and read back from `CardSelectionUI.RerollsRemaining` in `OnCardPicked`. The 2.5D presenter draws the reroll button (screen space, anchored above the card fan by `PlaceRerollButton`).
 
 ### Victory

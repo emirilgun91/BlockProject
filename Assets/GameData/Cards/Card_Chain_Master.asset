@@ -23,7 +23,8 @@ MonoBehaviour:
     Description: Combo gain +0.02 per chained clear
   BaseWeight: 30
   IsUnique: 0
-  LockedByDefault: 0
+  LockedByDefault: 1
+  UnlockAtStage: 10
   RequiredShapeId: 
   IsShapeCard: 0
   TargetShapeId: 

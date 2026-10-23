@@ -47,11 +47,31 @@ namespace RogueBlockBlast.UI
 
         private static InputMode _instance;
 
+        /// <summary>Tuş adlarının hangi kumandaya göre yazılacağı.</summary>
+        public enum PadFamily { Xbox, PlayStation, SteamDeck }
+
+        /// <summary>
+        /// Steam Input'un bildirdiği gerçek kumanda ailesi (<c>SteamPlatform</c> yazar).
+        /// Steam Input açıkken kumanda oyuna sanal bir Xbox gamepad'i olarak gelir;
+        /// Unity'nin cihaz tipi PlayStation kumandasını tanımaz ve ×○□△ yerine A/B/X/Y
+        /// yazılırdı. Null: Steam yok ya da Steam Input bu kumandayı yönetmiyor —
+        /// o zaman Unity'nin cihaz tipine bakılır.
+        /// </summary>
+        private static PadFamily? _steamFamily;
+
+        public static void SetSteamFamily(PadFamily? family)
+        {
+            if (_steamFamily == family) return;
+            _steamFamily = family;
+            Changed?.Invoke();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             UsingGamepad = false;
             Changed      = null;
+            _steamFamily = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -141,12 +161,11 @@ namespace RogueBlockBlast.UI
 
         // ── Tuş adları ───────────────────────────────────────────────────────
 
-        private enum Family { Xbox, PlayStation, SteamDeck }
-
-        private static Family CurrentFamily()
+        private static PadFamily CurrentFamily()
         {
-            if (Gamepad.current is DualShockGamepad) return Family.PlayStation;
-            return OnSteamDeck ? Family.SteamDeck : Family.Xbox;
+            if (_steamFamily.HasValue) return _steamFamily.Value;
+            if (Gamepad.current is DualShockGamepad) return PadFamily.PlayStation;
+            return OnSteamDeck ? PadFamily.SteamDeck : PadFamily.Xbox;
         }
 
         /// <summary>
@@ -159,18 +178,18 @@ namespace RogueBlockBlast.UI
             var family = CurrentFamily();
             switch (button)
             {
-                case PadButton.South: return family == Family.PlayStation ? "×" : "A";
-                case PadButton.East:  return family == Family.PlayStation ? "○" : "B";
-                case PadButton.West:  return family == Family.PlayStation ? "□" : "X";
-                case PadButton.North: return family == Family.PlayStation ? "△" : "Y";
+                case PadButton.South: return family == PadFamily.PlayStation ? "×" : "A";
+                case PadButton.East:  return family == PadFamily.PlayStation ? "○" : "B";
+                case PadButton.West:  return family == PadFamily.PlayStation ? "□" : "X";
+                case PadButton.North: return family == PadFamily.PlayStation ? "△" : "Y";
 
-                case PadButton.LeftShoulder:  return family == Family.Xbox ? "LB" : "L1";
-                case PadButton.RightShoulder: return family == Family.Xbox ? "RB" : "R1";
-                case PadButton.LeftTrigger:   return family == Family.Xbox ? "LT" : "L2";
-                case PadButton.RightTrigger:  return family == Family.Xbox ? "RT" : "R2";
+                case PadButton.LeftShoulder:  return family == PadFamily.Xbox ? "LB" : "L1";
+                case PadButton.RightShoulder: return family == PadFamily.Xbox ? "RB" : "R1";
+                case PadButton.LeftTrigger:   return family == PadFamily.Xbox ? "LT" : "L2";
+                case PadButton.RightTrigger:  return family == PadFamily.Xbox ? "RT" : "R2";
 
-                case PadButton.Start:  return family == Family.PlayStation ? "Options" : "Menu";
-                case PadButton.Select: return family == Family.PlayStation ? "Share"   : "View";
+                case PadButton.Start:  return family == PadFamily.PlayStation ? "Options" : "Menu";
+                case PadButton.Select: return family == PadFamily.PlayStation ? "Share"   : "View";
             }
             return "?";
         }
@@ -183,7 +202,7 @@ namespace RogueBlockBlast.UI
         {
             string glyph = Glyph(button);
             string color = null;
-            if (CurrentFamily() == Family.PlayStation)
+            if (CurrentFamily() == PadFamily.PlayStation)
             {
                 switch (button)
                 {

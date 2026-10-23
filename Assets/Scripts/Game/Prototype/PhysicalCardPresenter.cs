@@ -370,8 +370,9 @@ namespace RogueBlockBlast.Game.Prototype
             var btnGo = new GameObject("Reroll", typeof(RectTransform));
             _rerollRect = (RectTransform)btnGo.transform;
             _rerollRect.SetParent(go.transform, false);
-            // Yelpazenin üstü: altta havuz slotları ve sayaç var, buton onlara biniyordu.
-            _rerollRect.anchorMin = _rerollRect.anchorMax = new Vector2(0.5f, 0.86f);
+            // Konum her karede yelpazeye göre verilir (PlaceRerollButton): sabit bir
+            // ekran oranı portrait'te üstteki HUD panellerine biniyordu.
+            _rerollRect.anchorMin = _rerollRect.anchorMax = new Vector2(0.5f, 0.5f);
             _rerollRect.pivot     = new Vector2(0.5f, 0.5f);
             _rerollRect.sizeDelta = new Vector2(380f, 76f);
 
@@ -449,12 +450,36 @@ namespace RogueBlockBlast.Game.Prototype
             _rerollGroup.alpha = _rerollAlpha;
             _rerollGroup.blocksRaycasts = _rerollShown;
             if (!_rerollShown && _rerollAlpha <= 0f) _rerollCanvas.gameObject.SetActive(false);
+            PlaceRerollButton();
 
             // Basınca kısa bir sıçrama: hakkın harcandığı hissedilsin
             _rerollPunch = Mathf.MoveTowards(_rerollPunch, 0f, Time.unscaledDeltaTime * 4f);
             // (ölçeği KitButton yönetiyor, o yüzden sallanma rotasyonla)
             float wobble = Mathf.Sin(_rerollPunch * Mathf.PI * 3f) * 7f * _rerollPunch;
             _rerollRect.localRotation = Quaternion.Euler(0f, 0f, wobble);
+        }
+
+        /// <summary>
+        /// Butonu orta kartın üst kenarının hemen üstüne koyar (hover kalkışı dahil).
+        /// Kartlar kameraya göre dizildiği için bu nokta her en-boy oranında
+        /// yelpaze ile üstteki HUD arasında kalır.
+        /// </summary>
+        private void PlaceRerollButton()
+        {
+            if (_rerollRect == null || _camera == null || _canvasScale <= 0f) return;
+
+            float cardHeight = _cardSizePx.y * _canvasScale;
+            Vector3 top = FanOrigin + CamUp * (cardHeight * 0.5f + _hoverLift);
+            Vector3 sp  = _camera.WorldToScreenPoint(top);
+
+            var canvasRect = (RectTransform)_rerollCanvas.transform;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, sp, null, out Vector2 local))
+                return;
+
+            float h = _rerollRect.sizeDelta.y;
+            float y = local.y + h * 0.5f + 24f;
+            float maxY = canvasRect.rect.height * 0.5f - h * 0.5f - 16f;   // ekranın üstünden taşmasın
+            _rerollRect.anchoredPosition = new Vector2(0f, Mathf.Min(y, maxY));
         }
 
         /// <summary>Yuvarlak buton dolgusu ve kenarı — kod içinde üretilir, asset gerekmez.</summary>

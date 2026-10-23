@@ -1173,17 +1173,21 @@ namespace RogueBlockBlast.Game
             if (_cardState.HasMomentumShield &&
                 _comboSystem.Multiplier >= _cardState.MomentumShieldMinMultiplier)
             {
-                // Bu kart oyunu bitmekten kurtarıyor ama tek yaptığı sessizce yeni
-                // havuz vermekti — oyuncu şeklinin neden kaybolduğunu anlamıyordu.
-                // Kaybın eşiğinden döndüğü an artık ekranda söyleniyor.
-                ScreenEventFX.Instance.PlayRunSaved(
-                    Loc.GetOr("Event.RunSaved", "RUN SAVED"),
-                    Loc.GetOr("Event.RunSavedSub", "Momentum Shield"));
-                FrameFeedbackController.Instance?.OnLineClear(3);
-
                 // Çarpan tabana iner; tekrar sıkışırsa kalkan yeniden tetiklenmez
                 _comboSystem.ForceResetToBase();
-                TryRescue();
+
+                // Bu kart oyunu bitmekten kurtarıyor ama tek yaptığı sessizce yeni
+                // havuz vermekti — oyuncu şeklinin neden kaybolduğunu anlamıyordu.
+                // Kaybın eşiğinden döndüğü an ekranda söyleniyor; ama yalnızca
+                // gelen havuz gerçekten sığıyorsa — yoksa "RUN SAVED" yazısının
+                // hemen arkasından game over açılıyordu.
+                if (TryRescue())
+                {
+                    ScreenEventFX.Instance.PlayRunSaved(
+                        Loc.GetOr("Event.RunSaved", "RUN SAVED"),
+                        Loc.GetOr("Event.RunSavedSub", "Momentum Shield"));
+                    FrameFeedbackController.Instance?.OnLineClear(3);
+                }
                 return;
             }
 
@@ -1193,16 +1197,22 @@ namespace RogueBlockBlast.Game
             OnGameOver(GameOverReason.NoMoves);
         }
 
-        /// <summary>Kurtarma hakkı harcandı: yeni havuz ver, o da sığmazsa sıradaki hakka geç.</summary>
-        private void TryRescue()
+        /// <summary>
+        /// Kurtarma hakkı harcandı: yeni havuz ver, o da sığmazsa sıradaki hakka geç.
+        /// True: bu havuz sığdı (sonraki haklar bu dalda kullanılmadı).
+        /// </summary>
+        private bool TryRescue()
         {
             _milestoneSystem?.EnsureMinimumRemaining(6);
             GenerateNewPool(skipValidCheck: true);
             _poolDirty = true;
             if (HasAnyValidMoveInPool())
+            {
                 RunEvents.DeadPoolSurvived();
-            else
-                HandleDeadPool();
+                return true;
+            }
+            HandleDeadPool();
+            return false;
         }
 
         // ── Milestone Handlers ───────────────────────────────────────────────

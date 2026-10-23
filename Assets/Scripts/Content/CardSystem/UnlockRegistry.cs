@@ -152,15 +152,22 @@ namespace RogueBlockBlast.Core
             IEnumerable<string> shapeIds,
             IEnumerable<string> cardIds)
         {
+            // _lockedShapes burada silinmez: o liste yalnızca RegisterLockedShapes ile
+            // dolar. Mağaza Init'i ikinci kez çağırınca liste boşalıyor, kilitli
+            // şekillerin kartları (6Sq, Cross, LongL, Dot) satın alınmadan teklif ediliyordu.
             _unlockedShapes.Clear();
-            _lockedShapes.Clear();
 
             foreach (var id in shapeIds)
                 if (SaveStore.GetInt(ShapeKeyPrefix + id, 0) == 1)
                     _unlockedShapes.Add(id);
 
+            // Kart listesi verilmediyse (mağaza yalnızca şekilleri bilir) kart
+            // kayıtlarına dokunulmaz — boş listeyle silinip geri yüklenmiyordu.
+            var cards = cardIds as ICollection<string> ?? new List<string>(cardIds);
+            if (cards.Count == 0) return;
+
             _unlockedCards.Clear();
-            foreach (var id in cardIds)
+            foreach (var id in cards)
                 if (SaveStore.GetInt(CardKeyPrefix + id, 0) == 1)
                     _unlockedCards.Add(id);
         }

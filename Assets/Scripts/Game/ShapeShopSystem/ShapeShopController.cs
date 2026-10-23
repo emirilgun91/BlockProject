@@ -116,6 +116,10 @@ namespace RogueBlockBlast.UI
                 .Where(s => s != null)
                 .Select(s => s.Id);
             UnlockRegistry.Instance?.Init(ids, System.Array.Empty<string>());
+            // Ana menüde RunController yok; kilitli şekilleri mağaza bildirir.
+            UnlockRegistry.Instance?.RegisterLockedShapes(_shapeLibrary.Shapes
+                .Where(s => s != null && s.LockedByDefault)
+                .Select(s => s.Id));
         }
 
         private void BuildCards()

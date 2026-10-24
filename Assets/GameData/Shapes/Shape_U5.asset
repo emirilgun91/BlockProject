@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 323f0464ca7547a38d38fbfaf7f4b7e3, type: 3}
+  m_Name: Shape_U5
+  m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.ShapeSO
+  Id: Shape_U5
+  Cells:
+  - {x: 2, y: 2}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
+  - {x: 2, y: 1}
+  - {x: 0, y: 2}
+  Rarity: 0
+  BaseWeight: 15
+  ColorPreset: 4
+  BaseTileValue: 6
+  LockedByDefault: 1
+  UnlockCost: 1000
+  ScoreGain:
+    Steps: 020000000400000007000000090000000b0000000f0000001500000018000000260000002d00000032000000380000003f000000470000004f00000059000000630000006f0000007d0000008c000000
+    Multiplier: 1
+    Increment: 0
+    MaxValue: 0
+    MaxLevel: 20
+  ScoreCost:
+    Steps: 64000000c800000090010000580200002003000040060000800c0000881300004c1d00003421000068290000f4330000d84000000e5100005e650000907e0000669e0000dac5000076f700002e350100
+    Multiplier: 1
+    Increment: 0
+    MaxValue: 0
+    MaxLevel: 20
+  ScoreUpgradeBaseCost: 100
+  ScoreUpgradeCostPerLevel: 50
+  WeightIncreaseCost: 600
+  WeightDecreaseCost: 400

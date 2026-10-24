@@ -20,7 +20,7 @@ MonoBehaviour:
   - {x: 1, y: 1}
   - {x: 1, y: -1}
   Rarity: 2
-  BaseWeight: 25
+  BaseWeight: 20
   ColorPreset: 6
   BaseTileValue: 18
   LockedByDefault: 1

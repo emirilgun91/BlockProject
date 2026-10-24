@@ -134,6 +134,8 @@ Shape.Shape_LongL.Name,Long L,Langes L,Uzun L,L lunga,L long,Długie L,Lang L,L 
 Shape.Shape_Cross.Name,Cross,Kreuz,Artı,Croce,Croix,Krzyż,Kryss,Cruz,Cruz,Cruz,Cruz,Крест,クロス,십자,十字
 Shape.Shape_4Gen.Name,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen,4Gen
 Shape.Shape_6Sq.Name,6Square,6-Quadrat,6Kare,6 quadrati,6 carrés,6 kwadratów,6-firkant,6 quadrados,6 quadrados,6 cuadros,6 cuadros,6 квадратов,6スクエア,6칸 사각,6格方块
+Shape.Shape_Domino.Name,Domino,Domino,Domino,Domino,Domino,Domino,Domino,Dominó,Dominó,Dominó,Dominó,Домино,ドミノ,도미노,多米诺
+Shape.Shape_U5.Name,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5,U5
 Pause.Feedback,SEND FEEDBACK,FEEDBACK SENDEN,ÖNERİ VER,INVIA FEEDBACK,DONNER SON AVIS,PRZEŚLIJ OPINIĘ,SEND TILBAKEMELDING,ENVIAR FEEDBACK,ENVIAR FEEDBACK,ENVIAR COMENTARIOS,ENVIAR COMENTARIOS,ОТПРАВИТЬ ОТЗЫВ,フィードバックを送る,피드백 보내기,提交反馈
 Milestone.Title,MILESTONE,ZIEL,HEDEF,OBIETTIVO,OBJECTIF,CEL,MÅL,OBJETIVO,OBJETIVO,OBJETIVO,OBJETIVO,ЦЕЛЬ,目標,목표,目标
 Milestone.PiecesLeft,{0} left,{0} übrig,{0} kaldı,{0} rimasti,{0} restants,pozostało {0},{0} igjen,restam {0},restam {0},quedan {0},quedan {0},осталось {0},残り {0},{0}개 남음,剩余 {0}

@@ -45,6 +45,26 @@ namespace RogueBlockBlast.Core
         // Sonraki milestone — null ise tüm milestone'lar geçildi
         public MilestoneData? NextMilestone => _config.GetMilestone(CurrentMilestoneIndex);
 
+        /// <summary>Önceki milestone'un (Bounty Hunter ölçekli) eşiği — bu pencerenin başlangıcı.</summary>
+        private float PrevThreshold =>
+            (CurrentMilestoneIndex > 0 ? (_config.GetMilestone(CurrentMilestoneIndex - 1)?.ScoreThreshold ?? 0) : 0)
+            * _permanentScale;
+
+        /// <summary>Bu pencerede kazanılması gereken skor (eşikler arası fark).</summary>
+        public float CurrentWindowGap =>
+            NextMilestone.HasValue ? NextMilestone.Value.ScoreThreshold * _permanentScale - PrevThreshold : 0f;
+
+        /// <summary>
+        /// Geçerli hedef. Pencere ölçeği (Future Investment) toplam eşiği değil, bu aşamanın
+        /// gereken farkını ölçekler: eşikler run boyunca biriken skor olduğundan toplamı
+        /// ölçeklemek "+%20" ile ileri aşamalarda farkın katlarını isterdi.
+        /// </summary>
+        public float EffectiveThreshold =>
+            NextMilestone.HasValue ? PrevThreshold + CurrentWindowGap * _currentWindowScale : 0f;
+
+        /// <summary>Son milestone geçiş hakkıyla mı geçildi — o aşama coin vermez.</summary>
+        public bool LastWasPass { get; private set; }
+
         // ── Events ───────────────────────────────────────────────────────────
         /// <summary>Milestone'a ulaşıldı. int=kazanılan coin, MilestoneData=milestone bilgisi.</summary>
         public event Action<int, MilestoneData> OnMilestoneReached;
@@ -83,7 +103,7 @@ namespace RogueBlockBlast.Core
             var milestone = NextMilestone;
             if (!milestone.HasValue) return;
 
-            if (newScore >= milestone.Value.ScoreThreshold * _currentWindowScale * _permanentScale)
+            if (newScore >= EffectiveThreshold)
                 TriggerMilestone(milestone.Value);
             else
                 FireProgressChanged();
@@ -101,8 +121,27 @@ namespace RogueBlockBlast.Core
             FireProgressChanged();
         }
 
-        /// <summary>Future Investment: mevcut milestone eşiğini ölçekle.</summary>
+        /// <summary>Future Investment: bu aşamanın gereken farkını ölçekle.</summary>
         public void ScaleCurrentWindow(float scale) { _currentWindowScale *= scale; FireProgressChanged(); }
+
+        /// <summary>
+        /// Skoru eşik kontrolü yapmadan günceller (Future Investment hediyesi milestone
+        /// olayının içinden gelir; burada tetiklemek iç içe milestone açardı). Eşik bir
+        /// sonraki <see cref="OnScoreChanged"/>'de kontrol edilir.
+        /// </summary>
+        public void SyncScore(int score) { CurrentScore = score; FireProgressChanged(); }
+
+        /// <summary>
+        /// Milestone geçiş hakkı: hedefe ulaşılmadan aşamayı geçilmiş say.
+        /// Dinleyici <see cref="LastWasPass"/> ile bunu ayırt eder.
+        /// </summary>
+        public void ForcePass()
+        {
+            if (!NextMilestone.HasValue) return;
+            LastWasPass = true;
+            try { TriggerMilestone(NextMilestone.Value); }
+            finally { LastWasPass = false; }
+        }
 
         /// <summary>Bounty Hunter: tüm milestone eşiklerine kalıcı çarpan ekle.</summary>
         public void ScalePermanent(float scale) { _permanentScale *= scale; FireProgressChanged(); }
@@ -163,14 +202,10 @@ namespace RogueBlockBlast.Core
             var next = NextMilestone;
 
             // Önceki milestone eşiği — score progress başlangıç noktası
-            int prevThreshold = CurrentMilestoneIndex > 0
-                ? (_config.GetMilestone(CurrentMilestoneIndex - 1)?.ScoreThreshold ?? 0)
-                : 0;
+            int prevThreshold = Mathf.RoundToInt(PrevThreshold);
 
             // UI'ya etkili (ölçeklenmiş) eşiği gönder — progress bar doğru görünsün
-            int effectiveNext = next.HasValue
-                ? Mathf.RoundToInt(next.Value.ScoreThreshold * _currentWindowScale * _permanentScale)
-                : 0;
+            int effectiveNext = Mathf.RoundToInt(EffectiveThreshold);
 
             OnProgressChanged?.Invoke(new MilestoneProgressState(
                 currentMilestone : CurrentMilestoneIndex,

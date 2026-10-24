@@ -8,8 +8,10 @@ namespace RogueBlockBlast.Core
     ///
     /// KURALLAR:
     /// - Line clear → charge +1 (max 3)
-    ///   · charge < 3  → multiplier += 0.1
-    ///   · charge == 3 → multiplier += 0.2 (max charge bonusu)
+    ///   · charge < 3  → multiplier += BonusPerClear (0.1)
+    ///   · charge == 3 → multiplier += max(BonusAtMaxCharge, BonusPerClear + 0.1)
+    ///     Dolu bar hiçbir zaman dolu olmayandan az vermez (Chain Master /
+    ///     Combo Gain BonusPerClear'ı 0.2'nin üstüne çıkarınca tersine dönüyordu).
     /// - Placement, clear yok → charge -1 (min 0)
     ///   · charge == 0 → multiplier sıfırlanır (x1.0)
     ///
@@ -38,6 +40,15 @@ namespace RogueBlockBlast.Core
         public  float ChainMasterBonus;      // kart başına artış (stack'lenir)
         private int   _consecutiveClears;
 
+        /// <summary>
+        /// Chain Master'ın run boyunca BonusPerClear'a ekleyebileceği toplam (kaç kopya
+        /// alınırsa alınsın). Tavansız hâli simülasyonda +37'ye kadar çıkıyordu.
+        /// </summary>
+        public const float ChainMasterCap = 1f;
+
+        /// <summary>Dolu barın satır başı bonusu, BonusPerClear'ın en az bu kadar üstünde kalır.</summary>
+        public const float MaxChargeLead = 0.1f;
+
         /// <summary>Chain Master'ın bu run'da BonusPerClear'a eklediği toplam — UI için.</summary>
         public float ChainMasterAccumulated { get; private set; }
 
@@ -48,6 +59,9 @@ namespace RogueBlockBlast.Core
         public int   Charges    { get; private set; } = 0;
         public float Multiplier { get; private set; } = 1f;
         public bool  IsMaxCharge => Charges >= MaxCharge;
+
+        /// <summary>Dolu barda bir satırın çarpana eklediği miktar.</summary>
+        public float MaxChargeBonus => Mathf.Max(BonusAtMaxCharge, BonusPerClear + MaxChargeLead);
 
         // ── Events ───────────────────────────────────────────────────────────
         /// <summary>Herhangi bir state değişikliğinde tetiklenir.</summary>
@@ -80,16 +94,16 @@ namespace RogueBlockBlast.Core
                 if (Charges < MaxCharge)
                     Charges++;
 
-                float bonus = Charges >= MaxCharge ? BonusAtMaxCharge : BonusPerClear;
-                Multiplier += bonus;
+                Multiplier += Charges >= MaxCharge ? MaxChargeBonus : BonusPerClear;
             }
 
             // Chain Master: ardışık clear sayacı — bonus bir sonraki clear'dan itibaren geçerli
             _consecutiveClears++;
-            if (HasChainMaster && ChainMasterBonus > 0f)
+            if (HasChainMaster && ChainMasterBonus > 0f && ChainMasterAccumulated < ChainMasterCap)
             {
-                BonusPerClear          += ChainMasterBonus;
-                ChainMasterAccumulated += ChainMasterBonus;
+                float add = Mathf.Min(ChainMasterBonus, ChainMasterCap - ChainMasterAccumulated);
+                BonusPerClear          += add;
+                ChainMasterAccumulated += add;
             }
 
             if (IsMaxCharge)

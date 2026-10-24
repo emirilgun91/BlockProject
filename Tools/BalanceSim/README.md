@@ -17,7 +17,16 @@ Unity'nin kendi Roslyn derleyicisi ve .NET 6 runtime'ı ile çalışır, ayrı .
 ./run.sh export               # out/report_data.json → report/template.html
 ./run.sh classic 3000         # Classic Mode: tek oyun skor/satır/süre dağılımı (başarım eşikleri)
 ./run.sh classic 1000 rotate  # karşılaştırma varyantları: rotate (döndürme açık), all (kilitli şekiller de), nofit (yeniden çekme yok)
+./run.sh chain 800            # Chain Master: tavan varyantları ve bonusun ulaştığı yer
+./run.sh shapes 400           # gerçek oyun tahtalarında şekil başına sığma / satır tamamlama oranları
+./run.sh shapeworth 3000 Mid  # şekil başına "nötr hücre değeri" (Casual / Mid / Skilled)
+./run.sh proposal             # shapeworth sonuçlarından şekil puanı + seviye fiyatı önerisi (24 Ekim'de asset'lere uygulandı)
+./run.sh prop invest 3000     # `prop` öneki: öneriyi bugünkü asset'lerin üstüne uygulayıp herhangi bir komutu koşturur
+./run.sh cardvar 3000         # Bounty Hunter / Future Investment öneri varyantları
+./run.sh passvar 3000         # Dead Pool Revive ile milestone geçiş hakkı karşılaştırması
 ```
+
+**Nötr hücre değeri** (`shapeworth`): şekil spawn'ların %25'ini oluştururken hücre başına kaç puan verirse oyuncu, o şekil hiç yokmuş gibi ilerler. Herkes 25 puanla (Z'nin Lv3 değeri) ölçülür, sonuç buna oranla verilir. Oran > 1 şeklin zor olduğunu, < 1 kolay ve faydalı olduğunu gösterir. Ekonomi parça sayısıyla sınırlı olduğu için küçük şekiller (I3, C, Dot) parça başına daha az tahta kapladığından yüksek oran alır.
 
 `classic` oyundaki Classic kurallarını modeller (`GameMode.Classic`): milestone/kart/upgrade yok, döndürme kapalı, parça rastgele yönde gelir, yalnızca başta açık şekiller, sığmayan parça 2 kez yeniden çekilir. Çıktı `out/classic.json`; eşik başına "tek oyunda ulaşma %" `AchievementTracker`'daki Classic eşiklerinin kaynağıdır.
 

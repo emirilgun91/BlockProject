@@ -22,21 +22,21 @@ MonoBehaviour:
   Rarity: 2
   BaseWeight: 25
   ColorPreset: 6
-  BaseTileValue: 11
+  BaseTileValue: 18
   LockedByDefault: 1
-  UnlockCost: 350
+  UnlockCost: 1000
   ScoreGain:
-    Steps: 0300000005000000090000000c0000000f000000140000001c00000020000000320000003c0000004b0000005a00000064000000
+    Steps: 070000000b000000140000001b000000220000002d0000003f000000480000007000000087000000
     Multiplier: 1
-    Increment: 2
+    Increment: 0
     MaxValue: 0
-    MaxLevel: 13
+    MaxLevel: 10
   ScoreCost:
-    Steps: 960000002c010000f4010000ee020000e8030000d0070000a00f0000701700003421000010270000d4300000983a00005c440000
+    Steps: 960000002c01000058020000b6030000e2040000c409000088130000781e0000b42d0000c2330000
     Multiplier: 1
-    Increment: 2000
-    MaxValue: 20000
-    MaxLevel: 0
+    Increment: 0
+    MaxValue: 0
+    MaxLevel: 10
   ScoreUpgradeBaseCost: 170
   ScoreUpgradeCostPerLevel: 30
   WeightIncreaseCost: 1000

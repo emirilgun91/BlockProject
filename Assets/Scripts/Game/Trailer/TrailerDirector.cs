@@ -1305,7 +1305,7 @@ namespace RogueBlockBlast.Game.Trailer
             {
                 MaxCharge = c?.MaxCharge ?? 3,
                 PerClear  = c?.BonusPerClear ?? 0.1f,
-                AtMax     = c?.BonusAtMaxCharge ?? 0.2f,
+                AtMax     = c?.MaxChargeBonus ?? 0.2f,
                 Base      = c?.BaseMultiplier ?? 1f,
             };
         }

@@ -12,6 +12,7 @@ namespace RogueBlockBlast.Content
         ComboBarExpansion,  // Combo bar sayısı artışı
         CoinGainBoost,      // Coin kazanım artışı
         StartingCombo,      // Başlangıç combo çarpanı
+        MilestonePass,      // Lifeline: parçalar bitince hedefin %75'indeysen aşama geçilir
     }
 
     /// <summary>

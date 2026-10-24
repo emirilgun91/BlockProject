@@ -264,6 +264,7 @@ namespace RogueBlockBlast.UI
 
             Color flat = primary ? UiTheme.AccentDeep : UiTheme.Raised;
             var fill = Img(rt.gameObject, sprite, Color.white, flat);
+            fill.raycastTarget = true;   // Button tıklamayı bu görsel üzerinden alır; kapalıyken tık pencereye düşüyordu
             var label = LocText("Label", rt, skin, key, 28f, UiTheme.Text, true);
             Stretch(label.rectTransform);
             label.margin = new Vector4(16f, 0f, 16f, 6f);   // görselin alt kenarı kalın

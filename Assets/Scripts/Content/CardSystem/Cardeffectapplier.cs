@@ -151,7 +151,7 @@ namespace RogueBlockBlast.Game
                     // ── Bounty Hunter ─────────────────────────────────────────
                     case Content.CardEffectType.BountyHunterCoinPerClear:
                         cardState.HasBountyHunter          = true;
-                        cardState.BountyHunterCoinPerClear  = Mathf.RoundToInt(effect.Value);
+                        cardState.BountyHunterRewardShare   = effect.Value;
                         break;
 
                     case Content.CardEffectType.BountyHunterThresholdScale:

@@ -51,7 +51,7 @@ namespace RogueBlockBlast.Content
         LineMasterMultiplier,       // Sadece yatay (satır) clear'lar skor verir, bu çarpanla
 
         // ── Bounty Hunter ─────────────────────────────────────────────────────
-        BountyHunterCoinPerClear,   // Her line clear'da kazanılan coin miktarı
+        BountyHunterCoinPerClear,   // Her line clear: o anki aşama coin ödülünün Value oranı kadar coin (0.02 = %2)
         BountyHunterThresholdScale, // Tüm milestone eşiklerine uygulanacak kalıcı çarpan
 
         // ── Future Investment ─────────────────────────────────────────────────

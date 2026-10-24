@@ -62,7 +62,8 @@ namespace RogueBlockBlast.Game
 
         // ── Bounty Hunter ─────────────────────────────────────────────────────
         public bool HasBountyHunter;
-        public int  BountyHunterCoinPerClear;
+        /// <summary>Satır başı coin = o an oynanan aşamanın coin ödülünün bu oranı (0.02 = %2).</summary>
+        public float BountyHunterRewardShare;
 
         /// <summary>Bu run içinde Bounty Hunter ile kazanılan toplam altın — slot ve tooltip gösterir.</summary>
         public int  BountyHunterCoinsEarned;
@@ -177,7 +178,7 @@ namespace RogueBlockBlast.Game
             HasHyperfocus    = false; HyperfocusPenaltyShapes = 0;
             HasTunnelVision  = false; TunnelVisionMultiplier = 2.5f;
             HasLineMaster    = false; LineMasterMultiplier = 2.5f;
-            HasBountyHunter  = false; BountyHunterCoinPerClear = 0; BountyHunterCoinsEarned = 0;
+            HasBountyHunter  = false; BountyHunterRewardShare = 0f; BountyHunterCoinsEarned = 0;
             HasFutureInvestment = false; FutureInvestmentPendingDiscount = 0f;
             HasFirstPicks    = false; FirstPicksFreeCount = 0;     FirstPicksUsedThisMilestone = 0;
             HasMomentumShield = false; MomentumShieldMinMultiplier = 3f;

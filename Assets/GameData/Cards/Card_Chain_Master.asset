@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Chain_Master
   CardName: Chain Master
-  Description: Each consecutive clear permanently adds +0.02 to your combo gain.
+  Description: Each consecutive clear permanently adds +0.02 to your combo gain, up to +1.
   Icon: {fileID: 5309497199123456101, guid: 2c1cf5a09ec61f14e9a72cf8fac57fbd, type: 3}
   Rarity: 2
   Effects:
   - Type: 44
     Value: 0.02
-    Description: Combo gain +0.02 per chained clear
+    Description: Combo gain +0.02 per chained clear (max +1)
   BaseWeight: 30
   IsUnique: 0
   LockedByDefault: 1

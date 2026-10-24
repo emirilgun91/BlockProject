@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RogueBlockBlast.Content.CardSO
   Id: Card_Future_Investment
   CardName: Future Investment
-  Description: Raises this Milestone's target by 20%. Clear it and the next target
-    drops 15%.
+  Description: Raises the points this Milestone needs by 10%. Clear it and start the
+    next Milestone with 20% of its points already scored.
   Icon: {fileID: -4766527980457479534, guid: 3a3f418661757d742b4ff607fd641ffc, type: 3}
   Rarity: 1
   Effects:
   - Type: 21
-    Value: 1.2
+    Value: 1.1
     Description: 
   - Type: 22
-    Value: 0.15
+    Value: 0.2
     Description: 
   BaseWeight: 40
   IsUnique: 0

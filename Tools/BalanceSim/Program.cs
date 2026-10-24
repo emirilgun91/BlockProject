@@ -38,7 +38,7 @@ namespace BalanceSim
         public static BotProfile[] All() => new[] { Casual(), Mid(), Skilled() };
     }
 
-    public static class Program
+    public static partial class Program
     {
         public static GameData G;
         public static string OutDir;
@@ -75,6 +75,8 @@ namespace BalanceSim
                     CardValues[e.GetProperty("Id").GetString()] = (float)e.GetProperty("DeltaStage").GetDouble();
             }
 
+            // `prop <komut> ...`: şekil puanı önerisini uygulayıp komutu onunla koşturur
+            if (args.FirstOrDefault() == "prop") { BuildShapeProposal(apply: true); args = args.Skip(1).ToArray(); }
             string cmd = args.Length > 0 ? args[0] : "all";
             int a1 = args.Length > 1 && int.TryParse(args[1], out var t1) ? t1 : 0;
             int a2 = args.Length > 2 && int.TryParse(args[2], out var t2) ? t2 : 0;
@@ -94,6 +96,11 @@ namespace BalanceSim
                 case "chain": Chain(a1 > 0 ? a1 : 800); break;
                 case "scenarios": Scenarios(a1 > 0 ? a1 : 100, args.Length > 2 ? args[2] : null); break;
                 case "tune": Tune(args.Length > 1 ? args[1] : "Skilled", a2 > 0 ? a2 : 300); break;
+                case "shapes": Shapes(a1 > 0 ? a1 : 400); break;
+                case "cardvar": CardVariants(a1 > 0 ? a1 : 3000); break;
+                case "passvar": PassVariants(a1 > 0 ? a1 : 3000); break;
+                case "proposal": BuildShapeProposal(apply: false); break;
+                case "shapeworth": ShapeWorth(a1 > 0 ? a1 : 2000, args.Length > 2 ? args[2] : "Mid"); break;
                 case "classic": Classic(a1 > 0 ? a1 : 1000, args.Length > 2 ? args[2] : ""); break;
             }
             Console.WriteLine($"[done {cmd} in {sw.Elapsed.TotalSeconds:0.0}s]");
@@ -434,11 +441,11 @@ namespace BalanceSim
             var rows = new List<ChainRow>();
             var variants = new (string name, Func<Config> cfg)[]
             {
-                ("oyundaki (sınırsız)", () => new Config()),
-                ("zincir kırılınca sıfırla", () => new Config { ChainMode = 1 }),
-                ("toplam +0.5 tavan", () => new Config { ChainMode = 2, ChainCap = 0.5f }),
-                ("toplam +1.0 tavan", () => new Config { ChainMode = 2, ChainCap = 1.0f }),
-                ("oyundaki + dolu bar BPC'yi izler", () => new Config { MaxChargeFollowsBpc = true }),
+                ("sınırsız (24 Ekim öncesi)", () => new Config { ChainMode = 0, MaxChargeFollowsBpc = false }),
+                ("zincir kırılınca sıfırla", () => new Config { ChainMode = 1, MaxChargeFollowsBpc = false }),
+                ("toplam +0.5 tavan", () => new Config { ChainCap = 0.5f, MaxChargeFollowsBpc = false }),
+                ("toplam +1.0 tavan", () => new Config { MaxChargeFollowsBpc = false }),
+                ("oyundaki: +1.0 tavan + dolu bar BPC+0.1", () => new Config()),
             };
             foreach (int lvl in new[] { 3, 8 })
             foreach (var bp in new[] { Personas.Mid(), Personas.Skilled() })
@@ -473,6 +480,7 @@ namespace BalanceSim
         {
             var scen = new (string name, Func<Config> cfg, float price)[]
             {
+                ("A0: 24 Ekim öncesi (Chain Master sınırsız)", () => new Config { ChainMode = 0, MaxChargeFollowsBpc = false }, 1f),
                 ("A: oyundaki hâl", () => new Config(), 1f),
                 ("B: combo azalan getiri (K=4)", () => new Config { ComboDimK = 4f }, 1f),
                 ("C: coin eğrisi 150×1.22^n", () => new Config { CoinOverride = CoinCurve(150, 1.22) }, 1f),

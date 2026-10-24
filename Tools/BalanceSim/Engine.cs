@@ -36,12 +36,20 @@ namespace BalanceSim
         // ── Denge senaryoları (varsayılan = oyundaki hâl) ──
         public float ComboCap;            // >0: çarpan tavanı
         public float ComboDimK;           // >0: artış / (1 + (mult-base)/K)
-        public int   ChainMode;           // 0 oyundaki, 1 zincir kırılınca sıfırla, 2 toplamı ChainCap ile sınırla
-        public float ChainCap = 0.5f;
-        public bool  MaxChargeFollowsBpc; // dolu barda artış = max(BonusAtMax, BonusPerClear + 0.1)
+        public int   ChainMode = 2;       // 0 sınırsız (24 Ekim öncesi), 1 zincir kırılınca sıfırla, 2 toplamı ChainCap ile sınırla (oyundaki)
+        public float ChainCap = 1.0f;       // ComboSystem.ChainMasterCap
+        public bool  MaxChargeFollowsBpc = true; // dolu barda artış = max(BonusAtMax, BonusPerClear + 0.1) (ComboSystem.MaxChargeBonus)
         public int[] CoinOverride;        // aşama başına coin ödülü
         public float GainScale = 1f;      // şekil skor yükseltmesinin etkisi
         public bool  StopAtVictory = true;
+        public float[] TileOverride;      // >0: şeklin hücre değeri (seviyeyi yok sayar) — şekil deneyleri
+        public int[]   WeightOverride;    // şeklin ağırlığı; 0 = hiç gelmez — şekil deneyleri
+        public float   BountyPct;         // >0: Bounty Hunter satır başı coin = mevcut aşama ödülünün bu oranı — öneri deneyi
+        public int     MilestonePasses;   // öneri: run başına milestone geçiş hakkı
+        public float   PassMinPct = 0.75f; // hak, skor hedefin bu oranındaysa kullanılır
+        public bool    PassGivesCoins;
+        public bool    MilestoneGapScale = true; // Future Investment hedefin farkını ölçekler (MilestoneSystem.EffectiveThreshold)
+        public bool    FutureInvestmentGift = true; // sonraki "indirim" aşama farkının o kadarı hediye skor (RunController)
 
         /// <summary>Classic Mode (GameMode.Classic): milestone/kart/upgrade yok, döndürme kapalı,
         /// her parça rastgele bir rotasyonla gelir, yalnızca başta açık şekiller çıkar ve
@@ -166,7 +174,10 @@ namespace BalanceSim
         public int Limit => poolOverride > 0 ? poolOverride : g.PoolLimit;
         public int Remaining => Math.Max(0, Limit - Placed);
         public bool AllCleared => Index >= g.Milestones.Count;
-        public float NextThreshold => AllCleared ? float.MaxValue : g.Milestones[Index].Threshold * curScale * permScale;
+        public bool GapScale;   // öneri: pencere ölçeği toplam hedefi değil, bu aşamanın gereken farkını ölçekler
+        float Prev => Index == 0 ? 0f : g.Milestones[Index - 1].Threshold * permScale;
+        float Eff(int i) => GapScale ? Prev + (g.Milestones[i].Threshold * permScale - Prev) * curScale : g.Milestones[i].Threshold * curScale * permScale;
+        public float NextThreshold => AllCleared ? float.MaxValue : Eff(Index);
         public float PermScale => permScale;
 
         public void OnPiecePlaced() { Placed++; if (Remaining <= 0) OnExhausted?.Invoke(); }
@@ -175,7 +186,7 @@ namespace BalanceSim
             Score = s;
             if (AllCleared) return;
             var m = g.Milestones[Index];
-            if (s >= m.Threshold * curScale * permScale)
+            if (s >= Eff(Index))
             {
                 LastRemaining = Remaining;
                 int idx = Index;
@@ -185,6 +196,8 @@ namespace BalanceSim
         }
         public void ScaleCurrentWindow(float s) => curScale *= s;
         public void ScalePermanent(float s) => permScale *= s;
+        /// <summary>Milestone geçiş hakkı (öneri): hedefe ulaşılmadan aşamayı geçilmiş say.</summary>
+        public void ForceReach(bool coins) { var m = g.Milestones[Index]; LastRemaining = 0; int idx = Index; Index++; Placed = 0; curScale = 1f; OnReached?.Invoke(coins ? m.Coin : 0, idx); }
         public void DeductPieces(int c) { Placed = Math.Min(Placed + c, Limit); if (Remaining <= 0) OnExhausted?.Invoke(); }
         public void SetPoolLimit(int l) => poolOverride = l;
         public void AddPieces(int c) => Placed = Math.Max(0, Placed - c);
@@ -199,7 +212,7 @@ namespace BalanceSim
         public bool HasHyperfocus; public int HyperfocusPenaltyShapes;
         public bool HasTunnelVision; public float TunnelVisionMultiplier = 2.5f;
         public bool HasLineMaster; public float LineMasterMultiplier = 2.5f;
-        public bool HasBountyHunter; public int BountyHunterCoinPerClear, BountyCoins;
+        public bool HasBountyHunter; public int BountyHunterCoinPerClear, BountyCoins; public float BountyShare;
         public bool HasFutureInvestment; public float FutureInvestmentPendingDiscount;
         public bool HasFirstPicks; public int FirstPicksFreeCount, FirstPicksUsed;
         public bool HasMomentumShield; public float MomentumShieldMin = 3f;
@@ -240,7 +253,7 @@ namespace BalanceSim
         public int RevivesUsed;
         public List<int> StagePlacements = new(); // her stage'i geçmek için harcanan hamle
         public List<string> Picked = new();
-        public int PoolRerollsUsed;
+        public int PoolRerollsUsed, PassesUsed;
         public int Offers, OffersNoop, AllNoopOffers, PicksNoop;
     }
 
@@ -258,7 +271,8 @@ namespace BalanceSim
         public readonly List<Piece> Pool = new(3);
         public int Score, Coins;
         public float Global = 1f;
-        int coinBonus, cardDeadReroll, upgRevivesUsed, freeDead;
+        int coinBonus, cardDeadReroll, upgRevivesUsed, freeDead, passesLeft;
+        bool passReach;
         public int PoolRerolls, CardRerolls;
         public readonly Dictionary<int, int> Inventory = new();
         public readonly float[] ShapeScoreBonus, ShapeWeightDelta;
@@ -288,9 +302,14 @@ namespace BalanceSim
         public void NewRun()
         {
             int poolBonus = (int)Math.Round(P.Effect(G, "upgrade_pool_capacity"));
-            MS = new MilestoneSys(G, G.PoolLimit + poolBonus);
+            MS = new MilestoneSys(G, G.PoolLimit + poolBonus) { GapScale = C.MilestoneGapScale };
             MS.OnReached = HandleMilestoneReached;
-            MS.OnExhausted = () => OnGameOver(Reason.PoolExhausted);
+            passesLeft = C.MilestonePasses + (int)Math.Round(P.Effect(G, "upgrade_milestone_pass"));
+            MS.OnExhausted = () =>
+            {
+                if (passesLeft > 0 && !MS.AllCleared && MS.Score >= C.PassMinPct * MS.NextThreshold) { passesLeft--; Stats.PassesUsed++; passReach = !C.PassGivesCoins; MS.ForceReach(C.PassGivesCoins); passReach = false; return; }
+                OnGameOver(Reason.PoolExhausted);
+            };
             Combo.OnReset = () => { if (CS.HasHyperfocus && CS.HyperfocusPenaltyShapes > 0) MS.DeductPieces(CS.HyperfocusPenaltyShapes); };
             if (C.Classic)
             {
@@ -315,6 +334,7 @@ namespace BalanceSim
         int ShapeWeight(ShapeDef s)
         {
             if (C.Classic) return s.BaseWeight;
+            if (C.WeightOverride != null) return C.WeightOverride[s.Idx];
             int w = P.EffectiveWeight(s);
             if (ShapeHasEffect[s.Idx]) w = Math.Max(1, w + (int)Math.Round(ShapeWeightDelta[s.Idx]));
             return w;
@@ -322,7 +342,7 @@ namespace BalanceSim
 
         bool SpawnAllowed(ShapeDef s) => C.Classic
             ? C.ClassicAllShapes || !s.Locked
-            : P.ShapeAvailable(s) && (!CS.HasDietPlan || s.Size < CS.DietPlanMaxSize);
+            : P.ShapeAvailable(s) && (C.WeightOverride == null || C.WeightOverride[s.Idx] > 0) && (!CS.HasDietPlan || s.Size < CS.DietPlanMaxSize);
 
         Piece RandomPiece()
         {
@@ -335,6 +355,7 @@ namespace BalanceSim
                 if (!SpawnAllowed(s)) continue;
                 cum += ShapeWeight(s);
                 if (roll < cum && C.Classic) return new Piece { S = s, Tile = s.BaseTile, Rot = R.Range(0, 4) };
+                if (roll < cum && C.TileOverride != null && C.TileOverride[s.Idx] > 0) return new Piece { S = s, Tile = C.TileOverride[s.Idx] };
                 if (roll < cum) return new Piece { S = s, Tile = s.BaseTile + (s.TileAt(P.ScoreLvl[s.Idx]) - s.BaseTile) * C.GainScale };
             }
             return null;
@@ -431,7 +452,11 @@ namespace BalanceSim
                 Combo.OnLineClear(cleared);
                 if (CS.HasBountyHunter && CS.BountyHunterCoinPerClear > 0)
                 {
-                    int bc = cleared * CS.BountyHunterCoinPerClear;
+                    float share = C.BountyPct > 0f ? C.BountyPct : CS.BountyShare;
+                    int per = share > 0f && !MS.AllCleared
+                        ? Math.Max(1, (int)Math.Round(share * G.Milestones[MS.Index].Coin))
+                        : CS.BountyHunterCoinPerClear;
+                    int bc = cleared * per;
                     Coins += bc; CS.BountyCoins += bc;
                 }
                 if (CS.HasPhantomCell && CS.PhantomPos >= 0) CheckPhantomRelocate(rows, cols);
@@ -576,7 +601,13 @@ namespace BalanceSim
             Dead = 0;
             if (CS.HasFutureInvestment && CS.FutureInvestmentPendingDiscount > 0f)
             {
-                MS.ScaleCurrentWindow(1f - CS.FutureInvestmentPendingDiscount);
+                if (C.FutureInvestmentGift && !MS.AllCleared)
+                {
+                    // öneri: indirim borç değil hediye — yeni aşamanın gereken farkının o kadarı skor olarak verilir
+                    float gap = (G.Milestones[MS.Index].Threshold - data.Threshold) * MS.PermScale;
+                    Score += (int)Math.Round(gap * CS.FutureInvestmentPendingDiscount);
+                }
+                else MS.ScaleCurrentWindow(1f - CS.FutureInvestmentPendingDiscount);
                 CS.FutureInvestmentPendingDiscount = 0f;
             }
             if (CS.HasHoarder && MS.LastRemaining >= CS.HoarderMinRemaining)
@@ -584,7 +615,7 @@ namespace BalanceSim
 
             float coinMult = 1f + P.Effect(G, "upgrade_coin_gain");
             if (C.CoinOverride != null && idx < C.CoinOverride.Length) coinReward = C.CoinOverride[idx];
-            int total = (int)Math.Round((coinReward + coinBonus) * coinMult);
+            int total = passReach ? 0 : (int)Math.Round((coinReward + coinBonus) * coinMult);   // Lifeline ile geçilen aşama coin vermez
             Coins += total;
 
             Stats.Stage = idx + 1;
@@ -731,7 +762,7 @@ namespace BalanceSim
                         case E.HyperfocusPenaltyShapes: CS.HasHyperfocus = true; CS.HyperfocusPenaltyShapes = (int)Math.Round(v); break;
                         case E.TunnelVisionMultiplier: CS.HasTunnelVision = true; CS.TunnelVisionMultiplier = v; break;
                         case E.LineMasterMultiplier: CS.HasLineMaster = true; CS.LineMasterMultiplier = v; break;
-                        case E.BountyHunterCoinPerClear: CS.HasBountyHunter = true; CS.BountyHunterCoinPerClear = (int)Math.Round(v); break;
+                        case E.BountyHunterCoinPerClear: CS.HasBountyHunter = true; if (v >= 1f) CS.BountyHunterCoinPerClear = (int)Math.Round(v); else { CS.BountyHunterCoinPerClear = 1; CS.BountyShare = v; } break;
                         case E.BountyHunterThresholdScale: CS.HasBountyHunter = true; MS.ScalePermanent(v); break;
                         case E.FutureInvestmentCurrentScale: CS.HasFutureInvestment = true; MS.ScaleCurrentWindow(v); break;
                         case E.FutureInvestmentNextDiscount: CS.HasFutureInvestment = true; CS.FutureInvestmentPendingDiscount += v; break;

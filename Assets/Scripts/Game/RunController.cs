@@ -90,6 +90,7 @@ namespace RogueBlockBlast.Game
         private PieceDefinition       _currentPiece;
         private Rotation              _currentRot        = Rotation.R0;
         private int _upgradeRevivesUsed = 0;
+        private int _milestonePassesLeft = 0;   // upgrade_milestone_pass (Lifeline)
         private readonly HashSet<Vector2Int> _ghost = new();
         // Ghost hücrelerinin pozisyon bonusu — her frame yeniden doldurulur (alokasyon yok)
         private readonly Dictionary<Vector2Int, float> _ghostPositionBonus = new();
@@ -703,7 +704,7 @@ namespace RogueBlockBlast.Game
                 if (_exhaustPending)
                 {
                     _exhaustPending = false;
-                    if ((_milestoneSystem?.PiecesRemaining ?? 1) <= 0)
+                    if ((_milestoneSystem?.PiecesRemaining ?? 1) <= 0 && !TryMilestonePass())
                         OnGameOver(GameOverReason.PoolExhausted);
                 }
 
@@ -785,9 +786,13 @@ namespace RogueBlockBlast.Game
                 AudioManager.Instance?.PlaySFX(LineClearSFX);
 
                 // Bounty Hunter: coin per line cleared
-                if (_cardState.HasBountyHunter && _cardState.BountyHunterCoinPerClear > 0)
+                // Ödül aşamayla büyür: sabit 1 coin, 150'den 150.000'e çıkan aşama
+                // ödülleri yanında hiçbir şeydi (BalanceSim: kart coin'i bile düşürüyordu).
+                if (_cardState.HasBountyHunter && _cardState.BountyHunterRewardShare > 0f &&
+                    _milestoneSystem?.NextMilestone is { } bountyStage)
                 {
-                    int bountyCoins = cleared * _cardState.BountyHunterCoinPerClear;
+                    int perLine     = Mathf.Max(1, Mathf.RoundToInt(bountyStage.CoinReward * _cardState.BountyHunterRewardShare));
+                    int bountyCoins = cleared * perLine;
                     CoinWallet.Instance?.Earn(bountyCoins);
                     _coins += bountyCoins;
                     _cardState.BountyHunterCoinsEarned += bountyCoins;
@@ -1180,6 +1185,10 @@ namespace RogueBlockBlast.Game
                 reg?.GetEffect(
                     _upgradeLibrary?.Get("upgrade_card_reroll")) ?? 0f
             );
+            _milestonePassesLeft = Mathf.RoundToInt(
+                reg?.GetEffect(
+                    _upgradeLibrary?.Get("upgrade_milestone_pass")) ?? 0f
+            );
             _classicActiveSeconds = 0f;
             _classicLastPlaceTime = Time.time;
             _classicLines         = 0;
@@ -1481,10 +1490,22 @@ namespace RogueBlockBlast.Game
             _board?.ClearAllDeadZones();
             UpdateBoardOverlays();
 
-            // Future Investment: apply pending discount to new current window
+            // Future Investment: yeni aşamanın gereken farkının o kadarı hediye skor.
+            // Eşikler run boyunca biriken skor olduğu için hedefi düşürmek bir borçtu:
+            // aşama erken geçiliyor, fark bir sonrakine ekleniyordu (BalanceSim: indirim
+            // büyüdükçe kart kötüleşiyordu). Hediye skor gerçekten kazanılmış sayılır.
             if (_cardState.HasFutureInvestment && _cardState.FutureInvestmentPendingDiscount > 0f)
             {
-                _milestoneSystem?.ScaleCurrentWindow(1f - _cardState.FutureInvestmentPendingDiscount);
+                if (_milestoneSystem != null && !_milestoneSystem.AllMilestonesCleared)
+                {
+                    int gift = Mathf.RoundToInt(_milestoneSystem.CurrentWindowGap * _cardState.FutureInvestmentPendingDiscount);
+                    if (gift > 0)
+                    {
+                        _score += gift;
+                        ScoreView?.AddScoreGain(_score, gift);
+                        _milestoneSystem.SyncScore(_score);
+                    }
+                }
                 _cardState.FutureInvestmentPendingDiscount = 0f;
             }
 
@@ -1500,7 +1521,10 @@ namespace RogueBlockBlast.Game
             float coinMultiplier = 1f + (UpgradeRegistry.Instance?.GetEffect(
                 _upgradeLibrary?.Get("upgrade_coin_gain")) ?? 0f);
 
-            int total = Mathf.RoundToInt((coinReward + _coinBonusPerMilestone) * coinMultiplier);
+            // Lifeline ile geçilen aşama coin vermez (verseydi hak, coin'i neredeyse ikiye katlıyordu).
+            int total = _milestoneSystem.LastWasPass
+                ? 0
+                : Mathf.RoundToInt((coinReward + _coinBonusPerMilestone) * coinMultiplier);
             CoinWallet.Instance?.Earn(total);
             _coins += total;
 
@@ -1605,7 +1629,32 @@ namespace RogueBlockBlast.Game
             // Hamle sürerken (Safe Zone / Hyperfocus cezası) hemen bitirme: aynı
             // hamlede milestone gelirse pencere sıfırlanır ve run devam etmeli.
             if (_inPlacement) { _exhaustPending = true; return; }
+            if (TryMilestonePass()) return;
             OnGameOver(GameOverReason.PoolExhausted);
+        }
+
+        /// <summary>Lifeline: parçalar bittiğinde skor hedefin bu oranındaysa aşama geçilmiş sayılır.</summary>
+        private const float MilestonePassMinRatio = 0.75f;
+
+        /// <summary>
+        /// Lifeline yükseltmesi (run başına hak). Pencere bittiğinde skor hedefin %75'ine
+        /// ulaşmışsa aşama coin vermeden geçilir ve run sürer; kart seçimi normal açılır.
+        /// Ölümlerin çoğu "parça hakkı bitti" olduğu için Second Wind'in (yalnızca
+        /// hamle kalmayınca) yetişmediği yeri kapatır.
+        /// </summary>
+        private bool TryMilestonePass()
+        {
+            var ms = _milestoneSystem;
+            if (_milestonePassesLeft <= 0 || ms == null || ms.AllMilestonesCleared || _gameOverFired) return false;
+            if (_score < ms.EffectiveThreshold * MilestonePassMinRatio) return false;
+
+            _milestonePassesLeft--;
+            if (ScreenEventFX.Instance != null)
+                ScreenEventFX.Instance.PlayRunSaved(
+                    Loc.GetOr("Event.MilestonePass", "STAGE PASSED"),
+                    Loc.GetOr("Upgrade.upgrade_milestone_pass.Name", "Lifeline"));
+            ms.ForcePass();
+            return true;
         }
 
         // ── Valid Move Check ─────────────────────────────────────────────────
@@ -2181,7 +2230,7 @@ namespace RogueBlockBlast.Game
 
                     // Zincir ilerledikçe değişir
                     case CardEffectType.ChainMaster:
-                        return $"+{_comboSystem.ChainMasterAccumulated:0.00} combo " +
+                        return $"+{_comboSystem.ChainMasterAccumulated:0.00}/{ComboSystem.ChainMasterCap:0.00} combo " +
                                $"(chain {_comboSystem.ConsecutiveClears})";
 
                     // Seçimden sonra sabit — yine de stack görünsün

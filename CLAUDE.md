@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Unity URP 2D**, render pipeline: `com.unity.render-pipelines.universal` 17.3.0
 - **Input**: Unity Input System 1.18.0 (keyboard + mouse)
 - **Animation**: DOTween
-- **Scenes**: `Assets/Scenes/MainMenu.unity` (meta-loop / upgrades) and `Assets/Scenes/SampleScene.unity` (gameplay)
+- **Scenes**: `Assets/Scenes/Intro.unity` (studio video, build index 0), `Assets/Scenes/MainMenu.unity` (meta-loop / upgrades) and `Assets/Scenes/SampleScene.unity` (gameplay)
 
 ## Development Commands
 
@@ -95,7 +95,7 @@ ShapeSpawnService.GetRandomWeighted(library)
 
 **Drag-to-place** (`RunController`): the ghost is shown only while the finger is down, `DragLift` (1.8 cells plus `GameSettings.DragOffsetY`) above the finger, and the piece is placed when the finger lifts. `TrackDragPress` runs *before* the input-lock early return. A touch "arms" placement only if it started while input was allowed and not on a `Selectable` or `ScrollRect` (pool slots are the exception). Without this, the touch that picked a card or pressed the rotate button placed a piece when it was released. Pool slots select on pointer **down**, so a drag can start from the slot.
 
-**Main menu**: there is no separate scene, because it is build index 0 and a phone opens it first. `PortraitMenuLayout` re-lays out the same scene while `Screen.height > Screen.width` and restores the original layout when the screen is landscape again. `MainMenuController.ResolveGameplayScene` loads `GamePortrait` when the screen is portrait. `GameOverUI` retry reloads the *active* scene.
+**Main menu**: there is no separate portrait menu scene, because a phone opens the same MainMenu right after the intro. `PortraitMenuLayout` re-lays out the same scene while `Screen.height > Screen.width` and restores the original layout when the screen is landscape again. `MainMenuController.ResolveGameplayScene` loads `GamePortrait` when the screen is portrait. `GameOverUI` retry reloads the *active* scene.
 
 ### Shape Shop from the Game Over screen
 
@@ -109,6 +109,17 @@ ShapeSpawnService.GetRandomWeighted(library)
 - `GamePortrait` is generated from `SampleScene`, so re-run **Build Portrait Scene** after changing the Game Over layout.
 
 **Purchase confirm.** Every spending button on a shop card (unlock, score, weight up/down) goes through `ShapeShopController.RequestPurchase(headline, detail, cost, buy)`: not enough coins → the toast; `GameSettings.ConfirmPurchase` off → buys at once; otherwise `ShopConfirmDialog` asks (Confirm / Cancel / "Don't show again"). The dialog builds its own UI under the shop root on first use, with the sprites and fonts in the controller's *Purchase Confirm* fields (set on the prefab), so it works in all three scenes. "Don't show again" is saved only on Confirm, so ticking it and cancelling never makes the next click buy silently. Confirm ignores input for 0.25 s after opening (double click, held A). ESC / B cancel; `ShopConfirmDialog.BlocksEscape` stops `ShapeShopOverlay` from closing the shop on the same ESC. The Settings row that turns it back on (`Settings.Gameplay.ConfirmPurchase`) is cloned at runtime from the Confirm Quit row by `SettingsController.CloneToggleRow`, so no settings scene needs rebuilding. The scrim is 0.94 alpha: in this linear/HDR setup the theme's 0.82 barely shows over the dark shop.
+
+### Intro video
+
+`Intro.unity` (build index 0) plays the Designer Dad logo video, then opens MainMenu. **`IntroSplash`** (`UI/`, on the scene's only camera) starts loading MainMenu in the background (`allowSceneActivation = false`), plays the clip and leaves when it ends or on any key / click / gamepad button / touch (`InputSystem.onAnyButtonPress`, ignored for the first 0.4 s). It fades the image and sound out over 0.35 s; MainMenu's `SceneTransition` then fades in from black.
+
+- The clip is `Assets/Video/DesignerDadIntro.webm` (VP8 + Vorbis, converted from the delivered H.264 MP4 with ffmpeg). Unity decodes VP8 itself; H.264 goes through Media Foundation on Windows, which is unreliable under Proton on the Steam Deck. Replace the file with another VP8 WebM rather than an MP4.
+- The video is drawn into a RenderTexture shown by a full-screen `RawImage` (letterboxed by an `AspectRatioFitter`). `VideoRenderMode.CameraNearPlane` draws nothing with the URP 2D Renderer and logs no error, so don't switch back to it.
+- AudioManager (and its mixer) lives in MainMenu, so the intro's `AudioSource` takes `GameSettings.EffectiveMaster × SfxVolume` directly; mute is respected.
+- If the clip is missing, fails to prepare within 3 s or reports an error, the menu opens immediately; a watchdog also leaves after clip length + 1.5 s.
+- Pressing Play in the editor with MainMenu open skips the intro. To test it, open `Intro.unity` first (or set `EditorSceneManager.playModeStartScene`).
+- Unity's own splash ("Made with Unity", Personal license) still plays before the intro; its background is black so the hand-off has no grey flash.
 
 ### Audio settings persistence
 

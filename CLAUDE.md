@@ -112,14 +112,20 @@ ShapeSpawnService.GetRandomWeighted(library)
 
 ### Intro video
 
-`Intro.unity` (build index 0) plays the Designer Dad logo video, then opens MainMenu. **`IntroSplash`** (`UI/`, on the scene's only camera) starts loading MainMenu in the background (`allowSceneActivation = false`), plays the clip and leaves when it ends or on any key / click / gamepad button / touch (`InputSystem.onAnyButtonPress`, ignored for the first 0.4 s). It fades the image and sound out over 0.35 s; MainMenu's `SceneTransition` then fades in from black.
+`Intro.unity` (build index 0) plays the Designer Dad logo video, then opens MainMenu. **`IntroSplash`** (`UI/`, on the scene's only camera) prepares the clip, plays it once Unity's own splash has finished and the clip is ready, and leaves when it ends or on any key / click / gamepad button / touch (`InputSystem.onAnyButtonPress`, ignored for the first 0.4 s of playback). It fades the image and sound out over 0.35 s, then loads MainMenu, whose `SceneTransition` fades in from black. It logs one `[Intro] <reason> …` line when it leaves.
 
+- **Only a player build shows the real timing.** In the editor the clip prepares instantly; in a Windows build preparing takes ~4 s. That is why preparation starts in `Start`, while Unity's "Made with Unity" splash is still on screen (the first scene's `Start` already runs then), and the give-up limit `_maxWait` is 10 s from boot. A 3 s limit counted from the end of the splash skipped the video in every build.
+- **Never preload MainMenu during the video.** A `LoadSceneAsync` held with `allowSceneActivation = false` stalls Unity's other async reads, including the video data in the build's `.resource` file, so the clip never prepared.
 - The clip is `Assets/Video/DesignerDadIntro.webm` (VP8 + Vorbis, converted from the delivered H.264 MP4 with ffmpeg). Unity decodes VP8 itself; H.264 goes through Media Foundation on Windows, which is unreliable under Proton on the Steam Deck. Replace the file with another VP8 WebM rather than an MP4.
 - The video is drawn into a RenderTexture shown by a full-screen `RawImage` (letterboxed by an `AspectRatioFitter`). `VideoRenderMode.CameraNearPlane` draws nothing with the URP 2D Renderer and logs no error, so don't switch back to it.
 - AudioManager (and its mixer) lives in MainMenu, so the intro's `AudioSource` takes `GameSettings.EffectiveMaster × SfxVolume` directly; mute is respected.
-- If the clip is missing, fails to prepare within 3 s or reports an error, the menu opens immediately; a watchdog also leaves after clip length + 1.5 s.
-- Pressing Play in the editor with MainMenu open skips the intro. To test it, open `Intro.unity` first (or set `EditorSceneManager.playModeStartScene`).
+- If the clip is missing, cannot start within `_maxWait` or reports an error, the menu opens immediately; a watchdog also leaves after clip length + 1.5 s of playback.
+- Pressing Play in the editor with MainMenu open skips the intro. To test it, open `Intro.unity` first (or set `EditorSceneManager.playModeStartScene`), and check a real build for timing.
 - Unity's own splash ("Made with Unity", Personal license) still plays before the intro; its background is black so the hand-off has no grey flash.
+
+### Unity MCP stays out of player builds
+
+The Unity MCP package (`com.ivanmurzak.unity.mcp*`) is an editor tool for Claude; game code never references it. Its Runtime assemblies compile under `UNITY_MCP_READY` and its NuGet DLLs in `Assets/Plugins/NuGet` (~18 MB: Roslyn, SignalR, …) are marked "Any Platform", so both used to ship. **`ExcludeMcpFromBuild`** (`Editor/`, an `IFilterBuildAssemblies`) drops them from the player build's assembly list only; the editor keeps MCP. A NuGet DLL that a remaining assembly really references (its AssemblyRef table, read with `System.Reflection.Metadata`) stays: today only `System.Memory` and `System.Runtime.CompilerServices.Unsafe`, for Unity's `System.IO.Hashing`. A text search is not enough, because the compiler embeds a `Microsoft.CodeAnalysis` namespace in every assembly. The file is wrapped in `#if UNITY_MCP_READY`, so it switches itself off if the package is removed. Verified with a Windows build: 37 assemblies left out, the game boots, plays the intro and opens the menu with no errors in `Player.log`.
 
 ### Audio settings persistence
 

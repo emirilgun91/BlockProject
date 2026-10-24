@@ -11,10 +11,14 @@ using UnityEngine.Video;
 namespace RogueBlockBlast.UI
 {
     /// <summary>
-    /// Açılıştaki stüdyo videosu (Intro sahnesi, build index 0). Video oynarken ana menü
-    /// arka planda yüklenir; video bitince ya da herhangi bir tuş / tık / kumanda tuşuyla
-    /// atlanınca görüntü siyaha söner ve menü açılır (menünün kendi SceneTransition'ı
-    /// siyahtan açılır).
+    /// Açılıştaki stüdyo videosu (Intro sahnesi, build index 0). Video bitince ya da herhangi
+    /// bir tuş / tık / kumanda tuşuyla atlanınca görüntü siyaha söner ve menü yüklenir
+    /// (menünün kendi SceneTransition'ı siyahtan açılır).
+    ///
+    /// Menü video oynarken önceden YÜKLENMEZ: allowSceneActivation=false bekleyen bir sahne
+    /// yüklemesi Unity'nin bütün asenkron okumalarını kuyrukta tutuyor; build'de videonun
+    /// verisi de bunlardan biri, video hazırlanamıyor ve intro boş geçiyordu (editörde
+    /// klip doğrudan asset'ten okunduğu için görünmüyordu).
     ///
     /// Video bir RenderTexture'a, oradan tam ekran bir RawImage'a çizilir. Kamera düzlemi
     /// modu (CameraNearPlane) URP 2D Renderer'da hiçbir şey çizmiyor — hata da vermiyor.
@@ -32,27 +36,23 @@ namespace RogueBlockBlast.UI
         [SerializeField] private float _skipDelay = 0.4f;
         [SerializeField] private float _fadeOut   = 0.35f;
 
-        [Tooltip("Video bu sürede hazırlanamazsa doğrudan menüye geçilir.")]
-        [SerializeField] private float _prepareTimeout = 3f;
+        [Tooltip("Açılıştan itibaren video bu sürede oynamaya başlayamazsa doğrudan menüye geçilir.")]
+        [SerializeField] private float _maxWait = 10f;
 
         private VideoPlayer    _player;
         private AudioSource    _audio;
         private RawImage       _image;
         private RenderTexture  _texture;
-        private AsyncOperation _load;
         private IDisposable    _anyButton;
+        private float          _bootTime;
         private float          _startTime;
         private bool           _finishing;
 
-        private void Start()
+        private IEnumerator Start()
         {
-            _startTime = Time.unscaledTime;
+            _bootTime = Time.unscaledTime;
 
-            // Menü video oynarken yüklenir; geçişte bekleme olmaz.
-            _load = SceneManager.LoadSceneAsync(_nextScene);
-            if (_load != null) _load.allowSceneActivation = false;
-
-            if (_clip == null) { Finish(); return; }
+            if (_clip == null) { Finish("klip yok"); yield break; }
 
             BuildScreen();
 
@@ -71,17 +71,31 @@ namespace RogueBlockBlast.UI
             _player.targetTexture     = _texture;
             _player.audioOutputMode   = VideoAudioOutputMode.AudioSource;
             _player.SetTargetAudioSource(0, _audio);
-            _player.prepareCompleted += p => { _image.enabled = true; p.Play(); };
-            _player.loopPointReached += _ => Finish();
-            _player.errorReceived    += (_, msg) => { Debug.LogWarning($"[Intro] video error: {msg}"); Finish(); };
-            _player.Prepare();
+            _player.loopPointReached += _ => Finish("bitti");
+            _player.errorReceived    += (_, msg) => { Debug.LogWarning($"[Intro] video error: {msg}"); Finish("hata"); };
 
-            _anyButton = InputSystem.onAnyButtonPress.Call(_ =>
+            // Build'de hazırlık ~4 sn sürüyor (editörde anlık). Unity'nin kendi açılış ekranı
+            // ("Made with Unity") oynarken bu sahnenin Start'ı zaten çalışıyor; hazırlık o
+            // sırada yapılır, video logo bitince ve hazır olunca oynar.
+            _player.Prepare();
+            while (!UnityEngine.Rendering.SplashScreen.isFinished || !_player.isPrepared)
             {
-                if (Time.unscaledTime - _startTime >= _skipDelay) Finish();
+                if (Time.unscaledTime - _bootTime > _maxWait) { Finish("hazırlanamadı"); yield break; }
+                yield return null;
+            }
+
+            _startTime = Time.unscaledTime;
+            _image.enabled = true;
+            _player.Play();
+
+            _anyButton = InputSystem.onAnyButtonPress.Call(control =>
+            {
+                if (Time.unscaledTime - _startTime >= _skipDelay) Finish("atlandı: " + control.path);
             });
 
-            StartCoroutine(Watchdog());
+            // Bitiş olayı gelmezse de takılma: klip süresi + pay.
+            yield return new WaitForSecondsRealtime((float)_clip.length + 1.5f);
+            Finish("bekçi");
         }
 
         /// <summary>Siyah tam ekran + videonun oranını koruyan (letterbox) görüntü.</summary>
@@ -119,22 +133,11 @@ namespace RogueBlockBlast.UI
             rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
-        private IEnumerator Watchdog()
-        {
-            while (!_player.isPrepared)
-            {
-                if (Time.unscaledTime - _startTime > _prepareTimeout) { Finish(); yield break; }
-                yield return null;
-            }
-            // Bitiş olayı gelmezse de takılma: klip süresi + pay.
-            yield return new WaitForSecondsRealtime((float)_clip.length + 1.5f);
-            Finish();
-        }
-
-        private void Finish()
+        private void Finish(string reason)
         {
             if (_finishing) return;
             _finishing = true;
+            Debug.Log($"[Intro] {reason} — açılıştan {Time.unscaledTime - _bootTime:0.00} sn, video {(_startTime > 0f ? Time.unscaledTime - _startTime : 0f):0.00} sn, kare {(_player != null ? _player.frame : -1)}");
             _anyButton?.Dispose();
             _anyButton = null;
             StopAllCoroutines();
@@ -154,8 +157,7 @@ namespace RogueBlockBlast.UI
             if (_image != null) _image.enabled = false;
             if (_player != null) _player.Stop();
 
-            if (_load != null) _load.allowSceneActivation = true;
-            else SceneManager.LoadScene(_nextScene);
+            SceneManager.LoadSceneAsync(_nextScene);
         }
 
         private void OnDestroy()

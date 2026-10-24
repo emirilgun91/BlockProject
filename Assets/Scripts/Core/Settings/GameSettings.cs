@@ -37,7 +37,8 @@ namespace RogueBlockBlast.Core.Settings
         public const string K_GhostPreview  = "Set_GhostPreview";
         public const string K_HighlightLines= "Set_HighlightLines";
         public const string K_ConfirmQuit   = "Set_ConfirmQuit";
-        public const string K_ShowFps       = "Set_ShowFps";
+        public const string K_ConfirmPurchase = "Set_ConfirmPurchase";
+        public const string K_ShowFps      = "Set_ShowFps";
         public const string K_GridLines     = "Set_GridLines";
 
         public const string K_Haptics       = "Set_Haptics";
@@ -71,7 +72,7 @@ namespace RogueBlockBlast.Core.Settings
         private static float _screenShake, _vfxIntensity;
         private static bool  _reduceMotion, _reduceFlashing;
 
-        private static bool  _ghostPreview, _highlightLines, _confirmQuit, _showFps, _gridLines;
+        private static bool  _ghostPreview, _highlightLines, _confirmQuit, _confirmPurchase, _showFps, _gridLines;
 
         private static bool  _haptics;
         private static float _dragOffsetY;
@@ -208,6 +209,13 @@ namespace RogueBlockBlast.Core.Settings
             set { EnsureLoaded(); Set(ref _confirmQuit, value, K_ConfirmQuit); }
         }
 
+        /// <summary>Shape Shop'ta harcamadan önce onay iste. Onay kutusundaki "Bir daha gösterme" kapatır.</summary>
+        public static bool ConfirmPurchase
+        {
+            get { EnsureLoaded(); return _confirmPurchase; }
+            set { EnsureLoaded(); Set(ref _confirmPurchase, value, K_ConfirmPurchase); }
+        }
+
         public static bool ShowFps
         {
             get { EnsureLoaded(); return _showFps; }
@@ -311,6 +319,7 @@ namespace RogueBlockBlast.Core.Settings
             _ghostPreview  = PlayerPrefs.GetInt(K_GhostPreview, 1) == 1;
             _highlightLines= PlayerPrefs.GetInt(K_HighlightLines, 1) == 1;
             _confirmQuit   = PlayerPrefs.GetInt(K_ConfirmQuit, 1) == 1;
+            _confirmPurchase = PlayerPrefs.GetInt(K_ConfirmPurchase, 1) == 1;
             _showFps       = PlayerPrefs.GetInt(K_ShowFps, 0) == 1;
             _gridLines     = PlayerPrefs.GetInt(K_GridLines, 1) == 1;
 
@@ -373,7 +382,7 @@ namespace RogueBlockBlast.Core.Settings
                 K_Master, K_Music, K_Sfx, K_Muted, K_MuteUnfocused,
                 K_Fullscreen, K_ResolutionIdx, K_VSync, K_TargetFps,
                 K_ScreenShake, K_VfxIntensity, K_ReduceMotion, K_ReduceFlashing,
-                K_GhostPreview, K_HighlightLines, K_ConfirmQuit, K_ShowFps, K_GridLines,
+                K_GhostPreview, K_HighlightLines, K_ConfirmQuit, K_ConfirmPurchase, K_ShowFps, K_GridLines,
                 K_Haptics, K_DragOffsetY,
                 K_Colorblind, K_UiScale, K_LargeText,
                 // dil bilinçli olarak korunuyor — sıfırlama sonrası menü okunabilir kalsın

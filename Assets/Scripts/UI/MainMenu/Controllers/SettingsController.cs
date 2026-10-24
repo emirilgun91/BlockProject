@@ -75,6 +75,7 @@ namespace RogueBlockBlast.UI
         [SerializeField] private Toggle   _confirmQuitToggle;
         [SerializeField] private Toggle   _hapticsToggle;
         [SerializeField] private Slider   _dragOffsetSlider;
+        private Toggle _confirmPurchaseToggle;   // _confirmQuitToggle satırından çalışma anında kopyalanır
 
         // ── Accessibility ────────────────────────────────────────────────────
         [Header("Accessibility")]
@@ -110,7 +111,7 @@ namespace RogueBlockBlast.UI
         {
             public float Master, Music, Sfx, Shake, Vfx, UiScale, DragOffset;
             public bool  Muted, MuteUnfocused, Fullscreen, ShowFps;
-            public bool  Ghost, Highlight, Grid, ConfirmQuit, Haptics;
+            public bool  Ghost, Highlight, Grid, ConfirmQuit, ConfirmPurchase, Haptics;
             public bool  ReduceMotion, ReduceFlashing, LargeText;
             public int   ResolutionIdx, VSync, TargetFps;
             public ColorblindMode Colorblind;
@@ -134,6 +135,34 @@ namespace RogueBlockBlast.UI
             // Sürükleme payı yalnızca dokunmatik sürükle-bırakta anlamlı: PC'de
             // satırı gizle (değer korunur, mobil sürüm aynı paneli kullanacak).
             if (!Application.isMobilePlatform) HideRow(_dragOffsetSlider);
+
+            _confirmPurchaseToggle = CloneToggleRow(_confirmQuitToggle, "Settings.Gameplay.ConfirmPurchase");
+        }
+
+        /// <summary>
+        /// Bir anahtar satırını hemen altına kopyalar ve etiketini değiştirir. Mağaza onayı
+        /// ("Bir daha gösterme"yi geri açmak) için: sahneleri builder'la yeniden kurmadan
+        /// iki ayar panelinde de (ana menü, pause) çıkar.
+        /// </summary>
+        private static Toggle CloneToggleRow(Toggle source, string locKey)
+        {
+            if (source == null) return null;
+            Transform row = null;
+            for (var t = source.transform; t != null && row == null; t = t.parent)
+                if (t.name.StartsWith("Row_")) row = t;
+            if (row == null) return null;
+
+            var clone = Instantiate(row.gameObject, row.parent);
+            clone.name = "Row_" + locKey;
+            clone.transform.SetSiblingIndex(row.GetSiblingIndex() + 1);
+            clone.SetActive(true);
+
+            var holder = clone.GetComponentInChildren<Assets.SimpleLocalization.Scripts.LocalizationKeyHolder>(true);
+            if (holder != null) holder.LocalizationKey = locKey;
+            var label = clone.GetComponentInChildren<Assets.SimpleLocalization.Scripts.TextMeshProGUILocalized>(true);
+            if (label != null && label.isActiveAndEnabled) label.ChangeText(locKey);   // OnEnable eski anahtarla çalıştı
+
+            return clone.GetComponentInChildren<Toggle>(true);
         }
 
         /// <summary>Kontrolün satırını (builder'ın "Row_..." nesnesi) kapatır.</summary>
@@ -195,6 +224,7 @@ namespace RogueBlockBlast.UI
             BindToggle(_highlightToggle,      v => GameSettings.HighlightClearingLines = v,     on);
             BindToggle(_gridToggle,           v => GameSettings.GridLines = v,                  on);
             BindToggle(_confirmQuitToggle,    v => GameSettings.ConfirmQuit = v,                on);
+            BindToggle(_confirmPurchaseToggle,v => GameSettings.ConfirmPurchase = v,            on);
             BindToggle(_hapticsToggle,        v => GameSettings.Haptics = v,                    on);
             BindToggle(_reduceFlashingToggle, v => GameSettings.ReduceFlashing = v,             on);
             BindToggle(_largeTextToggle,      v => GameSettings.LargeText = v,                  on);
@@ -435,6 +465,7 @@ namespace RogueBlockBlast.UI
             SetToggle(_highlightToggle,   GameSettings.HighlightClearingLines);
             SetToggle(_gridToggle,        GameSettings.GridLines);
             SetToggle(_confirmQuitToggle, GameSettings.ConfirmQuit);
+            SetToggle(_confirmPurchaseToggle, GameSettings.ConfirmPurchase);
             SetToggle(_hapticsToggle,     GameSettings.Haptics);
             SetSlider(_dragOffsetSlider,  GameSettings.DragOffsetY);
 
@@ -554,6 +585,7 @@ namespace RogueBlockBlast.UI
             GameSettings.HighlightClearingLines = s.Highlight;
             GameSettings.GridLines              = s.Grid;
             GameSettings.ConfirmQuit            = s.ConfirmQuit;
+            GameSettings.ConfirmPurchase        = s.ConfirmPurchase;
             GameSettings.Haptics                = s.Haptics;
             GameSettings.DragOffsetY            = s.DragOffset;
 
@@ -591,6 +623,7 @@ namespace RogueBlockBlast.UI
                 Highlight     = GameSettings.HighlightClearingLines,
                 Grid          = GameSettings.GridLines,
                 ConfirmQuit   = GameSettings.ConfirmQuit,
+                ConfirmPurchase = GameSettings.ConfirmPurchase,
                 Haptics       = GameSettings.Haptics,
                 DragOffset    = GameSettings.DragOffsetY,
 

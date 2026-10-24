@@ -300,3 +300,44 @@ namespace BalanceSim
         }
     }
 }
+namespace BalanceSim
+{
+    public static partial class Program
+    {
+        /// <summary>
+        /// Şekil skor seviyelerini 20'ye uzatma varyantları: 11–20 arası kazanç = Lv10 kazancı × gg^k,
+        /// fiyat = Lv10 fiyatı × cg^k (50'ye yuvarlı). Tam meta ilerleme, persona başına.
+        /// </summary>
+        static void Lv20(int players, string only)
+        {
+            var keep = G.Shapes.ToDictionary(s => s.Id, s => (gain: s.Gain, cost: s.Cost));
+            var variants = new (string name, float gg, float cg)[]
+            {
+                ("L10 (bugün)", 0f, 0f),
+                ("L20 kazanç x1.10 fiyat x1.20", 1.10f, 1.20f),
+                ("L20 kazanç x1.12 fiyat x1.25", 1.12f, 1.25f),
+                ("L20 kazanç x1.15 fiyat x1.30", 1.15f, 1.30f),
+            };
+            MetaSetups = new List<(BotProfile, string)> { (Personas.Casual(), "cheapest"), (Personas.Mid(), "cheapest"), (Personas.Skilled(), "cheapest") };
+            foreach (var (name, gg, cg) in variants)
+            {
+                if (only != null && !name.StartsWith(only)) continue;
+                foreach (var s in G.Shapes)
+                {
+                    var (g, c) = keep[s.Id];
+                    if (gg <= 0f || g.Length < 10) { s.Gain = g; s.Cost = c; continue; }
+                    s.Gain = g.Take(10).Concat(Enumerable.Range(1, 10).Select(k => (int)Math.Round(g[9] * Math.Pow(gg, k)))).ToArray();
+                    s.Cost = c.Take(10).Concat(Enumerable.Range(1, 10).Select(k => Math.Max(50, (int)Math.Round(c[9] * Math.Pow(cg, k) / 50.0) * 50))).ToArray();
+                }
+                var z = G.Shapes.First(s => s.Id == "Shape_Z");
+                long shopShapes = G.Shapes.Sum(s => (long)Enumerable.Range(0, s.MaxLevel).Sum(s.ScoreCostFor));
+                Console.WriteLine($"### {name}: Z Lv10 {z.TileAt(10)} Lv{z.MaxLevel} {z.TileAt(z.MaxLevel)}  Z Lv11-{z.MaxLevel} fiyat {string.Join(",", Enumerable.Range(10, z.MaxLevel - 10).Select(z.ScoreCostFor))}  şekil seviyeleri toplam {shopShapes}");
+                MakeCfg = () => new Config(); PriceScale = 1f; MetaTag = name;
+                Meta(players, 6000, "full");
+                foreach (var s in LastSummary)
+                    Console.WriteLine($"  {name,-30} {s.Persona,-7} ilk zafer run {s.RunsFinalStage.Median,4}  tüm yükseltmeler {s.RunsAllUpgrades.Median,4}  tüm şekil max {s.RunsAllScoreMax.Median,4}  her şey {s.RunsComplete.Median,4} run / {s.HoursComplete.Median,5:0.0} sa (eksik {s.RunsComplete.Missing})  deneme S5 {s.Attempts[5].Mean:0.0} S11 {s.Attempts[11].Mean:0.0}  en iyi run payı %{s.BestRunCoinShare.Median * 100:0}");
+            }
+            foreach (var s in G.Shapes) { s.Gain = keep[s.Id].gain; s.Cost = keep[s.Id].cost; }
+        }
+    }
+}

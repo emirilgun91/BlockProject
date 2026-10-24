@@ -17,7 +17,7 @@ namespace RogueBlockBlast.Core
 
         // ── Global Config ────────────────────────────────────────────────────
         public float ValuePerUpgradeLevel = 5f;
-        public int   MaxScoreUpgradeLevel = 10;
+        public int   MaxScoreUpgradeLevel = 20;   // gerçek sınır her şeklin ScoreGain eğrisi (MaxLevel)
         public int   MaxWeightLevel       = 10;   // base + 50 maksimum
         public int   WeightStep           = 5;    // +5 / -5
         public int   WeightMin            = 2;    // minimum weight değeri

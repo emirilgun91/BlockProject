@@ -98,6 +98,7 @@ namespace BalanceSim
                 case "tune": Tune(args.Length > 1 ? args[1] : "Skilled", a2 > 0 ? a2 : 300); break;
                 case "shapes": Shapes(a1 > 0 ? a1 : 400); break;
                 case "cardvar": CardVariants(a1 > 0 ? a1 : 3000); break;
+                case "lv20": Lv20(a1 > 0 ? a1 : 150, args.Length > 2 ? args[2] : null); break;
                 case "passvar": PassVariants(a1 > 0 ? a1 : 3000); break;
                 case "proposal": BuildShapeProposal(apply: false); break;
                 case "shapeworth": ShapeWorth(a1 > 0 ? a1 : 2000, args.Length > 2 ? args[2] : "Mid"); break;
@@ -819,7 +820,7 @@ namespace BalanceSim
         {
             public ShapeDef S;
             public override int Cost(Profile p) => (int)(S.ScoreCostFor(p.ScoreLvl[S.Idx]) * PriceScale);
-            public override bool Available(Profile p) => p.ShapeAvailable(S) && p.ScoreLvl[S.Idx] < 10;
+            public override bool Available(Profile p) => p.ShapeAvailable(S) && p.ScoreLvl[S.Idx] < S.MaxLevel;
             public override void Buy(Profile p) => p.ScoreLvl[S.Idx]++;
         }
         sealed class Upg : Item
@@ -848,7 +849,7 @@ namespace BalanceSim
         static bool Complete(Profile p) =>
             G.Shapes.All(s => !s.Locked || p.ShapeUnlocked[s.Idx]) &&
             G.Upgrades.All(u => p.Upg[u.Idx] >= u.MaxLevel) &&
-            G.Shapes.All(s => p.ScoreLvl[s.Idx] >= 10);
+            G.Shapes.All(s => p.ScoreLvl[s.Idx] >= s.MaxLevel);
 
         static int Shop(Profile p, List<Item> items, string policy, int run, PlayerLog log)
         {
@@ -921,7 +922,7 @@ namespace BalanceSim
 
                     if (log.RunsAllShapes == 0 && G.Shapes.All(s => !s.Locked || p.ShapeUnlocked[s.Idx])) log.RunsAllShapes = run;
                     if (log.RunsAllUpgrades == 0 && G.Upgrades.All(u => p.Upg[u.Idx] >= u.MaxLevel)) log.RunsAllUpgrades = run;
-                    if (log.RunsAllScoreMax == 0 && G.Shapes.All(s => p.ScoreLvl[s.Idx] >= 10)) log.RunsAllScoreMax = run;
+                    if (log.RunsAllScoreMax == 0 && G.Shapes.All(s => p.ScoreLvl[s.Idx] >= s.MaxLevel)) log.RunsAllScoreMax = run;
                     if (log.RunsFinalStage == 0 && st.Stage >= K) { log.RunsFinalStage = run; log.HoursFinalStage = seconds / 3600; }
                     if (demo && log.RunsDemoDone == 0 && st.Reason == Reason.DemoEnd) { log.RunsDemoDone = run; log.HoursDemoDone = seconds / 3600; }
                     log.Runs = run; log.Hours = seconds / 3600;

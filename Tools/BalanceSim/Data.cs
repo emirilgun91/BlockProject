@@ -36,6 +36,9 @@ namespace BalanceSim
         public int GainIncrement, CostIncrement, CostMax;
         public float GainMultiplier = 1f, CostMultiplier = 1f;
         public int Size => CX.Length;
+        /// <summary>ShapeUpgradeRegistry.GetMaxScoreLevel: eğrinin adım sayısı, en fazla RegistryMax.</summary>
+        public int MaxLevel => Gain.Length > 0 ? Math.Min(Gain.Length, RegistryMax) : 10;
+        public const int RegistryMax = 20;   // ShapeUpgradeRegistry.MaxScoreUpgradeLevel
 
         public ulong[][] Masks = new ulong[4][];  // rotasyon başına tüm geçerli konumlar
         public ulong[] Distinct;                 // 4 rotasyonun tekilleştirilmiş birleşimi

@@ -24,6 +24,7 @@ Unity'nin kendi Roslyn derleyicisi ve .NET 6 runtime'ı ile çalışır, ayrı .
 ./run.sh prop invest 3000     # `prop` öneki: öneriyi bugünkü asset'lerin üstüne uygulayıp herhangi bir komutu koşturur
 ./run.sh cardvar 3000         # Bounty Hunter / Future Investment öneri varyantları
 ./run.sh passvar 3000         # Dead Pool Revive ile milestone geçiş hakkı karşılaştırması
+./run.sh lv20 150             # şekil skor seviyelerini 20'ye uzatma varyantları (tam meta ilerleme)
 ```
 
 **Nötr hücre değeri** (`shapeworth`): şekil spawn'ların %25'ini oluştururken hücre başına kaç puan verirse oyuncu, o şekil hiç yokmuş gibi ilerler. Herkes 25 puanla (Z'nin Lv3 değeri) ölçülür, sonuç buna oranla verilir. Oran > 1 şeklin zor olduğunu, < 1 kolay ve faydalı olduğunu gösterir. Ekonomi parça sayısıyla sınırlı olduğu için küçük şekiller (I3, C, Dot) parça başına daha az tahta kapladığından yüksek oran alır.

@@ -18,6 +18,6 @@ MonoBehaviour:
   Icon: {fileID: -5177169228622864428, guid: 61de91709fd681c4798ff93436ab12a2, type: 3}
   UnlockStageIndex: 6
   MaxLevel: 5
-  CostPerLevel: d0070000102700003075000050c3000080380100
+  CostPerLevel: d0070000581b0000204e0000409c000080380100
   EffectType: 3
   EffectValuePerLevel: 0.03

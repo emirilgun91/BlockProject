@@ -55,7 +55,8 @@ namespace RogueBlockBlast.UI
         private void Update()
         {
             var kb = Keyboard.current;
-            if (IsOpen && kb != null && kb.escapeKey.wasPressedThisFrame) Close();
+            // Satın alma onayı açıksa ESC önce onu kapatır (aynı karede kapandıysa da)
+            if (IsOpen && kb != null && kb.escapeKey.wasPressedThisFrame && !ShopConfirmDialog.BlocksEscape) Close();
         }
 
         public void Open()

@@ -240,7 +240,52 @@ namespace RogueBlockBlast.UI
             _scoreUpgradeFX.Bind(_scoreValueText, transform as RectTransform);
         }
 
+        // Butonlar önce onay ister (ShapeShopController.RequestPurchase); satın alma
+        // Buy* metotlarında. Fiyat orada yeniden okunur, Spend yine son kontrol.
+
         private void OnScoreUpgrade()
+        {
+            var   reg  = ShapeUpgradeRegistry.Instance;
+            float now  = reg.GetTileValue(_shape.Id, _shape.BaseTileValue);
+            float next = now + reg.GetNextScoreGain(_shape.Id);
+            _controller.RequestPurchase(
+                Loc.Get("Shop.Confirm.Score", _nameText.text),
+                ChangeLine("ShapeCard.ScoreLabel", $"{now:0}", $"{next:0}"),
+                reg.GetScoreUpgradeCost(_shape.Id), BuyScoreUpgrade);
+        }
+
+        private void OnWeightUp()
+        {
+            var reg = ShapeUpgradeRegistry.Instance;
+            int now = reg.GetEffectiveWeight(_shape.Id, _shape.BaseWeight);
+            _controller.RequestPurchase(
+                Loc.Get("Shop.Confirm.WeightUp", _nameText.text),
+                ChangeLine("ShapeCard.WeightLabel", $"{now}", $"{now + reg.WeightStep}"),
+                reg.GetWeightIncreaseCost(_shape.Id), BuyWeightUp);
+        }
+
+        private void OnWeightDown()
+        {
+            var reg = ShapeUpgradeRegistry.Instance;
+            int now = reg.GetEffectiveWeight(_shape.Id, _shape.BaseWeight);
+            _controller.RequestPurchase(
+                Loc.Get("Shop.Confirm.WeightDown", _nameText.text),
+                ChangeLine("ShapeCard.WeightLabel", $"{now}", $"{now - reg.WeightStep}"),
+                reg.GetWeightDecreaseCost(_shape.Id), BuyWeightDown);
+        }
+
+        /// <summary>"Baz Puan: 5 -> 10" — kartın kendi etiketi ve ok yazımıyla aynı.</summary>
+        private static string ChangeLine(string labelKey, string now, string next)
+            => $"{Loc.Get(labelKey)}: {now} <color=#22DD66>-> {next}</color>";
+
+        private void OnUnlock()
+        {
+            _controller.RequestPurchase(
+                Loc.Get("Shop.Confirm.Unlock", _nameText.text), null,
+                _shape.UnlockCost, BuyUnlock);
+        }
+
+        private void BuyScoreUpgrade()
         {
             var reg  = ShapeUpgradeRegistry.Instance;
             int cost = reg.GetScoreUpgradeCost(_shape.Id);
@@ -265,7 +310,7 @@ namespace RogueBlockBlast.UI
             ShapeShopToast.Instance?.Show(Loc.Get("Toast.ScoreUpgraded", _nameText.text), ToastType.Success);
         }
 
-        private void OnWeightUp()
+        private void BuyWeightUp()
         {
             var reg  = ShapeUpgradeRegistry.Instance;
             int cost = reg.GetWeightIncreaseCost(_shape.Id);
@@ -281,7 +326,7 @@ namespace RogueBlockBlast.UI
             ShapeShopToast.Instance?.Show(Loc.Get("Toast.WeightIncreased", _nameText.text), ToastType.Success);
         }
 
-        private void OnWeightDown()
+        private void BuyWeightDown()
         {
             var reg  = ShapeUpgradeRegistry.Instance;
             int cost = reg.GetWeightDecreaseCost(_shape.Id);
@@ -297,7 +342,7 @@ namespace RogueBlockBlast.UI
             ShapeShopToast.Instance?.Show(Loc.Get("Toast.WeightDecreased", _nameText.text), ToastType.Default);
         }
 
-        private void OnUnlock()
+        private void BuyUnlock()
         {
             if (!CoinWallet.Instance.Spend(_shape.UnlockCost))
             {

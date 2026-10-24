@@ -2,6 +2,8 @@
 using System.Linq;
 using RogueBlockBlast.Content;
 using RogueBlockBlast.Core;
+using RogueBlockBlast.Core.Localization;
+using RogueBlockBlast.Core.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -34,7 +36,19 @@ namespace RogueBlockBlast.UI
         [Header("Navigation")]
         [SerializeField] private string _mainMenuSceneName = "MainMenu";
 
+        [Header("Purchase Confirm")]
+        [Tooltip("Satın alma onay kutusunun görselleri. Boş kalanlar düz renkli kutuya düşer.")]
+        [SerializeField] private Sprite        _confirmWindow;
+        [SerializeField] private Sprite        _confirmButton;
+        [SerializeField] private Sprite        _confirmButtonPrimary;
+        [SerializeField] private Sprite        _confirmCheckBox;
+        [SerializeField] private Sprite        _confirmCheckFill;
+        [SerializeField] private Sprite        _confirmCoin;
+        [SerializeField] private TMP_FontAsset _confirmFont;
+        [SerializeField] private TMP_FontAsset _confirmBoldFont;
+
         private readonly List<ShapeShopCardView> _cards = new();
+        private ShopConfirmDialog _confirmDialog;
 
         // ── Unity ────────────────────────────────────────────────────────────
 
@@ -101,10 +115,46 @@ namespace RogueBlockBlast.UI
                 card.Refresh();
         }
 
+        /// <summary>
+        /// Kartların harcama yapan her butonu buradan geçer. Para yetmiyorsa uyarı,
+        /// <see cref="GameSettings.ConfirmPurchase"/> kapalıysa doğrudan satın alma,
+        /// açıksa önce onay kutusu ("Bir daha gösterme" ayarı kapatır).
+        /// </summary>
+        public void RequestPurchase(string headline, string detail, int cost, System.Action buy)
+        {
+            if (CoinWallet.Instance == null || !CoinWallet.Instance.CanAfford(cost))
+            {
+                ShapeShopToast.Instance?.Show(Loc.Get("Toast.NotEnoughCoins"), ToastType.Error);
+                return;
+            }
+
+            if (!GameSettings.ConfirmPurchase) { buy(); return; }
+
+            if (_confirmDialog == null)
+                _confirmDialog = ShopConfirmDialog.Create(transform, new ShopConfirmDialog.Skin
+                {
+                    Window        = _confirmWindow,
+                    Button        = _confirmButton,
+                    ButtonPrimary = _confirmButtonPrimary,
+                    Track         = _confirmCheckBox,
+                    Fill          = _confirmCheckFill,
+                    Coin          = _confirmCoin,
+                    Font          = _confirmFont,
+                    BoldFont      = _confirmBoldFont,
+                });
+            _confirmDialog.Show(headline, detail, cost, buy);
+        }
+
         // ── Navigation ───────────────────────────────────────────────────────
 
         public void OnBackButton()
         {
+            // Onay kutusu açıkken geri butonu önce onu kapatır
+            if (_confirmDialog != null && _confirmDialog.IsOpen)
+            {
+                _confirmDialog.Cancel();
+                return;
+            }
             if (BackRequested != null) BackRequested.Invoke();
             else PanelManager.Instance?.CloseCurrentPanel();
         }

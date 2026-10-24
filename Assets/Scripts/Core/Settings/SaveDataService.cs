@@ -66,6 +66,7 @@ namespace RogueBlockBlast.Core.Settings
             PlayerPrefs.SetInt(GameSettings.K_GhostPreview,   GameSettings.GhostPreview ? 1 : 0);
             PlayerPrefs.SetInt(GameSettings.K_HighlightLines, GameSettings.HighlightClearingLines ? 1 : 0);
             PlayerPrefs.SetInt(GameSettings.K_ConfirmQuit,    GameSettings.ConfirmQuit ? 1 : 0);
+            PlayerPrefs.SetInt(GameSettings.K_ConfirmPurchase, GameSettings.ConfirmPurchase ? 1 : 0);
             PlayerPrefs.SetInt(GameSettings.K_ShowFps,        GameSettings.ShowFps ? 1 : 0);
             PlayerPrefs.SetInt(GameSettings.K_GridLines,      GameSettings.GridLines ? 1 : 0);
 

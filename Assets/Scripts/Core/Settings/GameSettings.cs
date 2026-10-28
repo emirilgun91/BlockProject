@@ -351,17 +351,75 @@ namespace RogueBlockBlast.Core.Settings
             QualitySettings.vSyncCount = _vsync;
             Application.targetFrameRate = _targetFps;
 
-            var resolutions = Screen.resolutions;
-            if (_resolutionIdx >= 0 && _resolutionIdx < resolutions.Length)
+            // Tam ekranda pencere her zaman ekranın kendi çözünürlüğünde kalır; seçilen
+            // çözünürlük URP render scale ile uygulanır. FullScreenWindow + yerel olmayan
+            // çözünürlükte Unity (D3D12, Linear) görüntüyü sRGB dönüşümü olmadan ölçekliyordu:
+            // renkler koyulaşıp soluyor, bloom kayboluyordu.
+            var resolutions = AvailableResolutions();
+            bool hasChoice = _resolutionIdx >= 0 && _resolutionIdx < resolutions.Length;
+            float renderScale = 1f;
+
+            if (_fullscreen)
+            {
+                var display = Screen.mainWindowDisplayInfo;   // pencerenin bulunduğu monitör
+                int nw = display.width  > 0 ? display.width  : Display.main.systemWidth;
+                int nh = display.height > 0 ? display.height : Display.main.systemHeight;
+                if (nw > 0 && nh > 0)
+                {
+                    if (!Screen.fullScreen || Screen.fullScreenMode != FullScreenMode.FullScreenWindow ||
+                        Screen.width != nw || Screen.height != nh)
+                        Screen.SetResolution(nw, nh, FullScreenMode.FullScreenWindow);
+
+                    if (hasChoice)
+                    {
+                        var r = resolutions[_resolutionIdx];
+                        renderScale = Mathf.Clamp(Mathf.Min((float)r.width / nw, (float)r.height / nh), 0.25f, 1f);
+                    }
+                }
+                else if (!Screen.fullScreen)
+                {
+                    Screen.fullScreen = true;
+                }
+            }
+            else if (hasChoice)
             {
                 var r = resolutions[_resolutionIdx];
-                Screen.SetResolution(r.width, r.height, _fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed,
-                                     r.refreshRateRatio);
+                Screen.SetResolution(r.width, r.height, FullScreenMode.Windowed);
             }
-            else if (Screen.fullScreen != _fullscreen)
+            else if (Screen.fullScreen)
             {
-                Screen.fullScreen = _fullscreen;
+                Screen.fullScreen = false;
             }
+
+            ApplyRenderScale(renderScale);
+            Debug.Log($"[Display] fullscreen={_fullscreen} choice={(hasChoice ? resolutions[_resolutionIdx].width + "x" + resolutions[_resolutionIdx].height : "none")} renderScale={renderScale:0.###}");
+        }
+
+        /// <summary>
+        /// Screen.resolutions, aynı genişlik/yükseklik için tazeleme hızı başına tekrarlanır.
+        /// Ayarlar ekranı ve kayıtlı index bu tekilleştirilmiş listeyi kullanır.
+        /// </summary>
+        public static Resolution[] AvailableResolutions()
+        {
+            var all = Screen.resolutions;
+            var unique = new System.Collections.Generic.List<Resolution>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                bool dup = false;
+                for (int j = 0; j < unique.Count; j++)
+                    if (unique[j].width == all[i].width && unique[j].height == all[i].height) { dup = true; break; }
+                if (!dup) unique.Add(all[i]);
+            }
+            return unique.ToArray();
+        }
+
+        private static void ApplyRenderScale(float scale)
+        {
+#if !UNITY_EDITOR
+            // Editörde asset'e yazmak onu kalıcı olarak değiştirirdi; Screen.SetResolution da orada çalışmaz.
+            var urp = UnityEngine.Rendering.Universal.UniversalRenderPipeline.asset;
+            if (urp != null && !Mathf.Approximately(urp.renderScale, scale)) urp.renderScale = scale;
+#endif
         }
 
         /// <summary>Ses + ekran ayarlarının hepsini uygular. Oyun açılışında çağrılır.</summary>

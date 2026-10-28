@@ -337,17 +337,8 @@ namespace RogueBlockBlast.UI
         // ── Cycling controls ─────────────────────────────────────────────────
         private void BuildResolutionList()
         {
-            var all = Screen.resolutions;
-            var unique = new List<Resolution>();
-            for (int i = 0; i < all.Length; i++)
-            {
-                // Aynı genişlik/yükseklik farklı tazeleme hızlarıyla tekrarlanıyor — en yükseğini tut.
-                bool dup = false;
-                for (int j = 0; j < unique.Count; j++)
-                    if (unique[j].width == all[i].width && unique[j].height == all[i].height) { dup = true; break; }
-                if (!dup) unique.Add(all[i]);
-            }
-            _resolutions = unique.ToArray();
+            // GameSettings.ApplyDisplay aynı listeyle çalışır; index ikisinde de aynı çözünürlüğü gösterir.
+            _resolutions = GameSettings.AvailableResolutions();
 
             int saved = GameSettings.ResolutionIndex;
             _resIndex = saved >= 0 && saved < _resolutions.Length ? saved : CurrentResolutionIndex();

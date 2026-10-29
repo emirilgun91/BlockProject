@@ -49,6 +49,7 @@ namespace RogueBlockBlast.Game
 
         [Header("Upgrades")]
         [SerializeField] private UpgradeLibrarySO _upgradeLibrary;
+        public UpgradeLibrarySO UpgradeLibrary => _upgradeLibrary;
 
         [SerializeField] private AudioClip mainLoopMusic;
         [Header("Milestone")]

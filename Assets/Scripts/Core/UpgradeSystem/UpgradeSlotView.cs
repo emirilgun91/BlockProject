@@ -63,6 +63,7 @@ namespace RogueBlockBlast.UI
         // Runtime
         private UpgradeSO _upgrade;
         public UpgradeSO  Upgrade => _upgrade;
+        public Button     Button  => _button;
 
         private UpgradeSlotFX _fx;
         private int           _lastLevel = -1;   // dot dolum animasyonunu tetiklemek için

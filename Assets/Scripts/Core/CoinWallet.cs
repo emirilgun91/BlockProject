@@ -45,6 +45,18 @@ namespace RogueBlockBlast.Core
         }
 
         /// <summary>
+        /// Hediye coin (ilk Game Over rehberi). <see cref="Earn"/> gibi bakiyeye eklenir ama
+        /// "kazanılan coin" başarım istatistiğine sayılmaz: oyuncu onu oynayarak kazanmadı.
+        /// </summary>
+        public void Grant(int amount)
+        {
+            if (amount <= 0) return;
+            Balance += amount;
+            Save();
+            OnBalanceChanged?.Invoke(Balance);
+        }
+
+        /// <summary>
         /// Coin harcar.
         /// Yeterli coin yoksa false döner, harcama yapılmaz.
         /// </summary>

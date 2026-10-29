@@ -21,11 +21,12 @@ MonoBehaviour:
   BaseWeight: 30
   IsUnique: 0
   LockedByDefault: 0
+  UnlockAtStage: 0
   RequiredShapeId: 
   IsShapeCard: 1
   TargetShapeId: Shape_J
   ShapeEffects:
   - EffectType: 0
-    Value: 5
+    Value: 10
   - EffectType: 1
     Value: -7

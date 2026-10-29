@@ -141,6 +141,12 @@ namespace RogueBlockBlast.Game
             if (GUILayout.Button("Dili değiştir")) Loc.NextLanguage();
             GUILayout.EndHorizontal();
 
+            // Meta rehberleri: ilk Game Over Shape Shop rehberi + Upgrades yönlendirmesi
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Rehber: shop {UI.MetaGuide.ShopState}/2, upgrades {(UI.MetaGuide.UpgradesNudged ? "gösterildi" : "bekliyor")}", _small);
+            if (GUILayout.Button("Rehberleri sıfırla", GUILayout.Width(130))) UI.MetaGuide.ResetAll();
+            GUILayout.EndHorizontal();
+
             // ── Achievement'lar ──────────────────────────────────────────────
             int achOpen = 0;
             foreach (var def in Core.Achievements.AchievementCatalog.All)

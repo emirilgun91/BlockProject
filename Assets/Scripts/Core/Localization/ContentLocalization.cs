@@ -1,4 +1,5 @@
 using RogueBlockBlast.Content;
+using UnityEngine;
 
 namespace RogueBlockBlast.Core.Localization
 {
@@ -28,7 +29,35 @@ namespace RogueBlockBlast.Core.Localization
         public static string Description(CardSO card)
         {
             if (card == null) return string.Empty;
-            return Loc.GetOr($"Card.{Key(card.Id, card.name)}.Desc", card.Description);
+            string text = Loc.GetOr($"Card.{Key(card.Id, card.name)}.Desc", card.Description);
+            return card.IsShapeCard ? FormatShapeEffects(card, text) : text;
+        }
+
+        /// <summary>
+        /// Şekil kartı metnindeki sayılar veriden gelir: {0} = puan bonusu, {1} = ağırlık
+        /// değişiminin büyüklüğü (CardSO.ShapeEffects). Eskiden CSV'de sabit yazılıydı ve
+        /// asset'teki değer değişince kart eski sayıyı göstermeye devam ediyordu.
+        /// </summary>
+        private static string FormatShapeEffects(CardSO card, string text)
+        {
+            if (string.IsNullOrEmpty(text) || text.IndexOf('{') < 0 || card.ShapeEffects == null) return text;
+
+            float score = 0f, weight = 0f;
+            foreach (var e in card.ShapeEffects)
+            {
+                if (e == null) continue;
+                if (e.EffectType == ShapeEffectType.ScoreBoost)   score  += e.Value;
+                if (e.EffectType == ShapeEffectType.WeightChange) weight += e.Value;
+            }
+            try
+            {
+                return string.Format(text, score.ToString("0.##"), Mathf.Abs(weight).ToString("0.##"));
+            }
+            catch (System.FormatException)
+            {
+                Debug.LogWarning($"[ContentLocalization] {card.Id} açıklama formatı hatalı: \"{text}\"");
+                return text;
+            }
         }
 
         /// <summary>

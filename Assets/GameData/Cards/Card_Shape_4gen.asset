@@ -21,11 +21,12 @@ MonoBehaviour:
   BaseWeight: 45
   IsUnique: 0
   LockedByDefault: 0
+  UnlockAtStage: 0
   RequiredShapeId: Shape_4Gen
   IsShapeCard: 1
   TargetShapeId: Shape_4Gen
   ShapeEffects:
   - EffectType: 0
-    Value: 2
+    Value: 5
   - EffectType: 1
     Value: -5

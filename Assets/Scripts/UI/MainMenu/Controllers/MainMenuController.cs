@@ -62,6 +62,10 @@ namespace RogueBlockBlast.UI
                 var root   = canvas != null ? canvas.rootCanvas.gameObject : gameObject;
                 UINav.Push(root, _btnNewRun.GetComponent<UnityEngine.UI.Selectable>());
             }
+
+            // Parası ilk kalıcı yükseltmeye yetiyorsa bir kereliğine Upgrades'e yönlendir
+            // (Game Over'dan "Upgrades'e Git" ile gelindiyse paneli doğrudan açar).
+            UpgradesNudge.RunInMenu(_upgradesPanel, OnUpgradesClicked);
         }
 
         private void OnDestroy()

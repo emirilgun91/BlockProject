@@ -93,6 +93,8 @@ namespace RogueBlockBlast.UI
         {
             if (!EscapePressed()) return;
             if (VictoryScreen.IsShowing) return;   // run bitti; ESC zafer ekranını atlatır
+            // İlk Game Over rehberi sürerken pause açılmaz: Ana Menü oradan rehberi atlatırdı
+            if (ShopUpgradeGuide.IsActive || UpgradesNudge.IsActive) return;
 
             // Ayarlar açıksa önce onu kapat
             if (_settingsPanel != null && _settingsPanel.activeSelf)

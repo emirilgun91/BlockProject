@@ -107,6 +107,11 @@ namespace RogueBlockBlast.UI
 
         // ── Public API ───────────────────────────────────────────────────────
 
+        public ShapeSO  Shape              => _shape;
+        public Button   ScoreUpgradeButton => _scoreUpgradeBtn;
+        public TMP_Text ScoreValueText     => _scoreValueText;
+        public TMP_Text ScoreCostText      => _scoreCostText;
+
         public void Bind(ShapeSO shape, ShapeShopController controller)
         {
             _shape      = shape;
@@ -245,6 +250,7 @@ namespace RogueBlockBlast.UI
 
         private void OnScoreUpgrade()
         {
+            if (!_controller.AllowsPurchase(_shape.Id, scoreUpgrade: true)) return;
             var   reg  = ShapeUpgradeRegistry.Instance;
             float now  = reg.GetTileValue(_shape.Id, _shape.BaseTileValue);
             float next = now + reg.GetNextScoreGain(_shape.Id);
@@ -256,6 +262,7 @@ namespace RogueBlockBlast.UI
 
         private void OnWeightUp()
         {
+            if (!_controller.AllowsPurchase(_shape.Id, scoreUpgrade: false)) return;
             var reg = ShapeUpgradeRegistry.Instance;
             int now = reg.GetEffectiveWeight(_shape.Id, _shape.BaseWeight);
             _controller.RequestPurchase(
@@ -266,6 +273,7 @@ namespace RogueBlockBlast.UI
 
         private void OnWeightDown()
         {
+            if (!_controller.AllowsPurchase(_shape.Id, scoreUpgrade: false)) return;
             var reg = ShapeUpgradeRegistry.Instance;
             int now = reg.GetEffectiveWeight(_shape.Id, _shape.BaseWeight);
             _controller.RequestPurchase(
@@ -280,6 +288,7 @@ namespace RogueBlockBlast.UI
 
         private void OnUnlock()
         {
+            if (!_controller.AllowsPurchase(_shape.Id, scoreUpgrade: false)) return;
             _controller.RequestPurchase(
                 Loc.Get("Shop.Confirm.Unlock", _nameText.text), null,
                 _shape.UnlockCost, BuyUnlock);
@@ -300,7 +309,13 @@ namespace RogueBlockBlast.UI
             // seviyenin kazancını gösterir ve efekt yanlış sayı yazar.
             float gained = reg.GetNextScoreGain(_shape.Id);
 
-            reg.UpgradeScore(_shape.Id);
+            if (!reg.UpgradeScore(_shape.Id))
+            {
+                // Arada max seviyeye ulaşıldıysa (beklenmez) para geri verilir
+                CoinWallet.Instance.Grant(cost);
+                _controller.RefreshAll();
+                return;
+            }
 
             // Efekt Refresh'ten SONRA oynatılır: Refresh puan yazısını yeniden
             // kurar ve arada oynatılan tween'i ezerdi.
@@ -308,6 +323,7 @@ namespace RogueBlockBlast.UI
             _scoreUpgradeFX?.Play(gained);
 
             ShapeShopToast.Instance?.Show(Loc.Get("Toast.ScoreUpgraded", _nameText.text), ToastType.Success);
+            _controller.NotifyScoreUpgraded(_shape.Id);
         }
 
         private void BuyWeightUp()

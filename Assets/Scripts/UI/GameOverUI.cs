@@ -150,9 +150,28 @@ namespace RogueBlockBlast.UI
 
             // Gamepad: "Yeni Run" seçili gelir; Upgrade Now ve Ana Menü gezinmeyle seçilir.
             UINav.Push(_root, _retryButton);
- 
+
             if (_canvasGroup != null)
                 _canvasGroup.alpha = 0f;
+
+            StartMetaGuides();
+        }
+
+        /// <summary>
+        /// Meta döngüye yönlendiren tek seferlik rehberler, en fazla biri: önce ilk Game Over'ın
+        /// Shape Shop rehberi (hediye coin + zorunlu puan yükseltmesi), o bittiyse parası
+        /// ilk kalıcı yükseltmeye yeten oyuncuya bir kereliğine Upgrades yönlendirmesi.
+        /// </summary>
+        private void StartMetaGuides()
+        {
+            if (GameMode.IsClassic) return;
+            var overlay = ShapeShopOverlay.Instance;
+            if (ShopUpgradeGuide.TryStart(overlay)) return;
+
+            var run = FindFirstObjectByType<RunController>();
+            if (run == null || overlay == null || overlay.Shop == null) return;
+            UpgradesNudge.TryOfferAtGameOver(overlay.Panel != null ? overlay.Panel.transform : _root.transform,
+                                             overlay.Shop.DialogSkin, run.UpgradeLibrary, OnMainMenu);
         }
 
         // ── Buttons ──────────────────────────────────────────────────────────

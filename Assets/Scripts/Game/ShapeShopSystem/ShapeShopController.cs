@@ -81,6 +81,66 @@ namespace RogueBlockBlast.UI
         /// </summary>
         public event System.Action BackRequested;
 
+        // ── İlk Game Over rehberi (ShopUpgradeGuide) ─────────────────────────
+
+        /// <summary>
+        /// Doluyken mağaza yalnızca bu şeklin puan yükseltmesini satar ve onay sormaz.
+        /// Rehber oyuncuya hediye coin'le tek bir puan yükseltmesi yaptırır; başka bir
+        /// harcama (ağırlık, kilit) parayı bitirip rehberi kilitlerdi.
+        /// </summary>
+        public string GuidedScoreShapeId { get; set; }
+
+        /// <summary>Bir puan yükseltmesi satın alındı (şekil id'si).</summary>
+        public event System.Action<string> ScoreUpgradeBought;
+
+        public IReadOnlyList<ShapeShopCardView> Cards => _cards;
+
+        /// <summary>Satın alma onayıyla aynı görseller — rehber pencereleri de aynı dili konuşsun.</summary>
+        public ShopConfirmDialog.Skin DialogSkin => new ShopConfirmDialog.Skin
+        {
+            Window        = _confirmWindow,
+            Button        = _confirmButton,
+            ButtonPrimary = _confirmButtonPrimary,
+            Track         = _confirmCheckBox,
+            Fill          = _confirmCheckFill,
+            Coin          = _confirmCoin,
+            Font          = _confirmFont,
+            BoldFont      = _confirmBoldFont,
+        };
+
+        /// <summary>Kartlar bu satın almaya izin veriyor mu? Rehber sürerken yalnızca hedef puan yükseltmesi.</summary>
+        public bool AllowsPurchase(string shapeId, bool scoreUpgrade) =>
+            string.IsNullOrEmpty(GuidedScoreShapeId) || (scoreUpgrade && shapeId == GuidedScoreShapeId);
+
+        internal void NotifyScoreUpgraded(string shapeId) => ScoreUpgradeBought?.Invoke(shapeId);
+
+        /// <summary>Oyuncu daha önce herhangi bir şeklin puanını yükseltti mi?</summary>
+        public bool HasAnyScoreUpgrade()
+        {
+            if (_shapeLibrary == null) return false;
+            EnsureRegistries();
+            var reg = ShapeUpgradeRegistry.Instance;
+            foreach (var shape in _shapeLibrary.Shapes)
+                if (shape != null && reg.GetScoreLevel(shape.Id) > 0) return true;
+            return false;
+        }
+
+        /// <summary>Açık şekiller arasında en ucuz puan yükseltmesi; yoksa -1.</summary>
+        public int CheapestScoreUpgradeCost()
+        {
+            if (_shapeLibrary == null) return -1;
+            EnsureRegistries();
+            var reg = ShapeUpgradeRegistry.Instance;
+            int best = -1;
+            foreach (var shape in _shapeLibrary.Shapes)
+            {
+                if (shape == null || !shape.IsUnlocked || !reg.CanUpgradeScore(shape.Id)) continue;
+                int cost = reg.GetScoreUpgradeCost(shape.Id);
+                if (best < 0 || cost < best) best = cost;
+            }
+            return best;
+        }
+
         /// <summary>
         /// Oyuncunun parası en az bir şeye yetiyor mu: kilitli bir şeklin açılması,
         /// skor yükseltmesi ya da ağırlık artırma. Ağırlık AZALTMA sayılmaz — bir
@@ -128,20 +188,11 @@ namespace RogueBlockBlast.UI
                 return;
             }
 
-            if (!GameSettings.ConfirmPurchase) { buy(); return; }
+            // Rehberde oyuncu zaten parlayan tek butona basıyor; araya onay kutusu girmesin
+            if (!GameSettings.ConfirmPurchase || !string.IsNullOrEmpty(GuidedScoreShapeId)) { buy(); return; }
 
             if (_confirmDialog == null)
-                _confirmDialog = ShopConfirmDialog.Create(transform, new ShopConfirmDialog.Skin
-                {
-                    Window        = _confirmWindow,
-                    Button        = _confirmButton,
-                    ButtonPrimary = _confirmButtonPrimary,
-                    Track         = _confirmCheckBox,
-                    Fill          = _confirmCheckFill,
-                    Coin          = _confirmCoin,
-                    Font          = _confirmFont,
-                    BoldFont      = _confirmBoldFont,
-                });
+                _confirmDialog = ShopConfirmDialog.Create(transform, DialogSkin);
             _confirmDialog.Show(headline, detail, cost, buy);
         }
 

@@ -64,6 +64,26 @@ namespace RogueBlockBlast.UI
         private UpgradeSlotView _selectedSlot;
         private CoinCounterFX   _coinFX;
 
+        // ── Rehber (UpgradesNudge) için ──────────────────────────────────────
+
+        public UpgradeLibrarySO Library       => _library;
+        public Button           BuyButton     => _buyButton;
+        public TMP_Text         BuyPriceText  => _buyPriceText;
+        public TMP_Text         DetailName    => _detailName;
+        public TMP_Text         DetailDesc    => _detailDesc;
+
+        /// <summary>Oyuncu bir slot seçti.</summary>
+        public event System.Action<UpgradeSO> SlotSelected;
+        /// <summary>Bir seviye satın alındı.</summary>
+        public event System.Action<UpgradeSO> Bought;
+
+        public UpgradeSlotView FindSlot(UpgradeSO upgrade)
+        {
+            foreach (var s in _slots)
+                if (s != null && s.Upgrade == upgrade) return s;
+            return null;
+        }
+
         // ── Unity ────────────────────────────────────────────────────────────
 
         private void OnEnable()
@@ -125,6 +145,7 @@ namespace RogueBlockBlast.UI
                 s.Refresh(isSelected: s == slot);
 
             ShowDetail(slot.Upgrade);
+            SlotSelected?.Invoke(slot.Upgrade);
         }
 
         // ── Detail ───────────────────────────────────────────────────────────
@@ -204,6 +225,7 @@ namespace RogueBlockBlast.UI
 
             // Satın alınan kartta kısa altın flaş + radyal glow (dot'lar Refresh'te dolar).
             _selectedSlot.PlayPurchaseFeedback();
+            Bought?.Invoke(upgrade);
         }
 
         public void OnSellClicked()

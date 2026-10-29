@@ -32,6 +32,15 @@ namespace RogueBlockBlast.UI
 
         public bool IsOpen { get; private set; }
 
+        public ShapeShopController Shop  => _shop;
+        public CanvasGroup         Panel => _panel;
+
+        /// <summary>
+        /// Açılış fade'i bitti, panel tıklanabilir. Rehber ışık deliğini ancak bundan sonra
+        /// koyar: kartların layout'u o noktada kurulmuş olur.
+        /// </summary>
+        public bool IsReady => IsOpen && _panel != null && _panel.interactable;
+
         /// <summary>Parası en az bir şeye yetiyor mu — "Upgrade Now!" butonunun görünürlüğü.</summary>
         public bool HasAffordableUpgrade => _shop != null && _shop.HasAffordableUpgrade();
 
@@ -80,6 +89,9 @@ namespace RogueBlockBlast.UI
         public void Close()
         {
             if (!IsOpen || _panel == null) return;
+            // İlk Game Over rehberi: hediye coin'le yükseltme yapılana kadar mağaza kapanmaz
+            // (geri butonu, ESC, B hepsi buradan geçer)
+            if (ShopUpgradeGuide.BlocksShopClose) return;
             IsOpen = false;
 
             _panel.interactable   = false;

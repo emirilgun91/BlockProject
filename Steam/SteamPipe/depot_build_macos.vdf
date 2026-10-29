@@ -1,0 +1,17 @@
+// macOS depot: Builds/macOS/Blockflow.app (Tools ▸ RogueBlockBlast ▸ Build ▸ macOS)
+// DepotID, Steamworks'te Mac depot'u oluşturunca verilen ID olmalı (app_build'deki ile aynı).
+"DepotBuild"
+{
+	"DepotID" "4559892"
+	"ContentRoot" "../../Builds/macOS/"
+
+	// Yalnızca .app; yanındaki Blockflow_BurstDebugInformation_DoNotShip klasörü girmez.
+	"FileMapping"
+	{
+		"LocalPath" "Blockflow.app/*"
+		"DepotPath" "Blockflow.app/"
+		"Recursive" "1"
+	}
+
+	"FileExclusion" "steam_appid.txt"
+}

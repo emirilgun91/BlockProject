@@ -1,0 +1,20 @@
+// Blockflow (4559890): Windows + macOS depot'larını birlikte yükler.
+// Yollar bu dosyanın klasörüne göredir. Kullanım: Steam/SteamPipe/README.md
+"AppBuild"
+{
+	"AppID" "4559890"
+	"Desc" "Blockflow 1.0.0"
+
+	// Boş: build yüklenir ama hiçbir branch'te yayınlanmaz. Steamworks ▸ Builds'den
+	// önce bir beta branch'e (ör. "mac-test") alıp Mac'te dene, sonra default'a al.
+	"SetLive" ""
+
+	"ContentRoot" "../../Builds/"
+	"BuildOutput" "../../Builds/SteamPipeOutput/"
+
+	"Depots"
+	{
+		"4559891" "depot_build_windows.vdf"
+		"4559892" "depot_build_macos.vdf"
+	}
+}

@@ -131,6 +131,15 @@ Two one-time guides point players at the meta loop; most players never found the
 - Pressing Play in the editor with MainMenu open skips the intro. To test it, open `Intro.unity` first (or set `EditorSceneManager.playModeStartScene`), and check a real build for timing.
 - Unity's own splash ("Made with Unity", Personal license) still plays before the intro; its background is black so the hand-off has no grey flash.
 
+### macOS build & SteamPipe
+
+**Tools ▸ RogueBlockBlast ▸ Build** (`PlatformBuildMenu`, `Editor/`) builds `Builds/macOS/Blockflow.app` (Intel + Apple Silicon, `x64ARM64`) and `Builds/Windows/Blockflow.exe`. Each build empties its folder first, sets the Standalone bundle ID to `com.designerdadgames.blockflow` (it was the template's `com.DefaultCompany.2D-URP`), switches the active target back afterwards, and checks that `steam_api.bundle` / `steam_api64.dll` made it in and `steam_appid.txt` did not.
+
+- The Mac build runs from Windows because Standalone uses **Mono**; IL2CPP for Mac would need a Mac with Xcode. It needs the *Mac Build Support (Mono)* module. The architecture is set through `UnityEditor.OSXStandalone.UserBuildSettings` by reflection, so the file compiles without the module.
+- The code has no Windows-only paths. Mac paths: save `~/Library/Application Support/Designer Dad Games/Blockflow/save.json`, log `~/Library/Logs/Designer Dad Games/Blockflow/Player.log`. Steam Cloud needs a `WinAppDataLocalLow` → `MacAppSupport` root override for macOS.
+- `Steam/SteamPipe/` holds `app_build_4559890.vdf` (Windows depot 4559891 + macOS depot 4559892; check both IDs against Steamworks) and a README covering the Steamworks setup, steamcmd and Mac testing. `SetLive` is empty: put a build on a beta branch first.
+- **Not verified on a Mac yet.** Open risks: the Windows-built `Contents/MacOS/Blockflow` has no exec bit (`chmod +x` when copied by hand; if Steam's copy won't launch, upload the Mac depot from a Mac), fullscreen render-scale sizing under Retina/Metal, and intro video prepare time. The build is not signed or notarized (Steam does not require it).
+
 ### Unity MCP stays out of player builds
 
 The Unity MCP package (`com.ivanmurzak.unity.mcp*`) is an editor tool for Claude; game code never references it. Its Runtime assemblies compile under `UNITY_MCP_READY` and its NuGet DLLs in `Assets/Plugins/NuGet` (~18 MB: Roslyn, SignalR, …) are marked "Any Platform", so both used to ship. **`ExcludeMcpFromBuild`** (`Editor/`, an `IFilterBuildAssemblies`) drops them from the player build's assembly list only; the editor keeps MCP. A NuGet DLL that a remaining assembly really references (its AssemblyRef table, read with `System.Reflection.Metadata`) stays: today only `System.Memory` and `System.Runtime.CompilerServices.Unsafe`, for Unity's `System.IO.Hashing`. A text search is not enough, because the compiler embeds a `Microsoft.CodeAnalysis` namespace in every assembly. The file is wrapped in `#if UNITY_MCP_READY`, so it switches itself off if the package is removed. Verified with a Windows build: 37 assemblies left out, the game boots, plays the intro and opens the menu with no errors in `Player.log`.

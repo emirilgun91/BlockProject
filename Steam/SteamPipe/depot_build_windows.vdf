@@ -1,0 +1,18 @@
+// Windows depot: Builds/Windows/ (Tools ▸ RogueBlockBlast ▸ Build ▸ Windows)
+"DepotBuild"
+{
+	"DepotID" "4559891"
+	"ContentRoot" "../../Builds/Windows/"
+
+	"FileMapping"
+	{
+		"LocalPath" "*"
+		"DepotPath" "."
+		"Recursive" "1"
+	}
+
+	// Burst'ün hata ayıklama sembolleri ve test için konan appid dosyası gönderilmez.
+	"FileExclusion" "*DoNotShip*"
+	"FileExclusion" "*.pdb"
+	"FileExclusion" "steam_appid.txt"
+}
